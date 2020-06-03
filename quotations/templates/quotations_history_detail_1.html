@@ -1,0 +1,387 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% load paginate %}
+{% load thumbnail %}
+{% block breadcrumb %}
+{% block extralinks %}
+<link rel="stylesheet" href="{% static 'css/bootstrap-suggest.css' %}">
+<style>
+  .opacity_block {
+    opacity: 0.2;
+  }
+
+  .form-group label {
+    font-weight: 800;
+    color: black;
+  }
+  .hideRow{
+    border-top:none!important;
+    padding:0!important;
+  }
+</style>
+{% endblock extralinks %}
+<!-- breadcrumb starts here -->
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Quotation History</li>
+    <li class="active breadcrumb-item">{{quotation_history.quotation_title}}</li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+{% block content %}
+<!-- Task VIEW STARTS -->
+<div class="crm_quotation" style="" id="opacity_block">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="crm_form">
+          <div class="row">
+            <div class="col-md-9 p-5 m-auto" style=" background: #fff!important;">
+              <!-- <h1 class="text-center pb-3">{{ quotation.quotation_title }}</h1> -->
+              <div class="card-title text-right">
+                <h5>
+                  <span class="float-left title">Overview</span>
+                  <span style="margin-top: 0px">
+                    <div class="dropdown buttons_row" style="width:auto; display:inline-block; left:0">
+                      <a href="" id="download_btn_" class="btn btn-info"
+                        style="padding: 0.12em 0.6em;border-radius: 0;">Download</a>
+                    </div>
+                  </span>
+                </h5>
+              </div>
+              <hr>
+              <form id="formid" action='' method="POST" novalidate>
+                <div class="row">
+                  <div class="col-md-6">
+                    {% if quotation_history.quotation_title %}
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Quotation
+                        Title</label>
+                      <div class="col-sm-8 pl-0 col-form-label">
+                        {{ quotation_history.quotation_title }}
+                      </div>
+                    </div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-6">
+                    {% if quotation_history.status %}
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Status </label>
+                      <div class="col-sm-8 pl-0 col-form-label">
+                        {{ quotation_history.status }}
+                      </div>
+                    </div>
+                    {% endif %}
+
+                  </div>
+                  {% if quotation_history.quotation_number %}
+                  <div class="col-12">
+                    <div class="form-group row">
+                      <label for="inputPassword" class="col-sm-3 col-form-label" style="margin-right: -3em;">Quotation
+                        Number </label>
+                      <div class="col-sm-9 pl-0 col-form-label">
+                        {{ quotation_history.quotation_number }}
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                  <!-- <div class="col-md-6">
+                      <div class="form-group row">
+                        <label for="id_contacts" class="col-sm-4 col-form-label">Status{% if form.status.field.required %}<span
+                            class="error_marker" style="color:red">*</span>{% endif %}</label>
+                        {{ form.status }}
+                        <span class="error" id="id__status">{{ form.status.errors }}</span>
+                      </div> -->
+                  <!-- <div class="row">
+                        <div class="col-sm-8 pl-0">
+                          <div class="form-group ">
+                            <label for="id_contacts" class="required">Status{% if form.status.field.required %}<span
+                                class="error_marker" style="color:red">*</span>{% endif %}</label>
+                            {{ form.status }}
+                            <span class="error" id="id__status">{{ form.status.errors }}</span>
+                          </div>
+                        </div>
+                      </div> -->
+                  <!-- <label>Status</label>
+                      <button class="btn status btn-primary">Sent</button> -->
+                  <!-- </div> -->
+                  <div class="col-md-12">
+                    <div class="row">
+                      {% if quotation_history.from_address.address_line or quotation_history.from_address.street or quotation_history.from_address.city or quotation_history.from_address.state or quotation_history.from_address.postcode or quotation_history.from_address.country %}
+                      <div class="form-group mt-5 col-md-6">
+                        <!-- <label for="exampleFormControlTextarea1">From Address</label>
+                          <textarea class="form-control" id="exampleFormControlTextarea1"
+                            placeholder="Micropyramid Informatics, 6th Floor, Krish saphire Building, Madhapur"
+                            rows="6"></textarea> -->
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">From Address</label>
+                          <div>
+                            {{quotation_history.from_address.get_complete_address}}
+                          </div>
+                        </div>
+                        <br>
+                      </div>
+                      {% endif %}
+                      {% if quotation_history.to_address.address_line or quotation_history.to_address.street or quotation_history.to_address.city or quotation_history.to_address.state or quotation_history.to_address.postcode or quotation_history.to_address.country %}
+                      <div class="form-group mt-5 col-md-6">
+                        <!-- <label for="exampleFormControlTextarea1">To Address</label>
+                          <textarea class="form-control" id="exampleFormControlTextarea1" rows="6"
+                            placeholder="Micropyramid Informatics, 6th Floor, Krish saphire Building, Madhapur"></textarea> -->
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">From Address</label>
+                          <div>
+                            {{quotation_history.to_address.get_complete_address}}
+                          </div>
+                        </div>
+                        <br>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    {% if quotation_history.name %}
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Name
+                      </label>
+                      <div class="col-sm-8 pl-0 col-form-label">
+                        {{ quotation_history.name }}
+                      </div>
+                    </div>
+                    {% endif %}
+                    <div class="form-group row">
+                      {% if quotation_history.email %}
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Email</label>
+                      <div class="col-sm-8 pl-0 col-form-label">
+                        {{ quotation_history.email }}
+                      </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group row">
+                      {% if quotation_history.email %}
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Phone</label>
+                      <div class="col-sm-8 pl-0 col-form-label">
+                        {{ quotation_history.phone }}
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-12 mt-5">
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Function Items</label>
+                    </div>
+                    {% for function_item_type_choice in function_item_type_choices %}
+                      <div class="form-group row" id="div_{{ function_item_type_choice.0 }}" style="display: none;">
+                        <label>{{ function_item_type_choice.0 }}</label>
+                        <table class="table table-hover" id="table_{{function_item_type_choice.0}}">
+                          <thead>
+                            <tr>
+                              <th scope="col" width="15%">#</th>
+                              <th scope="col" width="50%">Name</th>
+                              <th scope="col" width="35%">Price</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                          </tbody>
+                          <tfoot>
+                            <tr><th>Sub Total: </th><th id="subtotal_{{function_item_type_choice.0}}" style="text-align: right" colspan=3>HK$ 0</th></tr>
+                          <tfoot>
+                        </table>  
+                      </div>
+                    {% endfor%}
+
+                  </div>
+                  <div class="col-md-6">
+                    
+                    <div class="form-group row">
+                      {% if quotation_history.assigned_to.all %}
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Assign To</label>
+                      <div class="col-sm-8 pl-0 col-form-label">
+                        {% for user in quotation_history.assigned_to.all %}
+                        <div>
+                          <a href="{% url 'common:view_user' user.id %}">
+                            {{user}}
+                          </a>
+                        </div>
+                        {% endfor %}
+                      </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group row">
+                      {% if quotation_history.due_date %}
+                      <label for="inputState" class="col-sm-4">Due Date</label>
+                      <div class="col-sm-8 pl-0">
+                        {{ quotation_history.due_date }}
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-12 ">
+                    <div class="row pt-0 pb-4">
+                      {% if quotation_history.quantity %}
+                      <div class="form-group col-md-4">
+                        <label for="inputCity">Quality Hours</label>
+                        {{ quotation_history.quantity }}
+                      </div>
+                      {% endif %}
+                      {% if quotation_history.rate %}
+                      <div class="form-group col-md-4">
+                        <label for="inputCity">Rate</label>
+                        {{ quotation_history.rate }}
+                      </div>
+                      {% endif %}
+                      {% if quotation_history.formatted_total_amount %}
+                      <div class="form-group col-md-4">
+                        <label for="inputCity">Total Amount</label>
+                        <br>
+                        {{ quotation_history.formatted_total_amount }}
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      {% if quotation_history.details %}
+                      <label for="inputZip">Details</label>
+                      <br>
+                      {{ quotation_history.details }}
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-12 mt-1">
+                    <div class="form-group">
+                      Updated by <b>{{ quotation_history.updated_by }}</b> on <b
+                        title="{{ quotation_history.created_on }}">{{ quotation_history.created_on_arrow }}</b>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              <hr>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="overview_form_block row marl justify-content-center" id="loading_spinner"
+        style="z-index: 10; left: 0; right: 0; vertical-align: middle; position: absolute; margin-top: 35%;">
+        <div class="spinner-border text-primary" style="width: 5em; height: 5em;" role="status">
+          <span class="sr-only">Processing File...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+{% block js_block %}
+<script type="text/javascript">
+
+  var fi_data={};
+
+  var fiSet = new Set();
+
+  var sfiSet=new Set();
+
+  function initTable(){
+
+      {% for item in quotation_history.function_items.all %}
+        var sub_items=[];
+        {% for sub_item in item.function_item.sub_function_items.all %}
+          {% for sub_item_history in quotation_history.sub_function_items.all %}
+            {% if sub_item_history.sub_function_item.id == sub_item.id %}
+              sub_items.push({{sub_item_history.as_json|safe}});
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+        if(!fi_data["{{item.type}}"])
+          fi_data["{{item.type}}"]=[];
+        fi_data["{{item.type}}"].push({"id":"{{item.function_item.id}}","name":"{{item.name}}","price":"{{item.price}}","description":"{{item.description}}","sub_function_items":sub_items});
+      {% endfor %}
+
+      {% for sub_item in quotation_history.sub_function_items.all %}
+        sfiSet.add({{sub_item.sub_function_item.id}});
+      {% endfor %}
+
+      console.log(fi_data);
+      console.log(sfiSet);
+
+      for(var type in fi_data){
+        var tbody=document.getElementById("table_"+type).getElementsByTagName("tbody")[0];
+        if(fi_data[type].length>0){
+          document.getElementById("div_"+type).removeAttribute("style");
+          
+        }
+        for(var i=0;i<fi_data[type].length;i++){
+          fiSet.add(fi_data[type][i]["id"]);
+          tbody.innerHTML+=
+            "<tr id='row_"+fi_data[type][i]["id"]+"'>"+
+              "<th scope='row'>"+(fi_data[type][i]["sub_function_items"].length>0?("<a data-toggle='collapse' href='.collapse_"+fi_data[type][i]["id"]+"' role='button' aria-expanded='false' aria-controls='collapse_"+fi_data[type][i]["id"]+"'>"+(i+1)+"</a>"):(i+1))+"</th>"+
+              "<td>"+fi_data[type][i]["name"]+"<br> - "+fi_data[type][i]["description"]+"</td>"+
+              "<td>"+fi_data[type][i]["price"]+"</td>"+
+            "</tr>";
+          for(var j=0;j<fi_data[type][i]["sub_function_items"].length;j++){
+            //if(sfiSet.has(fi_data[type][i]["sub_function_items"][j]["id"])){
+              tbody.innerHTML+='<tr id="sub_row_'+fi_data[type][i]["sub_function_items"][j]["id"]+'"><td class="hideRow" colspan="4"><div class="collapse show collapse_'+fi_data[type][i]["id"]+'"><div style="padding: .75rem;border-top: 1px solid #dee2e6;display:flex;justify-content:space-between;"><div style="flex: 4;">'+fi_data[type][i]["sub_function_items"][j]["name"]+" - "+fi_data[type][i]["sub_function_items"][j]["description"]+'</div><div style="flex: 1;">'+parseInt(fi_data[type][i]["sub_function_items"][j]["price"]).toFixed(2)+'</div><div style="flex: 1;"></div></div></div></td></tr>';
+            //}
+          }         
+        }
+        
+      }
+      updateFunctionItemsVale();
+      updteAllFunctionItemsSubTotal();
+    }
+
+    function updteAllFunctionItemsSubTotal(){
+      var total=0;
+      for(var type in fi_data){
+        console.log(type);
+        total+=updteFunctionItemsSubTotal(type);
+      }
+      $("#total_amount").html("HK$ "+total);
+      return total;
+    }
+
+    function updteFunctionItemsSubTotal(type){
+      var st=0;
+      for(var i=0;i<fi_data[type].length;i++){
+        st+=parseInt(fi_data[type][i]["price"]);
+        for(var j=0;j<fi_data[type][i]["sub_function_items"].length;j++){
+          //if(sfiSet.has(fi_data[type][i]["sub_function_items"][j]["id"])){
+            st+=parseInt(fi_data[type][i]["sub_function_items"][j]["price"]);
+          //}
+        }
+      }
+      $("#subtotal_"+type).html("HK$ "+st.toFixed(2));
+      return st;
+    }
+
+    function updateFunctionItemsVale(){
+      console.log(fiSet);
+      if(fiSet.size>0){
+        $("#id__function_items").html("");
+      }
+      $("#id_function_items").val([...fiSet]);
+      $('#id_sub_function_items').val([...sfiSet]);
+      console.log([...fiSet]);
+      console.log([...sfiSet]);
+    }
+
+  $(document).ready(function () {
+    initTable();
+  });
+
+  $('#loading_spinner').hide()
+
+
+  /*Comment Edit Js Ends*/
+</script>
+<script src="{% static 'js/bootstrap-suggest.js' %}"></script>
+<script>
+  $('.mentions').suggest('@', {
+    data: {{ users_mention| safe}},
+    map: function (user) {
+      return {
+        value: user.username,
+        text: '<strong>' + user.username + '</strong>'
+      }
+    }
+ })
+</script>
+{% endblock js_block %}

@@ -1,0 +1,271 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% load paginate %}
+{% load thumbnail %}
+{% block extralinks %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<style>
+  .form-group label {
+    font-weight: 800;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<!-- main_container starts here -->
+<div class="main_container">
+  <!-- heading_create starts here -->
+  <div class="row marl">
+    <div class="col-lg-12 text-right">
+      {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+      <span class="d-inline"><a class="primary_btn" href="{% url 'function_items:add_function_item'%}"><i class="fa fa-plus"></i>
+          Add New Function Item</a></span>
+      {% else %}
+      <span class="d-inline"><a class="primary_btn" href="{% url 'function_items:request_function_item'%}"><i class="fa fa-flag"></i>
+          Request New Function Item</a></span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="filter_row list_filter_row row marl">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <form id="function_items_filter" action="" method="POST">
+            <div class="card-body">
+              <div class="card-title">Filters</div>
+              <div class="row marl">
+                <div class="filter_col col-md-3">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">NAME</label>
+                    <input type="text" class="form-control" placeholder="Name" name="name"
+                      value="{{request.POST.name}}">
+                  </div>
+                </div>
+                <div class="filter_col col-md-3">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">TYPE</label>
+                    <input type="text" class="form-control" placeholder="Type" name="type"
+                      value="{{request.POST.type}}">
+                  </div>
+                </div>
+                <div class="filter_col text-center col-3">
+                  <div class="form-group buttons_row">
+                    <button class="btn btn-primary save" type="submit">Search</button>
+                    <a href="{% url 'function_items:list' %}" class="btn btn-default clear">Clear</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- heading_create ends here -->
+  <!-- filter_row starts here -->
+  <div class="table_container_row row marl ">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title text-right">
+
+            <span class="float-left">Function Items - {% if show_pageitems %} {% show_pageitems %}{% else %}
+              {{function_item_list|length}}{% endif %}</span>
+
+            <span class="filter_toggle">
+              <a href="#" class="primary_btn"><i class="fas fa-filter"></i></a>
+            </span>
+
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                {% if function_item_list|length > 0 %}
+                <tr>
+                  <th width="5%">S.no</th>
+                  <th width="20%">Name</th>
+                  <th width="10%">Type</th>
+                  <th width="20%">Price</th>
+                  <th width="20%">Status</th>
+                  <th width="10%">Created On</th>
+                  <th width="15%">Actions</th>
+                </tr>
+                {% endif %}
+              </thead>
+              <tbody>
+                {% if per_page %}
+                {% paginate per_page function_item_list %}
+                {% else%}
+                {% paginate 10 function_item_list %}
+                {% endif %}
+                {% for function_item in function_item_list %}
+                <tr style="text-align:center;">
+                  <td scope="row">{{ forloop.counter }}</td>
+                  <td><a href="#" data-toggle="modal"
+                      data-target="#exampleModalCenter_function_item{{function_item.id}}">{{function_item.name}}</a></td>
+                  <td>
+                    {% if function_item.type %}
+                    {{function_item.type}}
+                    {% else %}
+                    Not Specified
+                    {% endif %}
+                  </td>
+                  <td>
+                    {{function_item.price}}
+                  </td>
+                  <td>
+                    {{function_item.status}}
+                  </td>
+                  <td title="{{function_item.created_on}}">{{function_item.created_on_arrow}}</td>
+                  <td class="actions">
+                    <a href="{% url 'function_items:view_function_item' function_item.id %}" class="btn btn-info view" title="View" ><i
+                        class="fas fa-eye"></i></a>
+                    {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                    <a href="{% url 'function_items:edit_function_item' function_item.id%}" class="btn btn-success edit" title="Edit"><i
+                        class="fas fa-pencil-alt"></i></a>
+                    {% endif %}
+                    {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                    <a href="{% url 'function_items:remove_function_item' function_item.id %}"
+                      class="btn btn-danger delete remove_account" title="Delete" ><i class="fas fa-trash-alt"></i></a>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor%}
+              </tbody>
+            </table>
+          </div>
+          {%ifequal function_item_list|length 0 %}
+          <h6 class="text-center">No Function Item Records Found</h6>
+          {%endifequal%}
+          <div class="marl row text-center">
+            {% show_pages %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <br clear="all">
+  </div>
+  <!-- filter_row ends here -->
+</div>
+<!-- main_container ends here -->
+
+
+{% for function_item_record in function_item_list %}
+
+<div class="modal fade" id="exampleModalCenter_function_item{{function_item_record.id}}" tabindex="-1" role="dialog"
+  aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">{{ function_item_record.name }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="" id="">
+          <div class="">
+            <div class="col-md-12" id="">
+              <div class="card">
+
+                <div class="card-body" id="datashow" style="margin: 0; padding: 0;">
+
+                  <div class="card-title text-right">
+                    <h5>
+                      <!-- <span class="float-left title">Overview</span> -->
+                      <span class="" style="margin-top: 0px">
+                        <!-- <div class="dropdown buttons_row">
+                          <button class="btn primary_btn dropdown-toggle" type="button" data-toggle="dropdown">Actions
+                            <span class="caret"></span></button>
+                          <ul class="dropdown-menu">
+                            <li><a href="{% url 'function_items:edit_function_item' function_item_record.id %}">Edit</a></li>
+                          </ul>
+                        </div> -->
+                      </span>
+                    </h5>
+                  </div>
+
+                  <div class="row marl">
+                    <div class="col-md-4">
+                      <div class="filter_col col-md-12" id="iname">
+                        <div class="form-group">
+                          <label class="function_item_field_label" for="id_name" data-name="name">Name</label>
+                          <div class="function_item_field" id="function_item_name" data-name="name">{{ function_item_record.name }}</div>
+                        </div>
+                      </div>
+                      <div class="filter_col col-md-12">
+                        <div class="form-group">
+                          <label class="function_item_field_label" for="id_type" data-name="name">Type</label>
+                          <div class="function_item_field" id="function_item_type" data-name="name">{{ function_item_record.type }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="filter_col col-md-12">
+                        <div class="form-group">
+                          <label class="function_item_field_label" for="id_price" data-name="name">Price</label>
+                          <div class="function_item_field" id="function_item_price" data-name="name">{{ function_item_record.price }}
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                    <div class=" ml-2 col-md-12">
+                      <div class="form-group">
+                        {% if function_item_record.description %}
+                        <label class="function_item_field_label" for="id_description" data-name="name">Description</label>
+                        <div class="function_item_field ml-1" id="function_item_description" data-name="name">
+                          {{ function_item_record.description }}
+                        </div>
+                        {% endif %}
+                      </div>
+                      <div class="created_information">
+                        Created by <b>{{ function_item_record.created_by }}</b> created on
+                        <b title="{{ function_item_record.created_on }}">{{ function_item_record.created_on_arrow }}</b>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endfor %}
+
+
+
+{%endblock%}
+{% block js_block %}
+<script type="text/javascript">
+  $(document).ready(function () {
+    $('.assigned_users').select2();
+    $(".filter_toggle").click(function () {
+      $(".list_filter_row").toggle();
+    });
+  });
+
+  search = "{{search}}"
+
+  if (search == 'True') {
+    $(".list_filter_row").show();
+  }
+  $('.delete').click(function (e) {
+    e.preventDefault()
+    url = $(this).attr('href')
+    if (!confirm('Are you sure you want to delete?'))
+      return;
+    window.location = $(this).attr('href')
+  });
+
+  $("a[rel='page']").click(function (e) {
+    e.preventDefault();
+    $('#function_items_filter').attr("action", $(this).attr("href"));
+    $('#function_items_filter').submit();
+  });
+</script>
+{% endblock js_block %}

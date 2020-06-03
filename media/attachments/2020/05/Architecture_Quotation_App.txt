@@ -1,0 +1,56 @@
+Architecture Quotation App
+
+Object
+
+	User:
+		Info (0.5 md)
+		Quotation Logo (1 md)
+		Company Stamp Image (1 md)
+		Orders (0.5 md)
+
+	Admin:
+		Account Management (2 md)
+			User List
+		Preset Item List (2 md)
+			Category
+				Item
+					Price
+		
+	Quotation(Case): (3 md)
+		Item List
+			Cost
+			Price
+		Out Source Quotation Images
+		Info
+
+
+
+Role Feature
+	
+	User:
+		Authenication (2 factor-email) (3 md)
+			Register
+			Login
+			Logout
+			Forgot Password
+		Upload Image (2 md)
+		Edit Info(2 md)
+		Create/Edit/Remove Quotation(Case) (3 md)
+		Calculate Cost (2 md)
+		Generate Quotation pdf (2 md)
+		Generate Invoice (2 md)
+		Generate Receipt (2 md)
+		Financial System (Cost price setting) (4 md)
+		Analysis System
+			Compare Current Cost & Previous Cost (3 md)
+			Cost and Profit Compare-overall & each item (3 md)
+			Calculate average hr and material cost by each item with working day (2 md)
+
+	Admin
+		Account Management
+			User List (2 md)
+				View info
+				Reset Password (by email)
+		Preset Item List (2 md)
+			Category -(Add, Edit, Remove)
+				Item -(Add, Edit, Remove)

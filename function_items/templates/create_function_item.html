@@ -1,0 +1,500 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% block breadcrumb %}
+{% block extralinks %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'function_items:list' %}">Function Items</a></li>
+    <li class="breadcrumb-item active">{% if function_item_obj %}Edit{% else %}Create{% endif %}</li>
+  </ol>
+</nav>
+{% endblock %}
+{% block content %}
+<form id="add_form" method="POST" action='' novalidate enctype="multipart/form-data">
+  <div class="overview_form_block row marl justify-content-center">
+    <div class="col-md-9">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title text-center">
+            {% if function_item_obj %}EDIT{% else %}CREATE{% endif %} Function Item
+          </div>
+          <div class="row marl no-gutters justify-content-center">
+            <div class="col-md-2">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Name{% if function_item_form.name.field.required %}<span
+                          class="error">*</span>{% endif %}</label>
+                      {{ function_item_form.name }}
+                      <span class="error">{{ function_item_form.name.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+              <div class="form-group col-md-12">
+                <label for="inputZip">Price{% if function_item_form.price.field.required %}<span
+                    class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                {{ function_item_form.price }}
+                <span class="error" id="id__price">{{ function_item_form.price.errors }}</span>
+                <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+              </div>
+              {% endif %}
+            </div>
+            <div class="col-md-2">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Type{% if function_item_form.type.field.required %}<span
+                                class="error">*</span>{% endif %}</label>
+                      {{ function_item_form.type }}
+                      <span class="error">{{ function_item_form.type.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Status{% if function_item_form.status.field.required %}<span
+                                class="error">*</span>{% endif %}</label>
+                      {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                      {{ function_item_form.status }}
+                      {% else %}
+                      <span class="form-control">Requested</span>
+                      <input type="hidden" value="Requested" name="status">
+                      {% endif %}
+                      <span class="error">{{ function_item_form.status.errors }}</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Description{% if function_item_form.description.field.required %}<span
+                      class="error">*</span>{% endif %}</label>
+                  {{ function_item_form.description }}
+                  <span class="error">{{ function_item_form.description.errors }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="row marl buttons_row text-center form_btn_row">
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Sub-Function Items{% if function_item_form.sub_function_items.field.required %}<span
+                      class="error">*</span>{% endif %}</label>
+                  {{ function_item_form.sub_function_items }}
+                  <span class="error">{{ function_item_form.sub_function_items.errors }}</span>
+                </div>
+              </div>
+            </div>
+            {% if function_item_obj %}
+            <div class="col-md-12">
+              <div class="row marl buttons_row text-center form_btn_row">
+                <div class="filter_col col-md-12">
+                  <div class="form-group">
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <table class="table table-hover" id="table_sub_function_item" {% if sub_function_item_objs|length <= 0 %}style="display:none"{% endif %}>
+                          <thead>
+                            <tr>
+                              <th scope="col" width="15%">#</th>
+                              <th scope="col" width="35%">Name</th>
+                              <th scope="col" width="20%">Status</th>
+                              <th scope="col" width="15%">Price</th>
+                              <th scope="col" width="15%">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for sub_function_item_obj in sub_function_item_objs %}
+                            <tr id="row_{{ sub_function_item_obj.id }}">
+                              <th scope='row'>{{forloop.counter}}</th>
+                              <td>{{sub_function_item_obj.name}}<br> - {{sub_function_item_obj.description}}</td>
+                              <td>{{sub_function_item_obj.status}}</td>
+                              <td>{{sub_function_item_obj.price}}</td>
+                              <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ sub_function_item_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{sub_function_item_obj.id}}" data-editname="{{sub_function_item_obj.name}}" data-editdescription="{{sub_function_item_obj.description}}" data-editstatus="{{sub_function_item_obj.status}}" data-editprice="{{sub_function_item_obj.price}}"><i
+                        class="fas fa-pencil-alt"></i></button> <button type="button" class="btn btn-danger" style="font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;" id="removeId_{{ sub_function_item_obj.id }}" data-toggle="modal" data-target="#removeModalCenter" data-removeid="{{sub_function_item_obj.id}}"><i class="fas fa-trash-alt"></i></button></td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addModal">
+                          Add Sub Function Item
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            <input type="hidden" id="save_new_form" name="savenewform">
+            <div class="col-md-12">
+              <div class="row marl buttons_row text-center form_btn_row">
+                <button class="btn btn-default save" type="submit">Save</button>
+                {% if not function_item_obj %}
+                <button class="btn btn-success save savenew" type="submit">Save & New</button>
+                {% endif %}
+                <a {% if request.GET.view_company %} href="{% url 'companies:view_company' request.GET.view_company %}"
+                  {% else %} href="{% url 'function_items:list' %}" {% endif %} class="btn btn-default clear"
+                  id="create_function_item_cancel">Cancel</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>
+{% if function_item_obj %}
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">Add Sub Function Item</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="sub_function_item_form" method="POST" action='{% url 'function_items:add_sub_function_item' %}'>
+        <div class="modal-body">
+            <div class="col-md-12">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Name{% if sub_function_item_form.name.field.required %}<span
+                              class="error">*</span>{% endif %}</label>
+                          {{ sub_function_item_form.name }}
+                          <span class="error">{{ sub_function_item_form.name.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Price{% if sub_function_item_form.price.field.required %}<span
+                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                    {{ sub_function_item_form.price }}
+                    <span class="error" id="id__price">{{ sub_function_item_form.price.errors }}</span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Status{% if sub_function_item_form.status.field.required %}<span
+                                    class="error">*</span>{% endif %}</label>
+                          {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                          {{ sub_function_item_form.status }}
+                          {% else %}
+                          <span class="form-control">Requested</span>
+                          <input type="hidden" value="Requested" name="status">
+                          {% endif %}
+                          <input type="hidden" value={{ function_item_obj.id }} name="related_function_item">
+                          <span class="error">{{ sub_function_item_form.status.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label for="exampleInputEmail1">Description{% if sub_function_item_form.description.field.required %}<span
+                          class="error">*</span>{% endif %}</label>
+                      {{ sub_function_item_form.description }}
+                      <span class="error">{{ sub_function_item_form.description.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="create_sub_function" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Edit Sub Function Item</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="edit_sub_function_item_form" method="POST" action='/function_items/sub/edit/'>
+        <div class="modal-body">
+            <div class="col-md-12">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Name{% if sub_function_item_form.name.field.required %}<span
+                              class="error">*</span>{% endif %}</label>
+                          {{ sub_function_item_form.name }}
+                          <span class="error">{{ sub_function_item_form.name.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Price{% if sub_function_item_form.price.field.required %}<span
+                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                    {{ sub_function_item_form.price }}
+                    <span class="error" id="id__price">{{ sub_function_item_form.price.errors }}</span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Status{% if sub_function_item_form.status.field.required %}<span
+                                    class="error">*</span>{% endif %}</label>
+                          {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                          {{ sub_function_item_form.status }}
+                          {% else %}
+                          <span class="form-control">Requested</span>
+                          <input type="hidden" value="Requested" name="status">
+                          {% endif %}
+                          <input type="hidden" value={{ function_item_obj.id }} name="related_function_item">
+                          <span class="error">{{ sub_function_item_form.status.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label for="exampleInputEmail1">Description{% if sub_function_item_form.description.field.required %}<span
+                          class="error">*</span>{% endif %}</label>
+                      {{ sub_function_item_form.description }}
+                      <span class="error">{{ sub_function_item_form.description.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="edit_sub_function" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Modal -->
+<div class="modal fade" id="removeModalCenter" tabindex="-1" role="dialog" aria-labelledby="removeModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeModalLongTitle">Alert</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        It will actually remove the sub function item. Do you confirm to do this?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" style="background-color: #dc3545;border-color: #dc3545;">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block js_block %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script type="text/javascript">
+  var curId=-1;
+  $(".savenew").on('click', function (e) {
+    e.preventDefault()
+    $("#save_new_form").val('true')
+    $('#add_form').submit()
+  });
+  $(document).ready(function () {
+    $('.assigned_users').select2();
+    $('#id_teams').select2();
+  });
+
+  $('#sub_function_item_form').submit(function() { // catch the form's submit event
+      $.ajax({ // create an AJAX call...
+          data: $(this).serialize(), // get the form data
+          type: $(this).attr('method'), // GET or POST
+          url: $(this).attr('action'), // the file to call
+          success: function(response) { // on success..
+            console.log(response);
+            addSubFunctionItem(response.id);
+          }
+      });
+      return false;
+  });
+
+  $('#edit_sub_function_item_form').submit(function() { // catch the form's submit event
+      $.ajax({ // create an AJAX call...
+          data: $(this).serialize(), // get the form data
+          type: $(this).attr('method'), // GET or POST
+          url: $(this).attr('action')+curId, // the file to call
+          success: function(response) { // on success..
+            console.log(response);
+            updateSubFunctionItem(response.id);
+          }
+      });
+      return false;
+  });
+
+  function addSubFunctionItem(id){
+
+    document.getElementById("table_sub_function_item").removeAttribute("style");
+    document.getElementById("table_sub_function_item").getElementsByTagName("tbody")[0].innerHTML+=
+    "<tr id='row_"+id+"'>"+
+      "<th scope='row'>"+$('#table_sub_function_item tr').length+"</th>"+
+      "<td>"+$('#sub_function_item_form #id_name').val()+"<br> - "+$('#sub_function_item_form #id_description').val()+"</td>"+
+      "<td>"+$('#sub_function_item_form #id_status').val()+"</td>"+
+      "<td>"+parseInt($('#sub_function_item_form #id_price').val()).toFixed(2)+"</td>"+
+      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#sub_function_item_form #id_name').val()+"' data-editdescription='"+$('#sub_function_item_form #id_description').val()+"' data-editstatus='"+$('#sub_function_item_form #id_status').children("option:selected").val()+"' data-editprice='"+$('#sub_function_item_form #id_price').val()+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
+    "</tr>";
+    clearSubFunctionItem();
+    $('#addModal').modal('hide');
+  }
+
+  $('#editModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var id = button.data('editid') // Extract info from data-* attributes
+    var name=button.data('editname')
+    var description=button.data('editdescription')
+    var status=button.data('editstatus')
+    var price=button.data('editprice')
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    curId=id
+    modal.find('#id_name').val(name)
+    modal.find('#id_description').val(description)
+    modal.find('#id_status').val(status)
+    modal.find('#id_price').val(price)
+    modal.find('.btn-primary').attr('onclick','updateSubFunctionItem('+id+')')
+  })
+
+
+  function updateSubFunctionItem(id){
+    console.log($('#table_sub_function_item #row_'+id).html(
+      "<th scope='row'>"+$('#table_sub_function_item #row_'+id+' th').html()+"</th>"+
+      "<td>"+$('#edit_sub_function_item_form #id_name').val()+"<br> - "+$('#edit_sub_function_item_form #id_description').val()+"</td>"+
+      "<td>"+$('#edit_sub_function_item_form #id_status').val()+"</td>"+
+      "<td>"+parseInt($('#edit_sub_function_item_form #id_price').val()).toFixed(2)+"</td>"+
+      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_sub_function_item_form #id_name').val()+"' data-editdescription='"+$('#edit_sub_function_item_form #id_description').val()+"' data-editstatus='"+$('#edit_sub_function_item_form #id_status').children("option:selected").val()+"' data-editprice='"+$('#edit_sub_function_item_form #id_price').val()+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
+    ));
+    $('#editModal').modal('hide');
+  }
+
+  function clearSubFunctionItem(){
+    $('#sub_function_item_form #id_name').val('');
+    $('#sub_function_item_form #id_description').val('');
+    $('#sub_function_item_form #id_price').val('');
+    $('#sub_function_item_form #id_status').val('Requested');
+
+  }
+
+  $('#removeModalCenter').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var id = button.data('removeid') // Extract info from data-* attributes
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    modal.find('.btn-danger').attr('onclick','removeSubFunctionItem('+id+')')
+  })
+
+  function removeSubFunctionItem(id){
+      console.log(id);
+      $.ajax({ // create an AJAX call...
+          data: {"pk":id}, // get the form data
+          type: "POST", // GET or POST
+          url: "{% url 'function_items:remove_sub_function_item' %}", // the file to call
+          success: function(response) { // on success..
+            console.log(response);
+            var tbody=$("#row_"+id).parent();
+            $("#row_"+id).remove();
+            console.log(tbody.children().length);
+            if(tbody.children().length<=0){
+
+              tbody.parent().attr("style","display:none");
+            }
+            $('#removeModalCenter').modal('hide');
+          }
+      });
+    }
+
+  $("#id_teams").change(function (e) {
+    try {
+      var users = []
+      $('#id_teams option:selected').each(function () {
+        // users.push($(this).attr('data-users'))
+        _data = $(this).attr('data-users');
+        if (!users) {
+          // users = []
+        } else {
+          users = users.concat(_data.split(','))
+        }
+      })
+      // users = $('option:selected', this).attr('data-users')
+      // if (!users) {
+      //   users = []
+      // } else {
+      //   users = users.split(',')
+      // }
+      console.log('selected users teams data', users)
+      var existingUsers = $('#id_assigned_to').val();
+      var allUsers = users.concat(existingUsers)
+      console.log(existingUsers)
+      if (users.length) {
+        $('#id_assigned_to').select2().val(allUsers).trigger('change');
+
+      }
+    } catch (error) {
+      console.log(error)
+      $('#id_assigned_to').select2().val(existingUsers).trigger('change');
+    }
+
+  });
+</script>
+{% endblock js_block %}

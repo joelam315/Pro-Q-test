@@ -1,0 +1,681 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% block breadcrumb %}
+{% load thumbnail %}
+{% block extralinks %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css"
+  href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/start/jquery-ui.css" />
+<style>
+  .form-group label {
+    font-weight: 800;
+    color: black;
+  }
+  .hideRow{
+    border-top:none!important;
+    padding:0!important;
+  }
+</style>
+{% endblock %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'quotations:quotations_list' %}">Quotations</a></li>
+    <li class="breadcrumb-item active">{% if quotation_obj %}Edit{% else %}Create{% endif %}</li>
+  </ol>
+</nav>
+{% endblock %}
+{% block content %}
+
+<div class="crm_quotation" style="">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="crm_form">
+          <div class="row">
+            <div class="col-md-9 p-5 m-auto" style=" background: #fff!important;">
+              <h1 class="text-center pb-3">{% if quotation_obj %}Edit{% else %}Create{% endif %} Quotation</h1>
+              <form id="formid" action='' method="POST" novalidate>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Quotation
+                        Title{% if form.quotation_title.field.required %}<span class="error_marker" style="color:red">
+                          *</span>{% endif %} </label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="micropyramid"> -->
+                        {{ form.quotation_title }}
+                        <span class="error" id="id__quotation_title">{{ form.quotation_title.errors }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group row">
+                      <label for="staticEmail"
+                        class="col-sm-4 col-form-label">Status{% if form.status.field.required %}<span
+                          class="error_marker" style="color:red">*</span>{% endif %}</label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="Lakshmanchandu"> -->
+                        {{ form.status }}
+                        <span class="error" id="id__status">{{ form.status.errors }}</span>
+                        <!-- <span class="error" id="id__name">{{ form.name.errors }}</span> -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12" style="margin: 0; padding: 0;">
+
+                    <div class="form-group row" style="padding:0; margin:0;">
+                      <label for="inputPassword" class="col-sm-3 col-form-label" style="">Quotation
+                        Number{% if form.quotation_number.field.required %}<span class="error_marker" style="color:red">
+                          *</span>{% endif %}</label>
+                      <div class="col-sm-9 pl-0">
+                        <!-- <input type="text" class="form-control" id="inputPassword" placeholder="79840PM90"> -->
+                        {{ form.quotation_number }}
+                        <span class="error" id="id__quotation_number">{{ form.quotation_number.errors }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- <div class="col-md-6">
+                    <div class="form-group row">
+                      <label for="id_contacts" class="col-sm-4 col-form-label">Status{% if form.status.field.required %}<span
+                          class="error_marker" style="color:red">*</span>{% endif %}</label>
+                      {{ form.status }}
+                      <span class="error" id="id__status">{{ form.status.errors }}</span>
+                    </div> -->
+                  <!-- <div class="row">
+                      <div class="col-sm-8 pl-0">
+                        <div class="form-group ">
+                          <label for="id_contacts" class="required">Status{% if form.status.field.required %}<span
+                              class="error_marker" style="color:red">*</span>{% endif %}</label>
+                          {{ form.status }}
+                          <span class="error" id="id__status">{{ form.status.errors }}</span>
+                        </div>
+                      </div>
+                    </div> -->
+                  <!-- <label>Status</label>
+                    <button class="btn status btn-primary">Sent</button> -->
+                  <!-- </div> -->
+                  <div class="col-md-12">
+                    <div class="row">
+                      <div class="form-group mt-5 col-md-6">
+                        <!-- <label for="exampleFormControlTextarea1">From Address</label>
+                        <textarea class="form-control" id="exampleFormControlTextarea1"
+                          placeholder="Micropyramid Informatics, 6th Floor, Krish saphire Building, Madhapur"
+                          rows="6"></textarea> -->
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">From Address</label>
+                          {{ from_address_form.address_line }}
+                          <span class="error" id="id__address_line">{{ from_address_form.address_line.errors }}</span>
+                        </div>
+                        {{ from_address_form.street }}
+                        <span class="error" id="id__street">{{ from_address_form.street.errors }}</span>
+                        <div class="row" style="margin-top: 10px;">
+                          <div class="col-md-4">
+                            {{ from_address_form.city }}
+                            {{ from_address_form.city.errors }}
+                            <span class="error" id="id__city">{{ to_address_form.city.errors }}</span>
+                          </div>
+                          <div class="col-md-4">
+                            {{ from_address_form.state }}
+                            <span class="error" id="id__state">{{ from_address_form.state.errors }}</span>
+                          </div>
+                          <div class="col-md-4">
+                            {{ from_address_form.postcode }}
+                            <span class="error" id="id__postcode">{{ from_address_form.postcode.errors }}</span>
+                          </div>
+                          <div class="col-md-12" style="margin-top: 10px;">
+                            {{ from_address_form.country }}
+                            <span class="error" id="id__country">{{ from_address_form.country.errors }}</span>
+                          </div>
+                        </div>
+                        <br>
+                      </div>
+                      <div class="form-group mt-5 col-md-6">
+                        <!-- <label for="exampleFormControlTextarea1">To Address</label>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="6"
+                          placeholder="Micropyramid Informatics, 6th Floor, Krish saphire Building, Madhapur"></textarea> -->
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">To Address</label>
+                          {{ to_address_form.address_line }}
+                          <span class="error" id="id__address_line_">{{ to_address_form.address_line.errors }}</span>
+                        </div>
+                        {{ to_address_form.street }}
+                        <span class="error" id="id__street_">{{ to_address_form.street.errors }}</span>
+                        <div class="row" style="margin-top: 10px;">
+                          <div class="col-md-4">
+                            {{ to_address_form.city }}
+                            {{ to_address_form.city.errors }}
+                            <span class="error" id="id__city_">{{ to_address_form.city.errors }}</span>
+                          </div>
+                          <div class="col-md-4">
+                            {{ to_address_form.state }}
+                            <span class="error" id="id__state_">{{ to_address_form.state.errors }}</span>
+                          </div>
+                          <div class="col-md-4">
+                            {{ to_address_form.postcode }}
+                            <span class="error" id="id__postcode_">{{ to_address_form.postcode.errors }}</span>
+                          </div>
+                          <div class="col-md-12" style="margin-top: 10px;">
+                            {{ to_address_form.country }}
+                            <span class="error" id="id__country_">{{ to_address_form.country.errors }}</span>
+                          </div>
+                        </div>
+                        <br>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mt-5">
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Name
+                        {% if form.name.field.required %}<span class="error_marker" style="color:red"> *
+                        </span>{% endif %}</label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="Lakshmanchandu"> -->
+                        {{ form.name }}
+                        <span class="error" id="id__name">{{ form.name.errors }}</span>
+                      </div>
+                    </div>
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Email
+                        {% if form.email.field.required %}<span class="error_marker" style="color:red"> *
+                        </span>{% endif %}</label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail"
+                                placeholder="lakshman@micropyramid.com"> -->
+                        {{ form.email }}
+                        <span class="error" id="id__email">{{ form.email.errors }}</span>
+                      </div>
+                    </div>
+                    <div class="form-group row">
+                      <label for="staticEmail"
+                        class="col-sm-4 col-form-label">Phone{% if form.phone.field.required %}<span
+                          class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                      <div class="col-sm-8 pl-0">
+                        {{ form.phone }}
+                        <span class="error" id="id__phone">{{ form.phone.errors }}</span>
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="6566589125"> -->
+                      </div>
+                    </div>
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Due Date
+                        {% if form.due_date.field.required %}<span class="error_marker"
+                          style="color:red">*</span>{% endif %}</label>
+                      <div class="col-sm-8 pl-0">
+                        <div id="datepicker1" class='input-group date'>
+                          {{ form.due_date }}
+                          <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                          </span>
+                        </div>
+                        <span class="error" id="id__due_date">{{ form.due_date.errors }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mt-5">
+                    <!--<div class="form-group row">
+                      <label for="inputState" class="col-sm-4">Currency{% if form.currency.field.required %}<span
+                          class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                      <div class="col-sm-8 pl-0">
+                        {{ form.currency }}
+                        <span class="error" id="id__currency">{{ form.currency.errors }}</span>
+                      </div>
+                    </div>-->
+                    {% if request.user.is_superuser or request.user.role == 'ADMIN' %}
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Teams</label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="santhrao N"> -->
+                        <select name="teams" id="id_teams" class="assigned_users form-control" multiple>
+                          {% for team in teams %}
+                          <option data-users="{{team.get_users}}" value="{{team.id}}" {% if team in quotation_obj.teams.all %}
+                            selected="" {% endif %}>
+                            {{team}}</option>
+                          {% endfor %}
+                        </select>
+                        <span class="error" id="id__teams">{{ form.teams.errors }}</span>
+                      </div>
+                    </div>
+                    {% endif %}
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Assign To</label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="santhrao N"> -->
+                        {{form.assigned_to}}
+                        <span class="error" id="id__assigned_to">{{ form.assigned_to.errors }}</span>
+                      </div>
+                    </div>
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Companies</label>
+                      <div class="col-sm-8 pl-0">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="santhrao N"> -->
+                        {{form.companies}}
+                        <span class="error" id="id__companies">{{ form.companies.errors }}</span>
+                      </div>
+                    </div>
+                    <input type="hidden" name="from_company" value="{{request.GET.view_company}}">
+                  </div>
+                  <div class="col-md-12 mt-5">
+                    <div class="form-group row">
+                      <label for="staticEmail" class="col-sm-4 col-form-label">Function Items</label>
+                    </div>
+                    <div class="form-group row">
+                      <div class="col-sm-10">
+                        <!-- <input type="text" class="form-control" id="staticEmail" placeholder="santhrao N"> -->
+                        <select id="select_function_items" class="assigned_users form-control" multiple>
+                          {% for function_item in function_items %}
+                          <option value="{{function_item.id}}">
+                            {{function_item.name}} ({{function_item.type}}) - {{function_item.description}}</option>
+                          {% endfor %}
+                        </select>
+                        <select name="function_items" id="id_function_items" class="assigned_users form-control" style="display:none" multiple>
+                          {% for function_item in function_items %}
+                          <option value="{{function_item.id}}"></option>
+                          {% endfor %}
+                        </select>
+                        <select name="sub_function_items" id="id_sub_function_items" class="assigned_users form-control" style="display:none" multiple>
+                          {% for sub_function_item in sub_function_items %}
+                          <option value="{{sub_function_item.id}}"></option>
+                          {% endfor %}
+                        </select>
+                        <span class="error" id="id__function_items">{{ form.sub_function_items.errors }}</span>
+                      </div>
+                      <div class="col-sm-2 pl-0">
+                        <div class="row marl buttons_row form_btn_row text-center">
+                          <button type="button" class="btn btn-default save" id="add_function_item" onclick="addFunctionItem()">Add</button>
+                        </div>
+                      </div>
+                    </div>
+                    {% for function_item_type_choice in function_item_type_choices %}
+                      <div class="form-group row" id="div_{{ function_item_type_choice.0 }}" style="display: none;">
+                        <label>{{ function_item_type_choice.0 }}</label>
+                        <table class="table table-hover" id="table_{{function_item_type_choice.0}}">
+                          <thead>
+                            <tr>
+                              <th scope="col" width="15%">#</th>
+                              <th scope="col" width="40%">Name</th>
+                              <th scope="col" width="30%">Price</th>
+                              <th scope="col" width="15%">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                          </tbody>
+                          <tfoot>
+                            <tr><th>Sub Total: </th><th id="subtotal_{{function_item_type_choice.0}}" style="text-align: right" colspan=3>HK$ 0</th></tr>
+                          <tfoot>
+                        </table>  
+                      </div>
+                    {% endfor%}
+
+                  </div>
+                  <div class="col-md-12 mt-5">
+                    <div class="row pt-0 pb-4">
+                      <div class="form-group col-md-4">
+                        <label for="inputCity">Quality Hours{% if form.quantity.field.required %}<span
+                            class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                        <!-- <input type="text" class="form-control" id="inputCity" placeholder="5:30"> -->
+                        {{ form.quantity }}
+                        <span class="error" id="id__quantity">{{ form.quantity.errors }}</span>
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label for="inputState">Rate {% if form.rate.field.required %}<span class="error_marker"
+                            style="color:red">*</span>{% endif %}</label>
+                        {{ form.rate }}
+                        <span class="error" id="id__rate">{{ form.rate.errors }}</span>
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label for="inputZip">Total Amount</label>
+                        <span class="form-control" id="total_amount" style="border: none"></span>
+                        
+                        <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-12 mt-1">
+                    <div class="form-group">
+                      <label for="inputZip">Details</label>
+                      {{form.details}}
+                      <span class="error" id="id__details">{{ form.details.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12">
+                  <div class="col-md-12">
+                    <div class="row marl buttons_row form_btn_row text-center">
+                      <button class="btn btn-default save" type="submit">Save</button>
+                      <a href="{% url 'quotations:quotations_list' %}" class="btn btn-default clear"
+                        id="create_user_cancel">Cancel</a>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endblock %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+  {% block js_block %}
+  <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js'></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.js"></script>
+  <script src="https://malsup.github.io/jquery.form.js"></script>
+  <script type="text/javascript">
+
+    // $(document).ready(function() {
+    //   $('.assigned_users').select2();
+    // });
+
+    var fi_data={}; // quotation function item data
+
+    var fi_sfi={}; //function item related sub function item
+
+    var fi_all=[]; // all function item
+
+    var sfi_all=[]; // all sub function item
+
+    var fiSet = new Set(); //check quotation function item duplication 
+
+    var sfiSet=new Set(); //check quotation sub function item duplication 
+
+    function initFIChoice(){
+      //function item loop
+      {% for fi in function_items %}
+        var sfis=[];
+        {% for sfi in fi.sub_function_items.all %}
+          sfis.push({{sfi.as_json|safe}});
+        {% endfor %}
+        fi_all["{{fi.id}}"]={"id":"{{fi.id}}","name":"{{fi.name}}","price":"{{fi.price}}","type":"{{fi.type}}","description":"{{fi.description}}","sub_function_items":sfis };
+      {% endfor %}
+
+      //sub function item loop
+      {% for sfi in sub_function_items %}
+        if(!fi_sfi[{{sfi.related_function_item.id}}])
+          fi_sfi[{{sfi.related_function_item.id}}]=[];
+        fi_sfi[{{sfi.related_function_item.id}}].push({{sfi.id}});
+        sfi_all["{{sfi.id}}"]={{sfi.as_json|safe}};
+      {% endfor %}
+      console.log(fi_all);
+      console.log(sfi_all);
+      console.log(fi_sfi);
+    }
+
+    function initTable(){
+
+      {% for item in quotation_obj.function_items.all %}
+        var sub_items=[];
+        {% for sub_item in item.sub_function_items.all %}
+          sub_items.push({{sub_item.as_json|safe}});
+        {% endfor %}
+        if(!fi_data["{{item.type}}"])
+          fi_data["{{item.type}}"]=[];
+        fi_data["{{item.type}}"].push({"id":"{{item.id}}","name":"{{item.name}}","price":"{{item.price}}","description":"{{item.description}}","sub_function_items":sub_items });
+      {% endfor %}
+
+      {% for sub_item in quotation_obj.sub_function_items.all %}
+        sfiSet.add({{sub_item.id}});
+      {% endfor %}
+
+      console.log(fi_data);
+
+      for(var type in fi_data){
+        var tbody=document.getElementById("table_"+type).getElementsByTagName("tbody")[0];
+        if(fi_data[type].length>0){
+          document.getElementById("div_"+type).removeAttribute("style");
+          
+        }
+        for(var i=0;i<fi_data[type].length;i++){
+          fiSet.add(fi_data[type][i]["id"]);
+          tbody.innerHTML+=
+            "<tr id='row_"+fi_data[type][i]["id"]+"'>"+
+              "<th scope='row'>"+(fi_data[type][i]["sub_function_items"].length>0?("<a data-toggle='collapse' href='.collapse_"+fi_data[type][i]["id"]+"' role='button' aria-expanded='false' aria-controls='collapse_"+fi_data[type][i]["id"]+"'>"+(i+1)+"</a>"):(i+1))+"</th>"+
+              "<td>"+fi_data[type][i]["name"]+"<br> - "+fi_data[type][i]["description"]+"</td>"+
+              "<td>"+fi_data[type][i]["price"]+"</td>"+
+              "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+fi_data[type][i]["id"]+"' onclick='removeFunctionItem("+fi_data[type][i]["id"]+",\""+type+"\")'>X</button></td>"+
+            "</tr>";
+            for(var j=0;j<fi_data[type][i]["sub_function_items"].length;j++){
+              tbody.innerHTML+='<tr id="sub_row_'+fi_data[type][i]["sub_function_items"][j]["id"]+'"><td class="hideRow" colspan="4"><div class="collapse collapse_'+fi_data[type][i]["id"]+'"><div style="padding: .75rem;border-top: 1px solid #dee2e6;display:flex;justify-content:space-between;"><div style="flex: 7;">'+fi_data[type][i]["sub_function_items"][j]["name"]+" - "+fi_data[type][i]["sub_function_items"][j]["description"]+'</div><div style="flex: 4;">'+parseInt(fi_data[type][i]["sub_function_items"][j]["price"]).toFixed(2)+'</div><div style="flex: 1;"><input class="form-check-input" type="checkbox" value='+fi_data[type][i]["sub_function_items"][j]["id"]+' id="checkbox_'+fi_data[type][i]["sub_function_items"][j]["id"]+'" class="sub_check" onchange="toggleSubCheck('+fi_data[type][i]["sub_function_items"][j]["id"]+',this)" '+(sfiSet.has(fi_data[type][i]["sub_function_items"][j]["id"])?'checked':'')+'></div></div></div></td></tr>';
+            }
+            
+            
+        }
+
+        
+      }
+      updateFunctionItemsValue();
+      updteAllFunctionItemsSubTotal();
+    }
+
+    function toggleSubCheck(id,cb){
+      if(cb.checked){
+        if(!sfiSet.has(id)){
+          sfiSet.add(id);
+        }
+      }
+      else{
+        if(sfiSet.has(id)){
+          sfiSet.delete(id);
+        }
+      }
+      updateFunctionItemsValue();
+      updteAllFunctionItemsSubTotal();
+    }
+
+    function addFunctionItem(){
+      var selectFunctionItems = $("#select_function_items");
+      var itemsId=selectFunctionItems.val();
+      console.log(itemsId);
+      for(var i=0;i<itemsId.length;i++){
+        var cur=fi_all[itemsId[i]];
+        console.log(cur);
+        if(!fiSet.has(cur["id"])){
+          fiSet.add(cur["id"]);
+          if(!fi_data[cur["type"]])
+            fi_data[cur["type"]]=[];
+          fi_data[cur["type"]].push({"id":cur["id"],"name":cur["name"],"price":cur["price"],"sub_function_items":cur["sub_function_items"]});
+          document.getElementById("div_"+cur["type"]).removeAttribute("style");
+          /*document.getElementById("table_"+cur["type"]).getElementsByTagName("tbody")[0].innerHTML+=
+          "<tr id='row_"+cur["id"]+"'>"+
+            "<th scope='row'>"+fi_data[cur["type"]].length+"</th>"+
+            "<td>"+cur["name"]+"<br> - "+cur["description"]+"</td>"+
+            "<td>"+cur["price"]+"</td>"+
+            "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+cur["id"]+"' onclick='removeFunctionItem("+cur["id"]+",\""+cur["type"]+"\")'>X</button></td>";*/
+          var tbody=document.getElementById("table_"+cur["type"]).getElementsByTagName("tbody")[0];
+          tbody.innerHTML+=
+          "<tr id='row_"+cur["id"]+"'>"+
+              "<th scope='row'>"+(cur["sub_function_items"].length>0?("<a data-toggle='collapse' href='.collapse_"+cur["id"]+"' role='button' aria-expanded='false' aria-controls='collapse_"+cur["id"]+"'>"+fi_data[cur["type"]].length+"</a>"):(fi_data[cur["type"]].length))+"</th>"+
+              "<td>"+cur["name"]+"<br> - "+cur["description"]+"</td>"+
+              "<td>"+cur["price"]+"</td>"+
+              "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+cur["id"]+"' onclick='removeFunctionItem("+cur["id"]+",\""+cur["type"]+"\")'>X</button></td>"+
+            "</tr>";
+            for(var j=0;j<cur["sub_function_items"].length;j++){
+              tbody.innerHTML+='<tr id="sub_row_'+cur["sub_function_items"][j]["id"]+'"><td class="hideRow" colspan="4"><div class="collapse collapse_'+cur["id"]+'"><div style="padding: .75rem;border-top: 1px solid #dee2e6;display:flex;justify-content:space-between;"><div style="flex: 7;">'+cur["sub_function_items"][j]["name"]+" - "+cur["sub_function_items"][j]["description"]+'</div><div style="flex: 4;">'+parseInt(cur["sub_function_items"][j]["price"]).toFixed(2)+'</div><div style="flex: 1;"><input class="form-check-input" type="checkbox" value='+cur["sub_function_items"][j]["id"]+' id="checkbox_'+cur["sub_function_items"][j]["id"]+'" onchange="toggleSubCheck('+cur["sub_function_items"][j]["id"]+',this)"></div></div></div></td></tr>';
+            }
+        }
+        
+      }
+    $('#select_function_items').val('').change();
+      console.log(fi_all);
+      updateFunctionItemsValue();
+      updteAllFunctionItemsSubTotal();
+    }
+
+    function removeFunctionItem(id,type){
+      console.log(id);
+
+      fiSet.delete(id.toString());
+      for(var i=fi_data[type].length-1;i>=0;i--){
+        if(fi_data[type][i]["id"]==id){
+          fi_data[type].splice(i,1);
+          break;
+        }
+      }
+      console.log(fi_data[type]);
+      //
+      var tbody=$("#row_"+id).parent();
+      $("#row_"+id).remove();
+      console.log(fi_sfi[id]);
+      if(fi_sfi[id]){
+        for(var i=0;i<fi_sfi[id].length;i++){
+          sfiSet.delete(fi_sfi[id][i]);
+          $("#sub_row_"+fi_sfi[id][i]).remove();
+        }
+      }
+      
+      console.log(tbody.children().length);
+      if(tbody.children().length<=0){
+        console.log(tbody.parent().parent());
+        tbody.parent().parent().attr("style","display:none");
+      }
+      updateFunctionItemsValue();
+      updteAllFunctionItemsSubTotal();
+    }
+
+    function updteAllFunctionItemsSubTotal(){
+      var total=0;
+      for(var type in fi_data){
+        console.log(type);
+        total+=updteFunctionItemsSubTotal(type);
+      }
+      $("#total_amount").html("HK$ "+total);
+      return total;
+    }
+
+    function updteFunctionItemsSubTotal(type){
+      var st=0;
+      for(var i=0;i<fi_data[type].length;i++){
+        st+=parseInt(fi_data[type][i]["price"]);
+        for(var j=0;j<fi_data[type][i]["sub_function_items"].length;j++){
+          if(sfiSet.has(fi_data[type][i]["sub_function_items"][j]["id"])){
+            st+=parseInt(fi_data[type][i]["sub_function_items"][j]["price"]);
+          }
+        }
+      }
+      $("#subtotal_"+type).html("HK$ "+st.toFixed(2));
+      return st;
+    }
+
+    function updateFunctionItemsValue(){
+      console.log(fiSet);
+      if(fiSet.size>0){
+        $("#id__function_items").html("");
+      }
+      $("#id_function_items").val([...fiSet]);
+      $('#id_sub_function_items').val([...sfiSet]);
+      console.log([...fiSet]);
+      console.log([...sfiSet]);
+    }
+
+    function remove_attachment(x) {
+      const con = confirm("Do you want to Delete it for Sure!?");
+      if (con == true) {
+        $.post('{% url "cases:remove_attachment" %}', {
+          "attachment_id": x
+        }, function (data) {
+          if (data.error) {
+            alert(data.errors)
+          } else {
+            $("#attachment" + data.attachment_object).remove()
+          }
+        })
+      }
+    }
+
+    $(document).ready(function () {
+      initFIChoice();
+      initTable();
+      $("#id_contacts").select2();
+      $("#id_assigned_to").select2();
+      $('#id_currency').select2();
+      $('#id_teams').select2();
+      $('#select_function_items').select2();
+      {% if request.GET.view_company %}
+      $("#id_companies option[value=" + '{{request.GET.view_company}}' + "]").attr('selected', true);
+      {% endif %}
+      $('#id_companies').select2();
+
+      {% if quotation_obj %}
+      $('#id_due_date').datetimepicker({
+        'format': 'YYYY-MM-DD',
+      })
+      {% else %}
+      var date = new Date();
+      var today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      $('#id_due_date').datetimepicker({
+        'format': 'YYYY-MM-DD',
+        minDate: today
+      })
+      {% endif %}
+
+
+      $('#id_quantity').keyup(calculate);
+      $('#id_rate').keyup(calculate);
+      function calculate(e) {
+        $('#id_total_amount').val($('#id_quantity').val() * $('#id_rate').val());
+      }
+
+    });
+    $('form#formid').ajaxForm({
+      type: 'POST',
+      dataType: 'json',
+      url: ".",
+      data: $('#formid').serialize(),
+      success: function (data) {
+        if (data.error) {
+          console.log($('#formid').serialize());
+          console.log(data)
+          $('.error').html('')
+          for (var key in data.errors) {
+            $('#id__' + key).html("<p>" + data.errors[key][0] + "</p>");
+          };
+          for (var key in data.from_address_errors) {
+            $('#id__' + key).html("<p>" + data.from_address_errors[key][0] + "</p>");
+          };
+          for (var key in data.to_address_errors) {
+            $('#id__' + key + '_').html("<p>" + data.to_address_errors[key][0] + "</p>");
+            console.log($('#id__' + key + '_'))
+          };
+          $('#submit_btn').removeAttr('disabled')
+        }
+        else {
+          window.location = data.success_url;
+        }
+      }
+    });
+
+    $("#id_teams").change(function (e) {
+    try {
+      var users = []
+      $('#id_teams option:selected').each(function () {
+        // users.push($(this).attr('data-users'))
+        _data = $(this).attr('data-users');
+        if (!users) {
+          // users = []
+        } else {
+          users = users.concat(_data.split(','))
+        }
+      })
+      // users = $('option:selected', this).attr('data-users')
+      // if (!users) {
+      //   users = []
+      // } else {
+      //   users = users.split(',')
+      // }
+      console.log('selected users teams data', users)
+      var existingUsers = $('#id_assigned_to').val();
+      var allUsers = users.concat(existingUsers)
+      console.log(existingUsers)
+      if (users.length) {
+        $('#id_assigned_to').select2().val(allUsers).trigger('change');
+
+      }
+    } catch (error) {
+      console.log(error)
+      $('#id_assigned_to').select2().val(existingUsers).trigger('change');
+    }
+
+  });
+  </script>
+  {% endblock js_block %}
