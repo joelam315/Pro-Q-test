@@ -159,6 +159,15 @@ class LoginView(TemplateView):
         if form.is_valid():
 
             user = User.objects.filter(username=request.POST.get('username')).first()
+            if not (user.role == 'ADMIN' or user.is_superuser):
+                return render(request, "login.html", {
+                    "ENABLE_GOOGLE_LOGIN": settings.ENABLE_GOOGLE_LOGIN,
+                    "GP_CLIENT_SECRET": settings.GP_CLIENT_SECRET,
+                    "GP_CLIENT_ID": settings.GP_CLIENT_ID,
+                    "error": True,
+                    "message":
+                    "Your Account is not Found. Please Contact Administrator"
+                })
             # user = authenticate(username=request.POST.get('username'), password=request.POST.get('password'))
             if user is not None:
                 if user.is_active:
@@ -187,7 +196,7 @@ class LoginView(TemplateView):
                     "GP_CLIENT_ID": settings.GP_CLIENT_ID,
                     "error": True,
                     "message":
-                    "Your Company is inactive. Please Contact Administrator"
+                    "Your Account is inactive. Please Contact Administrator"
                 })
             return render(request, "login.html", {
                 "ENABLE_GOOGLE_LOGIN": settings.ENABLE_GOOGLE_LOGIN,
@@ -195,7 +204,7 @@ class LoginView(TemplateView):
                 "GP_CLIENT_ID": settings.GP_CLIENT_ID,
                 "error": True,
                 "message":
-                "Your Company is not Found. Please Contact Administrator"
+                "Your Account is not Found. Please Contact Administrator"
             })
 
         return render(request, "login.html", {

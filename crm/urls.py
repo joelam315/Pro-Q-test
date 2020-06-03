@@ -48,6 +48,7 @@ urlpatterns = [
     path('function_items/',include('function_items.urls',namespace="function_items")),
     # path('planner/', include('planner.urls', namespace="planner")),
     path('logout/', views.LogoutView, {'next_page': '/login/'}, name="logout"),
+    path('api/',include('api.urls',namespace="api")),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
