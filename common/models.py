@@ -29,7 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=100, unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
-    email = models.EmailField(max_length=255, unique=True)
+    email = models.EmailField(max_length=255, unique=True,blank=True)
     phone= PhoneNumberField(unique=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -42,7 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     has_marketing_access = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'username'
-    #REQUIRED_FIELDS = ['username', ]
+    REQUIRED_FIELDS = ['email', ]
 
     objects = UserManager()
 
@@ -58,12 +58,10 @@ class User(AbstractBaseUser, PermissionsMixin):
             full_name = self.first_name + " " + self.last_name
         elif self.username:
             full_name = self.username
-        else:
-            full_name = self.email
         return full_name
 
     def __str__(self):
-        return self.email
+        return self.username
 
     class Meta:
         ordering = ['-is_active']

@@ -43,7 +43,8 @@ class UserRegisterView(APIView):
 		return Response(ret, status=status.HTTP_201_CREATED)
 
 
-class UserLoginView(TemplateView):
+class UserLoginView(APIView):
+	permission_classes = [AllowAny]
 
 	def post(self, request, *args, **kwargs):
 		ret={}

@@ -22,4 +22,5 @@ app_name = 'api'
 urlpatterns = [
 	path('register/',UserRegisterView.as_view(),name='user_register'),
 	path('login/',UserLoginView.as_view(),name='user_login'),
+	path('verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
