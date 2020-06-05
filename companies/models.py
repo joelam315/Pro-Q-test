@@ -26,7 +26,8 @@ class Company(models.Model):
         ("open", "Open"),
         ('close', 'Close')
     )
-
+    logo_prepend = "companies/logos"
+    br_prepend = "companies/brs"
     name = models.CharField(pgettext_lazy(
         "Name of Company", "Name"), max_length=64,unique=True)
     email = models.EmailField(blank=True, null=True)
@@ -72,6 +73,10 @@ class Company(models.Model):
         User, related_name='company_assigned_users')
     teams = models.ManyToManyField(Teams, related_name='company_teams')
     owner =models.OneToOneField(User,related_name='owned_company',on_delete=models.CASCADE)
+    logo_pic = models.FileField(
+        max_length=1000, upload_to=img_url, null=True, blank=True)
+    br_pic = models.FileField(
+        max_length=1000, upload_to=img_url, null=True, blank=True)
 
     def __str__(self):
         return self.name

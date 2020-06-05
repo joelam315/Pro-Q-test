@@ -20,3 +20,15 @@ class CompanySerializer(serializers.ModelSerializer):
 			"website",
 			"description"
 		)
+
+class CreateCompanySerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model=Company
+		fields=("name","logo_pic","br_pic")
+
+	def create(self, validated_data):
+		if validated_data["password"]!=validated_data["confirm_password"]:
+			raise serializers.ValidationError("Password and confirm password are not matched.")
+		comapny = Company.objects.create_user(name=validated_data["name"],phone=validated_data["logo_pic"],password=validated_data["br_pic"])
+		return comapny
