@@ -19,7 +19,7 @@ class CompanyForm(forms.ModelForm):
             field.widget.attrs = {"class": "form-control"}
         self.fields['description'].widget.attrs.update({'rows': '8'})
         self.fields['status'].choices = [
-            (each[0], each[1]) for each in Company.ACCOUNT_STATUS_CHOICE]
+            (each[0], each[1]) for each in Company.COMPANY_STATUS_CHOICE]
         self.fields['status'].required = False
         for key, value in self.fields.items():
             if key == 'phone':

@@ -272,7 +272,7 @@ class CompanyDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView
             'comment_permission': comment_permission,
             'tasks':company_record.companies_tasks.all(),
             'quotations':company_record.companies_quotations.all(),
-            'emails':company_record.sent_email.all(),
+            #'emails':company_record.sent_email.all(),
             'users_mention': users_mention,
         })
         return context

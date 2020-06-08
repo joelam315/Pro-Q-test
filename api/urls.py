@@ -16,7 +16,8 @@ from rest_framework_simplejwt.views import (
 from api.views import (
 	UserRegisterView,
 	UserLoginView,
-	UserPhoneVerifyView
+	UserPhoneVerifyView,
+	CreateCompanyView,
 )
 
 app_name = 'api'
@@ -26,5 +27,6 @@ urlpatterns = [
 	path('login/',UserLoginView.as_view(),name='user_login'),
 	path('check/', TokenVerifyView.as_view(), name='token_check'),
 	path('refresh/',TokenRefreshSlidingView.as_view(),name='token_refresh'),
-	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify')
+	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify'),
+	path('company/create/',CreateCompanyView.as_view(),name="create_company"),
 ]

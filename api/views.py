@@ -2,11 +2,13 @@ import datetime
 import json
 import os
 
+
 from django.shortcuts import render
 
 from common.models import User
 from common.serializers import CreateUserSerializer
 from companies.models import Company
+from companies.serializers import CreateCompanySerializer
 from projects.models import Project
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
@@ -100,11 +102,29 @@ class GetCompanyView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
 
+	def post(self,request, *args, **kwargs):
+
+		company=Company.objects.get(owner=request.user)
+		return Response(company.as_json())
+
 class CreateCompanyView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
-	serializer_class = CreateUserSerializer
+	serializer_class = CreateCompanySerializer
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		#return Response(request.data, status=status.HTTP_201_CREATED)
+		data = request.data
+		serialized = CreateCompanySerializer(data=data,context={'request': request})
+		serialized.owner=request.user
+		serialized.is_valid(raise_exception=True)
+		company=serialized.save()
+		company.save()
+
+		return Response(ret, status=status.HTTP_201_CREATED)
 
 #project
 

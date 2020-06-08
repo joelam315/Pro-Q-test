@@ -1,4 +1,5 @@
 import arrow
+import time
 from django.db import models
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -19,6 +20,14 @@ class Tags(models.Model):
         self.slug = slugify(self.name)
         super(Tags, self).save(*args, **kwargs)
 
+def br_url(self, filename):
+    hash_ = int(time.time())
+    return "%s/%s/%s" % ("companies",self.name, self.br_prepend)
+
+def logo_url(self, filename):
+    hash_ = int(time.time())
+    return "%s/%s/%s" % ("companies",self.name, self.logo_prepend)
+
 
 class Company(models.Model):
 
@@ -26,8 +35,8 @@ class Company(models.Model):
         ("open", "Open"),
         ('close', 'Close')
     )
-    logo_prepend = "companies/logos"
-    br_prepend = "companies/brs"
+    logo_prepend = "logos"
+    br_prepend = "brs"
     name = models.CharField(pgettext_lazy(
         "Name of Company", "Name"), max_length=64,unique=True)
     email = models.EmailField(blank=True, null=True)
@@ -74,12 +83,17 @@ class Company(models.Model):
     teams = models.ManyToManyField(Teams, related_name='company_teams')
     owner =models.OneToOneField(User,related_name='owned_company',on_delete=models.CASCADE)
     logo_pic = models.FileField(
-        max_length=1000, upload_to=img_url, null=True, blank=True)
+        max_length=1000, upload_to=logo_url, null=True, blank=True)
     br_pic = models.FileField(
-        max_length=1000, upload_to=img_url, null=True, blank=True)
+        max_length=1000, upload_to=br_url, null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+    def as_json(self):
+        return dict(
+            name=self.name
+        )
 
     class Meta:
         ordering = ['-created_on']
