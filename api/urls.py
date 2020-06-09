@@ -18,6 +18,14 @@ from api.views import (
 	UserLoginView,
 	UserPhoneVerifyView,
 	CreateCompanyView,
+	GetCompanyView,
+	GetDocumentFormatChoices,
+	SetDocumentFormat,
+	GetDocumentFormat,
+	SetChargingStages,
+	GetChargingStages,
+	SetGeneralRemarks,
+	GetGeneralRemarks,
 )
 
 app_name = 'api'
@@ -29,4 +37,12 @@ urlpatterns = [
 	path('refresh/',TokenRefreshSlidingView.as_view(),name='token_refresh'),
 	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify'),
 	path('company/create/',CreateCompanyView.as_view(),name="create_company"),
+	path('company/get/',GetCompanyView.as_view(),name="get_company"),
+	path('doc_format/get/choices/',GetDocumentFormatChoices.as_view(),name="get_doc_format_choices"),
+	path('doc_format/set/',SetDocumentFormat.as_view(),name="set_doc_format"),
+	path('doc_format/get/',GetDocumentFormat.as_view(),name="get_doc_format"),
+	path('charging_stages/set/',SetChargingStages.as_view(),name="set_charging_stages"),
+	path('charging_stages/get/',GetChargingStages.as_view(),name="get_charging_stages"),
+	path('general_remarks/set/',SetGeneralRemarks.as_view(),name="set_general_remarks"),
+	path('general_remarks/get/',GetGeneralRemarks.as_view(),name="get_general_remarks")
 ]

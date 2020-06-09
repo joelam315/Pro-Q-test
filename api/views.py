@@ -7,8 +7,9 @@ from django.shortcuts import render
 
 from common.models import User
 from common.serializers import CreateUserSerializer
-from companies.models import Company
-from companies.serializers import CreateCompanySerializer
+from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
+from companies.serializers import CreateCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
+from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
@@ -107,6 +108,16 @@ class GetCompanyView(APIView):
 		company=Company.objects.get(owner=request.user)
 		return Response(company.as_json())
 
+class GetCompanyLogoView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Company
+
+	def post(self,request, *args, **kwargs):
+
+		company=Company.objects.get(owner=request.user)
+		return Response(company.as_json())
+
 class CreateCompanyView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -125,6 +136,132 @@ class CreateCompanyView(APIView):
 		company.save()
 
 		return Response(ret, status=status.HTTP_201_CREATED)
+
+#docuemnt format
+class GetDocumentFormatChoices(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		ret["upper_choices"]=[UPPER_CHOICE[0] for UPPER_CHOICE in UPPER_CHOICES]
+		ret["middle_choices"]=[MIDDLE_CHOICE[0] for MIDDLE_CHOICE in MIDDLE_CHOICES]
+		ret["lower_choices"]=[LOWER_CHOICE[0] for LOWER_CHOICE in LOWER_CHOICES]
+
+		return Response(ret,status=status.HTTP_200_OK)
+
+class SetDocumentFormat(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=DocumentFormat
+	serializer_class = SetDocumentFormatSerializer
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		serialized = SetDocumentFormatSerializer(data=data,context={'request': request})
+		serialized.is_valid(raise_exception=True)
+		doc_format=serialized.save()
+		doc_format.save()
+
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetDocumentFormat(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=DocumentFormat
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		company=Company.objects.get(owner=request.user)
+		doc_format=DocumentFormat.objects.get(company=company)
+		ret["doc_format"]=doc_format.as_json()
+		return Response(ret, status=status.HTTP_200_OK)
+
+#charging stage
+class SetChargingStages(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class = SetChargingStageSerializer
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		sum_percen=0
+		if len(data)<0:
+			ret["result"]=False
+			ret["reason"]="There must have at least 1 record"
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
+		if len(data)>99:
+			ret["result"]=False
+			ret["reason"]="Too many records"
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
+		for i in range(len(data)):
+			data[i]["index"]=i+1
+			sum_percen+=data[i]["percentage"]
+		if sum_percen!=100:
+			ret["result"]=False
+			ret["reason"]="The total percentage is not equal to 100."
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST) 
+		serialized = SetChargingStageSerializer(data=data,context={'request': request},many=True)
+		serialized.is_valid(raise_exception=True)
+		charging_stages=serialized.save()
+		[charging_stage.save() for charging_stage in charging_stages]
+		ChargingStage.objects.filter(index__gt=len(data)).delete()
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetChargingStages(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ChargingStage
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		company=Company.objects.get(owner=request.user)
+		charging_stages=ChargingStage.objects.filter(company=company).order_by('index')
+		ret["charging_stages"]=[charging_stage.as_json() for charging_stage in charging_stages]
+		return Response(ret, status=status.HTTP_200_OK)
+
+#general remarks
+class SetGeneralRemarks(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class = SetGeneralRemarkSerializer
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if len(data)>99:
+			ret["result"]=False
+			ret["reason"]="Too many remarks"
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
+		for i in range(len(data)):
+			data[i]["index"]=i+1
+		serialized = SetGeneralRemarkSerializer(data=data,context={'request': request},many=True)
+		serialized.is_valid(raise_exception=True)
+		general_remarks=serialized.save()
+		[general_remark.save() for general_remark in general_remarks]
+		GeneralRemark.objects.filter(index__gt=len(data)).delete()
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetGeneralRemarks(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=GeneralRemark
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		company=Company.objects.get(owner=request.user)
+		general_remarks=GeneralRemark.objects.filter(company=company).order_by('index')
+		ret["general_remarks"]=[general_remark.as_json() for general_remark in general_remarks]
+		return Response(ret, status=status.HTTP_200_OK)
 
 #project
 

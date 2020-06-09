@@ -1,7 +1,7 @@
 import PIL
 
 from django import forms
-from companies.models import Company
+from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
 from rest_framework import serializers
 
 
@@ -92,3 +92,70 @@ class CreateCompanySerializer(serializers.ModelSerializer):
 			user = request.user
 		comapny = Company.objects.create(name=validated_data["name"],logo_pic=validated_data["logo_pic"],br_pic=validated_data["br_pic"],owner=user)
 		return comapny
+
+class SetDocumentFormatSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model=DocumentFormat
+		fields=("quot_upper_format",
+			"quot_middle_format",
+			"quot_lower_format",
+			"invoice_upper_format",
+			"invoice_middle_format",
+			"invoice_lower_format",
+			"receipt_upper_format",
+			"receipt_middle_format",
+			"receipt_lower_format"
+		)
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise serializers.ValidationError("You must create a company first.")
+		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"]})
+		return doc_format[0]
+
+class SetChargingStageSerializer(serializers.ModelSerializer):
+	
+	class Meta:
+		model=ChargingStage
+		fields=(
+			"index",
+			"percentage",
+			"description"
+		)
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise serializers.ValidationError("You must create a company first.")
+		charging_stage=ChargingStage.objects.update_or_create (company=company,index=validated_data["index"],defaults={"percentage":validated_data["percentage"],"description":validated_data["description"]})
+		return charging_stage[0]
+
+class SetGeneralRemarkSerializer(serializers.ModelSerializer):
+	
+	class Meta:
+		model=GeneralRemark
+		fields=(
+			"index",
+			"content"
+		)
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise serializers.ValidationError("You must create a company first.")
+		general_remark=GeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
+		return general_remark[0]

@@ -10,6 +10,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.utils.text import slugify
 from contacts.models import Contact
 from teams.models import Teams
+from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 
 
 class Tags(models.Model):
@@ -27,7 +28,6 @@ def br_url(self, filename):
 def logo_url(self, filename):
     hash_ = int(time.time())
     return "%s/%s/%s" % ("companies",self.name, self.logo_prepend)
-
 
 class Company(models.Model):
 
@@ -92,7 +92,8 @@ class Company(models.Model):
 
     def as_json(self):
         return dict(
-            name=self.name
+            name=self.name,
+            logo=str(self.logo_pic)
         )
 
     class Meta:
@@ -164,3 +165,66 @@ class EmailLog(models.Model):
     email = models.ForeignKey(Email, related_name='email_log2', on_delete=models.SET_NULL, null=True)
     contact = models.ForeignKey(Contact, related_name='contact_email_log2', on_delete=models.SET_NULL, null=True)
     is_sent = models.BooleanField(default=False)
+
+class DocumentFormat(models.Model):
+    company =models.OneToOneField(Company,related_name='company_doc_format',on_delete=models.CASCADE)
+    
+    quot_upper_format=models.CharField(choices=UPPER_CHOICES,max_length=20)
+    quot_middle_format=models.CharField(choices=MIDDLE_CHOICES,max_length=20)
+    quot_lower_format=models.CharField(choices=LOWER_CHOICES,max_length=20)
+
+    invoice_upper_format=models.CharField(choices=UPPER_CHOICES,max_length=20)
+    invoice_middle_format=models.CharField(choices=MIDDLE_CHOICES,max_length=20)
+    invoice_lower_format=models.CharField(choices=LOWER_CHOICES,max_length=20)
+
+    receipt_upper_format=models.CharField(choices=UPPER_CHOICES,max_length=20)
+    receipt_middle_format=models.CharField(choices=MIDDLE_CHOICES,max_length=20)
+    receipt_lower_format=models.CharField(choices=LOWER_CHOICES,max_length=20)
+
+    def __str__(self):
+        return str(self.company)+" Document Format"
+
+    def as_json(self):
+        return dict(
+            quot_upper_format=self.quot_upper_format,
+            quot_middle_format=self.quot_middle_format,
+            quot_lower_format=self.quot_lower_format,
+            invoice_upper_format=self.invoice_upper_format,
+            invoice_middle_format=self.invoice_middle_format,
+            invoice_lower_format=self.invoice_lower_format,
+            receipt_upper_format=self.receipt_upper_format,
+            receipt_middle_format=self.receipt_middle_format,
+            receipt_lower_format=self.receipt_lower_format
+        )
+
+class ChargingStage(models.Model):
+    company =models.ForeignKey(Company,related_name='company_charging_stages',on_delete=models.CASCADE)
+
+    index=models.PositiveIntegerField()
+    percentage=models.PositiveIntegerField()
+    description=models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return str(self.company)+" Stage: "+self.index
+
+    def as_json(self):
+        return dict(
+            index=self.index,
+            percentage=self.percentage,
+            description=self.description
+        )
+
+class GeneralRemark(models.Model):
+    company =models.ForeignKey(Company,related_name='company_general_remarks',on_delete=models.CASCADE)
+
+    index=models.PositiveIntegerField()
+    content=models.TextField()
+
+    def __str__(self):
+        return str(self.company)+" Remark: "+self.index
+
+    def as_json(self):
+        return dict(
+            index=self.index,
+            content=self.content
+        )
