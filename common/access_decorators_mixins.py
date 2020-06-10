@@ -71,3 +71,9 @@ class AdminAccessRequiredMixin(AccessMixin):
             return super(AdminAccessRequiredMixin, self).dispatch(request, *args, **kwargs)
         else:
             return self.handle_no_permission()
+
+def app_login_required(function):
+    def wrap(request, *args, **kwargs):
+        request.META['HTTP_AUTHORIZATION'].split("Bearer")[1]
+    
+    return wrap
