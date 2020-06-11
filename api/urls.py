@@ -17,7 +17,7 @@ from api.views import (
 	UserRegisterView,
 	UserLoginView,
 	UserPhoneVerifyView,
-	CreateCompanyView,
+	SetCompanyView,
 	GetCompanyView,
 	GetDocumentFormatChoices,
 	SetDocumentFormat,
@@ -26,6 +26,8 @@ from api.views import (
 	GetChargingStages,
 	SetGeneralRemarks,
 	GetGeneralRemarks,
+	GetDistrictList,
+	GetRoomTypeList,
 )
 
 app_name = 'api'
@@ -36,7 +38,7 @@ urlpatterns = [
 	path('check/', TokenVerifyView.as_view(), name='token_check'),
 	path('refresh/',TokenRefreshSlidingView.as_view(),name='token_refresh'),
 	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify'),
-	path('company/create/',CreateCompanyView.as_view(),name="create_company"),
+	path('company/create/',SetCompanyView.as_view(),name="create_company"),
 	path('company/get/',GetCompanyView.as_view(),name="get_company"),
 	path('doc_format/get/choices/',GetDocumentFormatChoices.as_view(),name="get_doc_format_choices"),
 	path('doc_format/set/',SetDocumentFormat.as_view(),name="set_doc_format"),
@@ -44,5 +46,7 @@ urlpatterns = [
 	path('charging_stages/set/',SetChargingStages.as_view(),name="set_charging_stages"),
 	path('charging_stages/get/',GetChargingStages.as_view(),name="get_charging_stages"),
 	path('general_remarks/set/',SetGeneralRemarks.as_view(),name="set_general_remarks"),
-	path('general_remarks/get/',GetGeneralRemarks.as_view(),name="get_general_remarks")
+	path('general_remarks/get/',GetGeneralRemarks.as_view(),name="get_general_remarks"),
+	path('districts/get/',GetDistrictList.as_view(),name="get_districts"),
+	path('room_types/get/',GetRoomTypeList.as_view(),name="get_room_types"),
 ]

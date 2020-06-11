@@ -7,10 +7,13 @@ from django.shortcuts import render
 
 from common.models import User
 from common.serializers import CreateUserSerializer
+from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
-from companies.serializers import CreateCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
+from companies.serializers import SetCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project
+from projects.utils import ROOM_TYPE
+from projects.serializers import CreateProjectSerializer
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -118,18 +121,18 @@ class GetCompanyLogoView(APIView):
 		company=Company.objects.get(owner=request.user)
 		return Response(company.as_json())
 
-class CreateCompanyView(APIView):
+class SetCompanyView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
-	serializer_class = CreateCompanySerializer
+	serializer_class = SetCompanySerializer
 
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		#return Response(request.data, status=status.HTTP_201_CREATED)
 		data = request.data
-		serialized = CreateCompanySerializer(data=data,context={'request': request})
+		serialized = SetCompanySerializer(data=data,context={'request': request})
 		serialized.owner=request.user
 		serialized.is_valid(raise_exception=True)
 		company=serialized.save()
@@ -276,3 +279,51 @@ class GetProjectListView(APIView):
 		projects=Project.objects.filter()
 		ret["projects"]=[project.as_json() for project in projects]
 		return Response(ret, status=status.HTTP_200_OK)
+
+class CreateProjectView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Project
+	serializer_class=CreateProjectSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		serialized=CreateProjectSerializer(data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		project=serialized.save()
+		return Response(ret,status=status.HTTP_200_OK)
+
+#district
+
+class GetDistrictList(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret['result']=True
+		districts=HK_DISTRICT
+		ret["districts"]=districts
+		return Response(ret, status=status.HTTP_200_OK)
+
+#room
+class GetRoomTypeList(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret['result']=True
+		room_types=ROOM_TYPE
+		ret["room_types"]=room_types
+		return Response(ret, status=status.HTTP_200_OK)
+
+class CreateRoomView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret['result']=True
+		return Response(ret,status=status.HTTP_200_OK)

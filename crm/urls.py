@@ -14,11 +14,12 @@ from rest_framework.permissions import (IsAuthenticated,)
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework_simplejwt import authentication
 
-from common.access_decorators_mixins import admin_login_required
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+
+from common.access_decorators_mixins import admin_login_required, app_login_required
 from django.http import HttpResponse
 import json
-from rest_framework_simplejwt.state import token_backend
-from common.models import User
+from companies.models import Company
 
 app_name = 'crm'
 
@@ -39,16 +40,27 @@ schema_view = get_schema_view(
 def admin_serve(request, path, document_root=None, show_indexes=False):
     return serve(request, path, document_root, show_indexes)
 
-@authentication_classes(authentication.JWTAuthentication)
-@permission_classes(IsAuthenticated)
+@app_login_required
 def protected_serve(request, path, document_root=None, show_indexes=False):
     #return 
     #raise PermissionDenied
     #token=OutstandingToken.objects.get(token=request.META['HTTP_AUTHORIZATION'].split("Bearer")[1])
-    user_id=token_backend.decode("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoic2xpZGluZyIsImV4cCI6MTU5OTEyNjk5MywianRpIjoiNmFkM2Q2MTRhYWFiNGFkNjk3Y2YzNDBiNTNlNmY2ZDkiLCJyZWZyZXNoX2V4cCI6MTU5OTEyNjk5MywidXNlcl9pZCI6Mn0.tWfyr-t4phoOcST2--ORYhcoiB6sLAtwXYVnrtBa_UI",verify=True)["user_id"]
-    user=User.objects.get(pk=user_id)
-    return HttpResponse(user.role)
-    return serve(request, path, document_root, show_indexes)
+    #return HttpResponse(request.META['HTTP_AUTHORIZATION'].split("Bearer")[1])
+
+    _type,_identity,_param=path.split('/',2)
+    if _type=="companies":
+        try:
+            company=Company.objects.get(id=_identity)
+            if company.owner==request.user:
+                return serve(request, path, document_root, show_indexes)
+            else:
+                raise PermissionDenied
+        except ObjectDoesNotExist:
+            raise PermissionDenied
+
+    raise PermissionDenied
+    
+    
 
 
 urlpatterns = [

@@ -12,3 +12,12 @@ PROJECT_STATUS = (
         ('Pending', 'Pending'),
         ('Cancelled', 'Cancel'),
     )
+
+ROOM_TYPE = (
+    ('Toilet',_('廁所')),
+    ('Kitchen',_('廚房')),
+    ('Living Room',_('客廳')),
+    ('Dinning Room',_('飯廳')),
+    ('1 Person Bed Room',_('一人睡房')),
+    ('2 Persons Bed Room',_('兩人睡房')),
+)

@@ -2,7 +2,7 @@ import arrow
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from common.models import Address, User
-from common.utils import CURRENCY_CODES
+from common.utils import CURRENCY_CODES,HK_DISTRICT
 from companies.models import Company
 from phonenumber_field.modelfields import PhoneNumberField
 from teams.models import Teams
@@ -46,8 +46,9 @@ class Project(models.Model):
     status = models.CharField(choices=PROJECT_STATUS,
                               max_length=15, default="Draft")
     details = models.TextField(_('Details'), null=True, blank=True)
+    start_date = models.DateField(blank=True, null=True)
     due_date = models.DateField(blank=True, null=True)
-    companies = models.ManyToManyField(Company, related_name='companies_projects')
+    company = models.ForeignKey(Company, related_name='company_projects',on_delete=models.CASCADE)
     teams = models.ManyToManyField(Teams, related_name='projects_teams')
     function_items=models.ManyToManyField(FunctionItem, related_name='projects_function_items')
     sub_function_items=models.ManyToManyField(SubFunctionItem,related_name="projects_sub_function_items")
@@ -55,7 +56,9 @@ class Project(models.Model):
     approved_on = models.DateTimeField(null=True)
     last_updated_by = models.ForeignKey(User, related_name='project_last_updated_by',on_delete=models.SET_NULL, null=True)
     last_updated_on = models.DateTimeField(auto_now_add=True)
-
+    district=models.CharField(choices=HK_DISTRICT,max_length=50, default="Central and Western")
+    work_location=models.CharField(
+        _("Details Location"), max_length=255, default="Pending")
 
     class Meta:
         """Meta definition for Project."""
@@ -232,3 +235,24 @@ class ProjectHistory(models.Model):
 
     class Meta:
         ordering = ('-created_on',)
+
+class Room(models.Model):
+    name=models.CharField(max_length=50)
+    long=models.PositiveIntegerField(default=0)
+    width=models.PositiveIntegerField(default=0)
+    height=models.PositiveIntegerField(default=0)
+    related_project=models.ForeignKey(Project,related_name='project_rooms',on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.related_project.project_title+": "+self.name
+
+    def floor_size(self):
+        return long*width
+
+    def as_json(self):
+        return dict(
+            name=self.name,
+            long=self.long,
+            width=self.width,
+            height=self.height
+        )

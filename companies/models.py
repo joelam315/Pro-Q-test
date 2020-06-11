@@ -23,11 +23,11 @@ class Tags(models.Model):
 
 def br_url(self, filename):
     hash_ = int(time.time())
-    return "%s/%s/%s" % ("companies",self.name, self.br_prepend)
+    return "%s/%s/%s/%s" % ("companies",self.id, self.br_prepend,filename)
 
 def logo_url(self, filename):
     hash_ = int(time.time())
-    return "%s/%s/%s" % ("companies",self.name, self.logo_prepend)
+    return "%s/%s/%s/%s" % ("companies",self.id, self.logo_prepend,filename)
 
 class Company(models.Model):
 
@@ -93,7 +93,7 @@ class Company(models.Model):
     def as_json(self):
         return dict(
             name=self.name,
-            logo=str(self.logo_pic)
+            logo="api/media/"+str(self.logo_pic)
         )
 
     class Meta:

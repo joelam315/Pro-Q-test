@@ -73,7 +73,7 @@ class CompanySerializer(serializers.ModelSerializer):
 			"description"
 		)
 
-class CreateCompanySerializer(serializers.ModelSerializer):
+class SetCompanySerializer(serializers.ModelSerializer):
 	logo_pic=Base64ImageField(
 		max_length=None, use_url=True,
 	)
@@ -90,7 +90,7 @@ class CreateCompanySerializer(serializers.ModelSerializer):
 		request = self.context.get("request")
 		if request and hasattr(request, "user"):
 			user = request.user
-		comapny = Company.objects.create(name=validated_data["name"],logo_pic=validated_data["logo_pic"],br_pic=validated_data["br_pic"],owner=user)
+		comapny = Company.objects.update_or_create(owner=user,defaults={"name":validated_data["name"],"logo_pic":validated_data["logo_pic"],"br_pic":validated_data["br_pic"]})[0]
 		return comapny
 
 class SetDocumentFormatSerializer(serializers.ModelSerializer):

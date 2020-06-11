@@ -130,6 +130,26 @@ EVENT_STATUS = (
     ('Deferred', 'Deferred')
 )
 
+HK_DISTRICT= (
+    ('Central and Western',_('中西區')),
+    ('Wan Chai',_('灣仔')),
+    ('Eastern',_('東區')),
+    ('Southern',_('南區')),
+    ('Yau Tsim Mong',_('油尖旺')),
+    ('Sham Shui Po',_('深水埗')),
+    ('Kowloon City',_('九龍城')),
+    ('Wong Tai Sin',_('黃大仙')),
+    ('Kwun Tong',_('觀塘')),
+    ('Kwai Tsing',_('葵青')),
+    ('Tsuen Wan',_('荃灣')),
+    ('Tuen Mun',_('屯門')),
+    ('Yuen Long',_('元朗')),
+    ('North',_('北區')),
+    ('Tai Po',_('大埔')),
+    ('Sha Tin',_('沙田')),
+    ('Sai Kung',_('西貢')),
+    ('Islands',_('離島')),
+)
 
 COUNTRIES = (
     ('GB', _('United Kingdom')),
