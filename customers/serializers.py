@@ -1,41 +1,40 @@
 from django import forms
+from projects.models import Project
+from companies.models import Company
 from customers.models import Customer
-from common.serializers import AddressSerializer, CreateAddressSerializer,UpdateAddressSerializer
-from companies.serializers import CompanySerializer
 from rest_framework import serializers
+from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
 
-class CustomerSerializer(serializers.ModelSerializer):
-	address=AddressSerializer(required=False)
-	company=CompanySerializer(required=False)
-	icon =serializers.CharField(required=False,help_text="Image URL")
+class SetProjectCustomerSerializer(serializers.ModelSerializer):
 
 	class Meta:
-		model = Customer
-		fields = ["id","first_name","last_name","email","phone","address","description","assigned_to","teams","icon","company"]
+		model=Customer
+		fields=("name","company_name","email","phone","address","project")
 
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			serializers.ValidationError("You must create a company first.")
+		project=Project.objects.get(id=2)
+		if user==project.company.owner:
+			info={}
+			if validated_data.get("name"):
+				info.update(name=validated_data["name"])
+			if validated_data.get("company_name"):
+				info.update(company_name=validated_data["company_name"])
+			if validated_data.get("email"):
+				info.update(email=validated_data["email"])
+			if validated_data.get("phone"):
+				info.update(phone=validated_data["phone"])
+			customer=Customer.objects.update_or_create(
+				project=project,
+				defaults={"name":validated_data["name"]}
+			)[0]
+			return customer
+		else:
+			raise PermissionDenied
 
-class CreateCustomerSerializer(serializers.ModelSerializer):
-	address=CreateAddressSerializer(required=False)
-	icon =serializers.FileField(required=False,help_text="Base64 format")
-
-	class Meta:
-		model = Customer
-		fields = ["first_name","last_name","email","phone","address","description","assigned_to","teams","icon"]
-
-class UpdateCustomerSerializer(serializers.ModelSerializer):
-	id=serializers.IntegerField(required=True)
-	first_name=serializers.CharField(required=False)
-	last_name=serializers.CharField(required=False)
-	phone=serializers.CharField(required=False)
-	address=UpdateAddressSerializer(required=False)
-	icon =serializers.FileField(required=False,help_text="Base64 format")
-
-	class Meta:
-		model = Customer
-		fields = ["id","first_name","last_name","email","phone","address","description","assigned_to","teams","icon"]
-
-class RemoveCustomerSerializer(serializers.ModelSerializer):
-
-	class Meta:
-		model = Customer
-		fields = ["id"]

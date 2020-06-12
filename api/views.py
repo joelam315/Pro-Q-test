@@ -14,6 +14,8 @@ from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project
 from projects.utils import ROOM_TYPE
 from projects.serializers import CreateProjectSerializer
+from customers.models import Customer
+from customers.serializers import SetProjectCustomerSerializer
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -141,7 +143,7 @@ class SetCompanyView(APIView):
 		return Response(ret, status=status.HTTP_201_CREATED)
 
 #docuemnt format
-class GetDocumentFormatChoices(APIView):
+class GetDocumentFormatChoicesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 
@@ -154,7 +156,7 @@ class GetDocumentFormatChoices(APIView):
 
 		return Response(ret,status=status.HTTP_200_OK)
 
-class SetDocumentFormat(APIView):
+class SetDocumentFormatView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentFormat
@@ -171,7 +173,7 @@ class SetDocumentFormat(APIView):
 
 		return Response(ret, status=status.HTTP_200_OK)
 
-class GetDocumentFormat(APIView):
+class GetDocumentFormatView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentFormat
@@ -185,7 +187,7 @@ class GetDocumentFormat(APIView):
 		return Response(ret, status=status.HTTP_200_OK)
 
 #charging stage
-class SetChargingStages(APIView):
+class SetChargingStagesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetChargingStageSerializer
@@ -217,7 +219,7 @@ class SetChargingStages(APIView):
 		ChargingStage.objects.filter(index__gt=len(data)).delete()
 		return Response(ret, status=status.HTTP_200_OK)
 
-class GetChargingStages(APIView):
+class GetChargingStagesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ChargingStage
@@ -231,7 +233,7 @@ class GetChargingStages(APIView):
 		return Response(ret, status=status.HTTP_200_OK)
 
 #general remarks
-class SetGeneralRemarks(APIView):
+class SetGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetGeneralRemarkSerializer
@@ -253,7 +255,7 @@ class SetGeneralRemarks(APIView):
 		GeneralRemark.objects.filter(index__gt=len(data)).delete()
 		return Response(ret, status=status.HTTP_200_OK)
 
-class GetGeneralRemarks(APIView):
+class GetGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=GeneralRemark
@@ -289,14 +291,32 @@ class CreateProjectView(APIView):
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
-		serialized=CreateProjectSerializer(data,context={'request':request})
+		data = request.data
+		serialized=CreateProjectSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
 		project=serialized.save()
+		ret["project_id"]=project.id
 		return Response(ret,status=status.HTTP_200_OK)
+
+class SetProjectCustomerView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Customer
+	serializer_class=SetProjectCustomerSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		serialized=SetProjectCustomerSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		customer=serialized.save()
+		return Response(ret,status=status.HTTP_200_OK)
+
 
 #district
 
-class GetDistrictList(APIView):
+class GetDistrictListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 
@@ -308,7 +328,7 @@ class GetDistrictList(APIView):
 		return Response(ret, status=status.HTTP_200_OK)
 
 #room
-class GetRoomTypeList(APIView):
+class GetRoomTypeListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 
