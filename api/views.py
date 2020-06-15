@@ -298,6 +298,17 @@ class CreateProjectView(APIView):
 		ret["project_id"]=project.id
 		return Response(ret,status=status.HTTP_200_OK)
 
+class GetProjectView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Project
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		project=Project.objects.get(id=data.get("id"))
+
 class SetProjectCustomerView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]

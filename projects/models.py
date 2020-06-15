@@ -113,7 +113,7 @@ class Project(models.Model):
             work_location=self.work_location,
             start_date=str(self.start_date),
             due_date=str(self.due_date),
-
+            customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
 
 

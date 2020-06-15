@@ -15,13 +15,13 @@ def img_url(self, filename):
     return "%s/%s/%s" % ("customer_profile_pics", hash_, filename)
 
 class Customer(models.Model):
-    #name = models.CharField(max_length=255)
-    #company_name= models.CharField(max_length=255,blank=True,null=True)
+    name = models.CharField(max_length=255)
+    company_name= models.CharField(max_length=255,blank=True,null=True)
     email = models.EmailField(blank=True,null=True)
     phone = PhoneNumberField(blank=True,null=True)
     address = models.CharField(
         _("Contact Address"), max_length=1024, default="Pending")
-    project=models.OneToOneField(Project,related_name="project_customer",on_delete=models.CASCADE)
+    project=models.OneToOneField(Project,on_delete=models.CASCADE)
     created_on = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User, related_name='customer_created_by',
