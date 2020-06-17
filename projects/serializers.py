@@ -33,3 +33,26 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 			project.due_date=validated_data["due_date"]
 		project.save()
 		return project
+
+class CreateRoomSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model=Room
+		fields=("name","length","width","height","related_project")
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			serializers.ValidationError("You must create a company first.")
+		project=Project.objects.get(id=validated_data["related_project"].id)
+		if not project:
+			serializers.ValidationError("Project not found.")
+		if user==project.company.owner:
+			room=Room.objects.create(**validated_data)
+			return room
+		else:
+			raise PermissionDenied

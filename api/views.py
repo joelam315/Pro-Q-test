@@ -11,9 +11,9 @@ from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
 from companies.serializers import SetCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
-from projects.models import Project
+from projects.models import Project, Room
 from projects.utils import ROOM_TYPE
-from projects.serializers import CreateProjectSerializer
+from projects.serializers import CreateProjectSerializer, CreateRoomSerializer
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
 
@@ -308,7 +308,8 @@ class GetProjectView(APIView):
 		ret["result"]=True
 		data = request.data
 		project=Project.objects.get(id=data.get("id"))
-
+	
+	#project-customer
 class SetProjectCustomerView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -324,6 +325,35 @@ class SetProjectCustomerView(APIView):
 		customer=serialized.save()
 		return Response(ret,status=status.HTTP_200_OK)
 
+	#project-room
+
+class CreateProjectRoomView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Room
+	serializer_class=CreateRoomSerializer
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		serialized=CreateRoomSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		room=serialized.save()
+		return Response(ret,status=status.HTTP_200_OK)
+
+class GetProjectRoomListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=Room
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		project=Project.objects.get(id=data["related_project"])
+		ret["rooms"]=[room.as_json() for room in project.project_rooms.all()]
+		return Response(ret, status=status.HTTP_200_OK)
 
 #district
 
@@ -349,12 +379,3 @@ class GetRoomTypeListView(APIView):
 		room_types=ROOM_TYPE
 		ret["room_types"]=room_types
 		return Response(ret, status=status.HTTP_200_OK)
-
-class CreateRoomView(APIView):
-	permission_classes = [IsAuthenticated]
-	authentication_classes = [authentication.JWTAuthentication]
-
-	def post(self, request, *args, **kwargs):
-		ret={}
-		ret['result']=True
-		return Response(ret,status=status.HTTP_200_OK)

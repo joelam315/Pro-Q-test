@@ -29,6 +29,8 @@ from api.views import (
 	CreateProjectView,
 	GetProjectListView,
 	SetProjectCustomerView,
+	CreateProjectRoomView,
+	GetProjectRoomListView,
 	GetDistrictListView,
 	GetRoomTypeListView,
 )
@@ -53,6 +55,8 @@ urlpatterns = [
 	path('project/create/',CreateProjectView.as_view(),name="create_project"),
 	path('project/list/',GetProjectListView.as_view(),name="list_project"),
 	path('project/customer/set/',SetProjectCustomerView.as_view(),name="set_project_customer"),
+	path('project/room/create/',CreateProjectRoomView.as_view(),name="create_project_room"),
+	path('project/room/list/',GetProjectRoomListView.as_view(),name="list_project_rooms"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 ]

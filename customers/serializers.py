@@ -19,7 +19,7 @@ class SetProjectCustomerSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			serializers.ValidationError("You must create a company first.")
-		project=Project.objects.get(id=2)
+		project=Project.objects.get(id=validated_data["project"].id)
 		if user==project.company.owner:
 			info={}
 			if validated_data.get("name"):
