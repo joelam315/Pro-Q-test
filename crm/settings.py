@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'function_items',
     'companies',
     'projects',
+    'rooms',
     'customers',
     'project_items',
     'api'

@@ -30,3 +30,4 @@ djangorestframework
 djangorestframework-simplejwt
 drf-yasg
 Pillow
+numexpr

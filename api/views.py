@@ -3,7 +3,7 @@ import json
 import os
 
 
-from django.shortcuts import render,get_object_or_404
+from django.shortcuts import render
 
 from common.models import User
 from common.serializers import CreateUserSerializer
@@ -11,9 +11,11 @@ from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
 from companies.serializers import SetCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
-from projects.models import Project, Room
+from projects.models import Project
 from projects.utils import ROOM_TYPE
-from projects.serializers import CreateProjectSerializer, CreateRoomSerializer,UpdateRoomSerializer
+from projects.serializers import CreateProjectSerializer
+from rooms.models import Room
+from rooms.serializers import CreateRoomSerializer,UpdateRoomSerializer
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
 
@@ -34,9 +36,6 @@ from rest_framework_simplejwt.models import TokenUser
 from rest_framework import status
 from django.views.generic import (CreateView, DeleteView, DetailView,
     TemplateView, UpdateView, View)
-
-from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
-
 
 #User
 
@@ -77,8 +76,8 @@ class UserLoginView(APIView):
 				cur_token.save()'''
 			sliding = SlidingToken.for_user(user)
 			ret["token"]=str(sliding)
-			#ret["type"]=str(type(sliding))
-			#ret["data"]=request.data
+			ret["type"]=str(type(sliding))
+			ret["data"]=request.data
 			if not user.phone_verify:
 				ret["need_verify"]=True
 			return Response(ret, status=status.HTTP_200_OK)
@@ -343,7 +342,7 @@ class CreateProjectRoomView(APIView):
 		serialized=CreateRoomSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
 		room=serialized.save()
-		return Response(ret,status=status.HTTP_201_CREATED)
+		return Response(ret,status=status.HTTP_200_OK)
 
 class UpdateProjectRoomView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -358,7 +357,6 @@ class UpdateProjectRoomView(APIView):
 		serialized=UpdateRoomSerializer(instance=data.get("id"),data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
 		room=serialized.save()
-		return Response(ret,status=status.HTTP_200_OK)
 
 class RemoveProjectRoomView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -387,7 +385,7 @@ class GetProjectRoomListView(APIView):
 		data=request.data
 		project=Project.objects.get(id=data["related_project"])
 		ret["rooms"]=[room.as_json() for room in project.project_rooms.all()]
-		return Response(ret, status=status.HTTP_200_OK)
+		return Response(ret, status=status.HTTP_200_OK)		
 
 #district
 

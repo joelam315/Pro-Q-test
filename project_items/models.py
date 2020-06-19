@@ -59,7 +59,7 @@ class ProjectItem(models.Model):
 	status=models.CharField(choices=PROJECT_STATUS, max_length=20,default='Requested')
 	created_on = models.DateTimeField(auto_now_add=True)
 	created_by = models.ForeignKey(User, related_name='sub_project_items_created_by',on_delete=models.SET_NULL, null=True)
-	related_project_item = models.ForeignKey(ProjectItem, related_name='sub_project_items',on_delete=models.CASCADE)
+	related_item = models.ForeignKey(Item, related_name='sub_project_items',on_delete=models.CASCADE)
 	def __str__(self):
 		return self.name
 

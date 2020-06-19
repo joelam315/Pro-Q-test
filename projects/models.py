@@ -206,29 +206,4 @@ class ProjectHistory(models.Model):
     class Meta:
         ordering = ('-created_on',)
 
-class Room(models.Model):
-    name=models.CharField(max_length=50)
-    length=models.PositiveIntegerField()
-    width=models.PositiveIntegerField()
-    height=models.PositiveIntegerField()
-    related_project=models.ForeignKey(Project,related_name='project_rooms',on_delete=models.CASCADE)
 
-    def __str__(self):
-        return self.related_project.project_title+": "+self.name
-
-    def floor_size(self):
-        return self.length*self.width
-
-    def wall_size(self):
-        return self.length*self.height*2+self.width*self.height*2
-
-    def as_json(self):
-        return dict(
-            id=self.id,
-            name=self.name,
-            length=self.length,
-            width=self.width,
-            height=self.height,
-            floor_size=self.floor_size(),
-            wall_size=self.wall_size()
-        )
