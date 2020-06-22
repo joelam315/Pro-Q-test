@@ -30,7 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(max_length=255, unique=True,blank=True,null=True,default=None)
-    phone= PhoneNumberField(unique=True)
+    phone= PhoneNumberField(unique=True,null=True)
     phone_verify=models.BooleanField(default=False)
     verify_code=models.CharField(max_length=6,blank=True)
     br_approved=models.BooleanField(default=False)

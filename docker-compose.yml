@@ -17,6 +17,4 @@ services:
       - "8002:8000"
     depends_on:
       - db
-    command:
-      - "--ws-external"
-      - "--rpc-external"
+    command: substrate --ws-external --rpc-external --rpc-cors all

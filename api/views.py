@@ -6,7 +6,7 @@ import os
 from django.shortcuts import render
 
 from common.models import User
-from common.serializers import CreateUserSerializer
+from common.serializers import CreateUserSerializer,LoginSerializer, PhoneVerifySerializer
 from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
 from companies.serializers import SetCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
@@ -31,11 +31,16 @@ from drf_yasg import openapi
 from sorl.thumbnail import get_thumbnail
 from django.core.files.base import ContentFile
 from django.contrib.auth.hashers import check_password
-from rest_framework_simplejwt.tokens import SlidingToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.models import TokenUser
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import status
+from rest_framework import serializers
+
 from django.views.generic import (CreateView, DeleteView, DetailView,
     TemplateView, UpdateView, View)
+
+default_param = openapi.Parameter(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
 
 #User
 
@@ -44,6 +49,15 @@ class UserRegisterView(APIView):
 	permission_classes = [AllowAny]
 	serializer_class = CreateUserSerializer
 
+	@swagger_auto_schema(
+		operation_description="Register a new User", 
+		security=None,
+		request_body=CreateUserSerializer,
+		responses={
+			status.HTTP_201_CREATED: "{\n&emsp;result: boolean,\n&emsp;access: string,\n&emsp;refresh:string\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -54,6 +68,9 @@ class UserRegisterView(APIView):
 		user=serialized.save()
 		user.verify_code="000000"
 		user.save()
+		token = RefreshToken.for_user(user)
+		ret["refresh"]=str(token)
+		ret["access"]=str(token.access_token)
 		#user=User.objects.create_user(phone="request")
 		return Response(ret, status=status.HTTP_201_CREATED)
 
@@ -61,6 +78,15 @@ class UserRegisterView(APIView):
 class UserLoginView(APIView):
 	permission_classes = [AllowAny]
 
+	@swagger_auto_schema(
+		operation_description="Register a new User", 
+		security=[{'Basic': []}],
+		request_body=LoginSerializer,
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean,\n&emsp;access: string,\n&emsp;refresh:string\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -74,18 +100,26 @@ class UserLoginView(APIView):
 				cur_token.expires_at=datetime.datetime.now()
 				#cur_token.blacklist()
 				cur_token.save()'''
-			sliding = SlidingToken.for_user(user)
-			ret["token"]=str(sliding)
-			ret["type"]=str(type(sliding))
-			ret["data"]=request.data
+			token = RefreshToken.for_user(user)
+			ret["refresh"]=str(token)
+			ret["access"]=str(token.access_token)
 			if not user.phone_verify:
-				ret["need_verify"]=True
+				raise serializers.ValidationError("Need verify phone first.")
 			return Response(ret, status=status.HTTP_200_OK)
 
 class UserPhoneVerifyView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	permission_classes = [IsAuthenticated]
 
+	@swagger_auto_schema(
+		operation_description="Register a new User", 
+		security=[{'Bearer': []}],
+		request_body=PhoneVerifySerializer,
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True

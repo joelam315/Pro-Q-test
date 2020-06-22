@@ -10,7 +10,7 @@ from drf_yasg import openapi
 from django.contrib import admin
 from rest_framework_simplejwt.views import (
     TokenVerifyView,
-    TokenRefreshSlidingView,
+    TokenRefreshView,
 )
 
 from api.views import (
@@ -43,7 +43,7 @@ urlpatterns = [
 	path('register/',UserRegisterView.as_view(),name='user_register'),
 	path('login/',UserLoginView.as_view(),name='user_login'),
 	path('check/', TokenVerifyView.as_view(), name='token_check'),
-	path('refresh/',TokenRefreshSlidingView.as_view(),name='token_refresh'),
+	path('refresh/',TokenRefreshView.as_view(),name='token_refresh'),
 	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify'),
 	path('company/create/',SetCompanyView.as_view(),name="create_company"),
 	path('company/get/',GetCompanyView.as_view(),name="get_company"),

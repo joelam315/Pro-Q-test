@@ -1,7 +1,7 @@
 from django import forms
 from .models import Company, Email
 from common.models import Comment, Attachments, User
-from leads.models import Lead
+#from leads.models import Lead
 from contacts.models import Contact
 from django.db.models import Q
 from teams.models import Teams
@@ -42,14 +42,14 @@ class CompanyForm(forms.ModelForm):
         # self.fields["lead"].queryset = Lead.objects.all(
         # ).exclude(status='closed')
         if request_user.role == 'ADMIN':
-            self.fields["lead"].queryset = Lead.objects.filter().exclude(
-                status='closed').order_by('title')
+            '''self.fields["lead"].queryset = Lead.objects.filter().exclude(
+                status='closed').order_by('title')'''
             self.fields["contacts"].queryset = Contact.objects.filter()
             self.fields["teams"].choices = [(team.get('id'), team.get('name')) for team in Teams.objects.all().values('id', 'name')]
             self.fields["teams"].required = False
         else:
-            self.fields["lead"].queryset = Lead.objects.filter(
-                Q(assigned_to__in=[request_user]) | Q(created_by=request_user)).exclude(status='closed').order_by('title')
+            '''self.fields["lead"].queryset = Lead.objects.filter(
+                Q(assigned_to__in=[request_user]) | Q(created_by=request_user)).exclude(status='closed').order_by('title')'''
             self.fields["contacts"].queryset = Contact.objects.filter(
                 Q(assigned_to__in=[request_user]) | Q(created_by=request_user))
             self.fields["teams"].required = False
@@ -65,9 +65,9 @@ class CompanyForm(forms.ModelForm):
             pass
 
         # lead is not mandatory while editing
-        if self.instance.id:
+        '''if self.instance.id:
             self.fields['lead'].required = False
-        self.fields['lead'].required = False
+        self.fields['lead'].required = False'''
 
     class Meta:
         model = Company
@@ -75,7 +75,7 @@ class CompanyForm(forms.ModelForm):
                   'description', 'status', 'assigned_to',
                   'billing_address_line', 'billing_street',
                   'billing_city', 'billing_state',
-                  'billing_postcode', 'billing_country', 'lead', 'contacts')
+                  'billing_postcode', 'billing_country', 'contacts')
 
 
 class CompanyCommentForm(forms.ModelForm):

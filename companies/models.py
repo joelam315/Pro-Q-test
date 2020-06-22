@@ -71,9 +71,9 @@ class Company(models.Model):
     tags = models.ManyToManyField(Tags, blank=True)
     status = models.CharField(
         choices=COMPANY_STATUS_CHOICE, max_length=64, default='open')
-    lead = models.ForeignKey(
+    '''lead = models.ForeignKey(
         'leads.Lead', related_name="company_leads",
-        on_delete=models.SET_NULL, null=True)
+        on_delete=models.SET_NULL, null=True)'''
     contact_name = models.CharField(pgettext_lazy(
         "Name of Contact", "Contact Name"), max_length=120)
     contacts = models.ManyToManyField(

@@ -1,6 +1,7 @@
 from django import forms
 from common.models import Address, User
 from rest_framework import serializers
+from phonenumber_field.serializerfields import PhoneNumberField
 
 class AddressSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -29,3 +30,21 @@ class CreateUserSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("Password and confirm password are not matched.")
 		user = User.objects.create_user(username=validated_data["phone"],phone=validated_data["phone"],password=validated_data["password"])
 		return user
+
+class LoginSerializer(serializers.ModelSerializer):
+	phone=PhoneNumberField()
+	password=serializers.CharField()
+
+	class Meta:
+		model=User
+		fields=("phone","password")
+
+class PhoneVerifySerializer(serializers.ModelSerializer):
+	phone=PhoneNumberField()
+
+	class Meta:
+		model=User
+		fields=("phone",)
+
+
+
