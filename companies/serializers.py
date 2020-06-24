@@ -1,7 +1,7 @@
 import PIL
 
 from django import forms
-from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
+from companies.models import Company,DocumentFormat,ChargingStages,GeneralRemark
 from rest_framework import serializers
 
 
@@ -55,22 +55,13 @@ class Base64ImageField(serializers.ImageField):
 		return extension
 
 class CompanySerializer(serializers.ModelSerializer):
+	logo=serializers.CharField()
 	class Meta:
 		model=Company
 		fields =(
 			"id",
 			"name",
-			"email",
-			"phone",
-			"industry",
-			"billing_address_line",
-			"billing_street",
-			"billing_city",
-			"billing_state",
-			"billing_postcode",
-			"billing_country",
-			"website",
-			"description"
+			"logo"
 		)
 
 class SetCompanySerializer(serializers.ModelSerializer):
@@ -92,6 +83,11 @@ class SetCompanySerializer(serializers.ModelSerializer):
 			user = request.user
 		comapny = Company.objects.update_or_create(owner=user,defaults={"name":validated_data["name"],"logo_pic":validated_data["logo_pic"],"br_pic":validated_data["br_pic"]})[0]
 		return comapny
+
+class DocumentFormatSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=DocumentFormat
+		exclude = ('company', )
 
 class SetDocumentFormatSerializer(serializers.ModelSerializer):
 
@@ -119,14 +115,23 @@ class SetDocumentFormatSerializer(serializers.ModelSerializer):
 		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"]})
 		return doc_format[0]
 
-class SetChargingStageSerializer(serializers.ModelSerializer):
+class ChargingStagesSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ChargingStages
+		fields=(
+			"quantity",
+			"values",
+			"descriptions"
+		)
+
+class SetChargingStagesSerializer(serializers.ModelSerializer):
 	
 	class Meta:
-		model=ChargingStage
+		model=ChargingStages
 		fields=(
-			"index",
-			"percentage",
-			"description"
+			"quantity",
+			"values",
+			"descriptions"
 		)
 
 	def create(self, validated_data):
@@ -137,8 +142,16 @@ class SetChargingStageSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
-		charging_stage=ChargingStage.objects.update_or_create (company=company,index=validated_data["index"],defaults={"percentage":validated_data["percentage"],"description":validated_data["description"]})
-		return charging_stage[0]
+		charging_stages=ChargingStages.objects.update_or_create (company=company,defaults={"quantity":validated_data["quantity"],"values":validated_data["values"],"descriptions":validated_data["descriptions"]})
+		return charging_stages[0]
+
+class GeneralRemarkSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=GeneralRemark
+		fields=(
+			"index",
+			"content"
+		)
 
 class SetGeneralRemarkSerializer(serializers.ModelSerializer):
 	

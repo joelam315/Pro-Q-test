@@ -4,6 +4,8 @@ from django.utils.translation import ugettext_lazy as _
 from projects.models import Project
 import numpy as np
 import numexpr as ne
+from django.contrib.postgres.fields import JSONField
+from project_items.models import Item
 
 class RoomProperty(models.Model):
 	name=models.CharField(max_length=50)
@@ -12,6 +14,13 @@ class RoomProperty(models.Model):
 	def __str__(self):
 		return self.name
 
+
+	def as_json(self):
+		return dict(
+			name=self.name,
+			symbol=self.symbol
+		)
+
 class RoomType(models.Model):
 	name=models.CharField(max_length=50)
 	is_active=models.BooleanField(default=True)
@@ -19,49 +28,100 @@ class RoomType(models.Model):
 	def __str__(self):
 		return self.name
 
-class RoomTypeProperty(models.Model):
-	class Meta:
-		unique_together = (('room_type', 'room_property'),)
-	room_type=models.ForeignKey(RoomType,on_delete=models.PROTECT)
-	room_property=models.ForeignKey(RoomProperty,on_delete=models.PROTECT)
+	def as_json(self):
+		return dict(
+			id=self.id,
+			name=self.name
+		)
+
+class RoomTypeProperties(models.Model):
+
+	room_type=models.OneToOneField(RoomType,related_name="room_type_properties",on_delete=models.PROTECT)
+	room_properties=models.ManyToManyField(RoomProperty,blank=True)
+
+	def __str__(self):
+		return str(self.room_type)+"'s Properties"
 
 class RoomTypeFormula(models.Model):
 	name=models.CharField(max_length=50)
 	room_type=models.ForeignKey(RoomType,on_delete=models.PROTECT)
 	formula=models.TextField()
 
-	def cal(self):
-		rtps=RoomTypeProperty.objects.filter(room_type=self.room_type)
-		cal_formula=formula
-		for rtp in rtps:
-			cal_formula=cal_formula.replace("\""+rtp.room_property.symbol+"\"",rtp.value)
-			cal_formula=cal_formula.replace("\'"+rtp.room_property.symbol+"\'",rtp.value)
+	def cal(self,value):
+		rtps=RoomTypeProperties.objects.get(room_type=self.room_type)
+		cal_formula=self.formula
+		params=[rtp.as_json() for rtp in rtps.room_properties.all()]
+		#params.sort(key=len_symbol,reverse=True)
+		#return params
+		for param in params:
+			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["name"],0)))
+			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["name"],0)))
 		
 		return ne.evaluate(cal_formula)
 
+	def __str__(self):
+		return str(self.room_type)+": "+self.name
+
 class Room(models.Model):
-    name=models.CharField(max_length=50)
-    length=models.PositiveIntegerField()
-    width=models.PositiveIntegerField()
-    height=models.PositiveIntegerField()
-    related_project=models.ForeignKey(Project,related_name='project_rooms',on_delete=models.CASCADE)
+	name=models.CharField(max_length=50)
+	room_type=models.ForeignKey(RoomType,on_delete=models.PROTECT)
+	value=JSONField(null=True,blank=True)
+	related_project=models.ForeignKey(Project,related_name='project_rooms',on_delete=models.CASCADE)
 
-    def __str__(self):
-        return self.related_project.project_title+": "+self.name
+	def __str__(self):
+		return self.related_project.project_title+": "+self.name
 
-    def floor_size(self):
-        return self.length*self.width
+	def as_json(self):
+		ret=dict(
+			id=self.id,
+			name=self.name,
+			value=self.value,
+			room_type=str(self.room_type),
+			room_project_items=[rpi.as_json() for rpi in self.room_project_items]
+		)
+		formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
+		for formula in formulas:
+			ret[formula.name]=formula.cal(self.value)
+		return ret
 
-    def wall_size(self):
-        return self.length*self.height*2+self.width*self.height*2
+class RoomItem(models.Model):
 
-    def as_json(self):
-        return dict(
-            id=self.id,
-            name=self.name,
-            length=self.length,
-            width=self.width,
-            height=self.height,
-            floor_size=self.floor_size(),
-            wall_size=self.wall_size()
-        )
+	class Meta:
+		unique_together = (("item", "room"),)
+
+	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
+	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.PROTECT)
+	unit_price = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+	value=JSONField(null=True,blank=True)
+	quantity=models.PositiveIntegerField()
+
+	def __str__(self):
+		return str(self.room)+": "+str(self.item)
+
+	'''@property
+	def created_on_arrow(self):
+		return arrow.get(self.created_on).humanize()
+
+	@property
+	def approved_on_arrow(self):
+		return arrow.get(self.approved_on).humanize()
+
+	@property
+	def last_updated_on_arrow(self):
+		return arrow.get(self.last_updated_on).humanize()'''
+
+	def as_json(self):
+		return dict(
+			id=self.id,
+			name=self.name,
+			price=float(self.price),
+			description=self.description
+		)
+
+	class Meta:
+
+		verbose_name= 'Room Item'
+		verbose_name_plural= 'Room Items'
+		#ordering = ['created_on']
+

@@ -3,6 +3,8 @@ import time
 from django.db import models
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.postgres.fields import JSONField,ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from common.models import User
 from common.utils import INDCHOICES, COUNTRIES
@@ -197,21 +199,25 @@ class DocumentFormat(models.Model):
             receipt_lower_format=self.receipt_lower_format
         )
 
-class ChargingStage(models.Model):
-    company =models.ForeignKey(Company,related_name='company_charging_stages',on_delete=models.CASCADE)
+class ChargingStages(models.Model):
+    company =models.OneToOneField(Company,related_name='company_charging_stages',on_delete=models.CASCADE)
 
-    index=models.PositiveIntegerField()
-    percentage=models.PositiveIntegerField()
-    description=models.TextField(null=True, blank=True)
+    quantity=models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(99)])
+
+    values=ArrayField(models.PositiveIntegerField(),size=99)
+
+    descriptions=ArrayField(models.TextField(blank=True),size=99)
+
+
 
     def __str__(self):
-        return str(self.company)+" Stage: "+self.index
+        return str(self.company)+"'s Charging Stage"
 
     def as_json(self):
         return dict(
-            index=self.index,
-            percentage=self.percentage,
-            description=self.description
+            quantity=self.quantity,
+            values=self.values,
+            descriptions=self.descriptions
         )
 
 class GeneralRemark(models.Model):

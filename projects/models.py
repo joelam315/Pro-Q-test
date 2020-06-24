@@ -1,6 +1,8 @@
 import arrow
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.postgres.fields import JSONField,ArrayField
 from common.models import Address, User
 from common.utils import CURRENCY_CODES,HK_DISTRICT
 from companies.models import Company
@@ -47,7 +49,7 @@ class Project(models.Model):
 
     def __str__(self):
         """Unicode representation of Project."""
-        return self.project_number
+        return str(self.company)+": "+self.project_title
 
     def total_amount(self):
         total=0
@@ -207,3 +209,23 @@ class ProjectHistory(models.Model):
         ordering = ('-created_on',)
 
 
+class ProjectChargingStages(models.Model):
+    project =models.OneToOneField(Project,related_name='project_charging_stages',on_delete=models.CASCADE)
+
+    quantity=models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(99)])
+
+    values=ArrayField(models.PositiveIntegerField(),size=99)
+
+    descriptions=ArrayField(models.TextField(blank=True),size=99)
+
+
+
+    def __str__(self):
+        return str(self.project)+"'s Charging Stage"
+
+    def as_json(self):
+        return dict(
+            quantity=self.quantity,
+            values=self.values,
+            descriptions=self.descriptions
+        )

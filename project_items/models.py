@@ -7,21 +7,59 @@ from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 
+class ItemProperty(models.Model):
+	name=models.CharField(max_length=50)
+	symbol=models.CharField(max_length=50,unique=True)
+
+	def __str__(self):
+		return self.name
+
+
+	def as_json(self):
+		return dict(
+			name=self.name,
+			symbol=self.symbol
+		)
+
+class ItemType(models.Model):
+	name=models.CharField(max_length=50)
+	is_active=models.BooleanField(default=True)
+
+	def __str__(self):
+		return self.name
+
+	def as_json(self):
+		return dict(
+			id=self.id,
+			name=self.name
+		)
+
+class ItemTypeMaterial(models.Model):
+	name=models.CharField(max_length=50)
+	item_type=models.ForeignKey(ItemType,related_name="item_type_materials",on_delete=models.PROTECT)
+
+	def  __str__(self):
+		return self.item_type+": "+self.name
+
+	def as_json(self):
+		return dict(
+			id=self.id,
+			name=self.name
+		)
+
 class Item(models.Model):
 
 	name=models.CharField(_("Name"),max_length=255)
-	price = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0)
+	item_properties=models.ManyToManyField(ItemProperty,blank=True)
 	description= models.TextField(blank=True, null=True)
-	type=models.CharField(choices=PROJECT_TYPE,max_length=20,default='Front-end')
-	status=models.CharField(choices=PROJECT_STATUS, max_length=20,default='Requested')
-	created_on = models.DateTimeField(auto_now_add=True)
-	created_by = models.ForeignKey(User, related_name='project_items_created_by',on_delete=models.SET_NULL, null=True)
+	item_type=models.ForeignKey(ItemType,related_name="related_items",on_delete=models.PROTECT)
+	is_active=models.BooleanField(default=True)
+
 
 	def __str__(self):
 		return self.name
 
-	@property
+	'''@property
 	def created_on_arrow(self):
 		return arrow.get(self.created_on).humanize()
 
@@ -31,61 +69,38 @@ class Item(models.Model):
 
 	@property
 	def last_updated_on_arrow(self):
-		return arrow.get(self.last_updated_on).humanize()
+		return arrow.get(self.last_updated_on).humanize()'''
 
 	def as_json(self):
 		return dict(
 			id=self.id,
 			name=self.name,
-			price=float(self.price),
+			item_properties=[p.as_json() for p in self.item_properties],
 			description=self.description,
-			type=self.type
+			item_type=self.item_type
 		)
 
 	class Meta:
 
-		verbose_name= 'Function Item'
-		verbose_name_plural= 'Function Items'
-		ordering = ['type','-created_on']
+		verbose_name= 'Item'
+		verbose_name_plural= 'Items'
+		#ordering = ['item_type']
 
+class ItemFormula(models.Model):
+	name=models.CharField(max_length=50)
+	item=models.ForeignKey(Item,on_delete=models.PROTECT)
+	formula=models.TextField()
 
+	def cal(self,value):
+		cal_formula=self.formula
+		params=[ip.as_json() for ip in self.item.item_properties.all()]
+		#params.sort(key=len_symbol,reverse=True)
+		#return params
+		for param in params:
+			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["name"],0)))
+			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["name"],0)))
+		
+		return ne.evaluate(cal_formula)
 
-class ProjectItem(models.Model):
-
-	name=models.CharField(_("Name"),max_length=255)
-	price = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0)
-	description= models.TextField(blank=True, null=True)
-	status=models.CharField(choices=PROJECT_STATUS, max_length=20,default='Requested')
-	created_on = models.DateTimeField(auto_now_add=True)
-	created_by = models.ForeignKey(User, related_name='sub_project_items_created_by',on_delete=models.SET_NULL, null=True)
-	related_item = models.ForeignKey(Item, related_name='sub_project_items',on_delete=models.CASCADE)
 	def __str__(self):
-		return self.name
-
-	@property
-	def created_on_arrow(self):
-		return arrow.get(self.created_on).humanize()
-
-	@property
-	def approved_on_arrow(self):
-		return arrow.get(self.approved_on).humanize()
-
-	@property
-	def last_updated_on_arrow(self):
-		return arrow.get(self.last_updated_on).humanize()
-
-	def as_json(self):
-		return dict(
-			id=self.id,
-			name=self.name,
-			price=float(self.price),
-			description=self.description
-		)
-
-	class Meta:
-
-		verbose_name= 'Sub Function Item'
-		verbose_name_plural= 'Sub Function Items'
-		ordering = ['created_on']
-
+		return str(self.room_type)+": "+self.name

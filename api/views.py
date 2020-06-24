@@ -8,14 +8,27 @@ from django.shortcuts import render
 from common.models import User
 from common.serializers import CreateUserSerializer,LoginSerializer, PhoneVerifySerializer
 from common.utils import HK_DISTRICT
-from companies.models import Company,DocumentFormat,ChargingStage,GeneralRemark
-from companies.serializers import SetCompanySerializer, SetDocumentFormatSerializer,SetChargingStageSerializer,SetGeneralRemarkSerializer
+from companies.models import Company,DocumentFormat,ChargingStages,GeneralRemark
+from companies.serializers import (
+	SetCompanySerializer, 
+	CompanySerializer, 
+	SetDocumentFormatSerializer,
+	SetChargingStagesSerializer,
+	SetGeneralRemarkSerializer,
+	DocumentFormatSerializer,
+	ChargingStagesSerializer,
+	GeneralRemarkSerializer
+)
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project
 from projects.utils import ROOM_TYPE
 from projects.serializers import CreateProjectSerializer
-from rooms.models import Room
-from rooms.serializers import CreateRoomSerializer,UpdateRoomSerializer
+from rooms.models import Room, RoomType, RoomItem
+from rooms.serializers import (
+	CreateRoomSerializer,
+	UpdateRoomSerializer,
+	SetRoomItemSerializer
+)
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
 
@@ -40,6 +53,8 @@ from rest_framework import serializers
 from django.views.generic import (CreateView, DeleteView, DetailView,
     TemplateView, UpdateView, View)
 
+token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,description="Bearer token required", type=openapi.TYPE_STRING)
+
 default_param = openapi.Parameter(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
 
 #User
@@ -50,7 +65,7 @@ class UserRegisterView(APIView):
 	serializer_class = CreateUserSerializer
 
 	@swagger_auto_schema(
-		operation_description="Register a new User", 
+		operation_description="Register a new user", 
 		security=None,
 		request_body=CreateUserSerializer,
 		responses={
@@ -79,7 +94,7 @@ class UserLoginView(APIView):
 	permission_classes = [AllowAny]
 
 	@swagger_auto_schema(
-		operation_description="Register a new User", 
+		operation_description="User login", 
 		security=[{'Basic': []}],
 		request_body=LoginSerializer,
 		responses={
@@ -104,7 +119,9 @@ class UserLoginView(APIView):
 			ret["refresh"]=str(token)
 			ret["access"]=str(token.access_token)
 			if not user.phone_verify:
-				raise serializers.ValidationError("Need verify phone first.")
+				ret["result"]=False
+				ret["reason"]="Need verify phone first."
+				raise serializers.ValidationError(ret)
 			return Response(ret, status=status.HTTP_200_OK)
 
 class UserPhoneVerifyView(APIView):
@@ -112,8 +129,9 @@ class UserPhoneVerifyView(APIView):
 	permission_classes = [IsAuthenticated]
 
 	@swagger_auto_schema(
-		operation_description="Register a new User", 
+		operation_description="Verify phone number for new user", 
 		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
 		request_body=PhoneVerifySerializer,
 		responses={
 			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
@@ -144,11 +162,21 @@ class GetCompanyView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
 
+	@swagger_auto_schema(
+		operation_description="Get user's company \n<b>* the returned value 'logo' is a path to the image resource</b>", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CompanySerializer,
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self,request, *args, **kwargs):
 
 		company=Company.objects.get(owner=request.user)
 		return Response(company.as_json())
 
+'''
 class GetCompanyLogoView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -158,6 +186,7 @@ class GetCompanyLogoView(APIView):
 
 		company=Company.objects.get(owner=request.user)
 		return Response(company.as_json())
+'''
 
 class SetCompanyView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -165,6 +194,16 @@ class SetCompanyView(APIView):
 	model=Company
 	serializer_class = SetCompanySerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update user's company info.", 
+		security=[{'Bearer': []}],
+		request_body=SetCompanySerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -176,13 +215,21 @@ class SetCompanyView(APIView):
 		company=serialized.save()
 		company.save()
 
-		return Response(ret, status=status.HTTP_201_CREATED)
+		return Response(ret, status=status.HTTP_200_OK)
 
 #docuemnt format
 class GetDocumentFormatChoicesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
-
+	@swagger_auto_schema(
+		operation_description="Get all docuemnt format choices.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;upper_choice: array[string],\n&emsp;middle_choice: array[string],\n&emsp;lower_choice: array[string],\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -198,6 +245,16 @@ class SetDocumentFormatView(APIView):
 	model=DocumentFormat
 	serializer_class = SetDocumentFormatSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update user's company docuemnt format.", 
+		security=[{'Bearer': []}],
+		request_body=SetDocumentFormatSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -214,6 +271,15 @@ class GetDocumentFormatView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentFormat
 
+	@swagger_auto_schema(
+		operation_description="Get user's company docuemnt format.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: DocumentFormatSerializer,
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -226,46 +292,55 @@ class GetDocumentFormatView(APIView):
 class SetChargingStagesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
-	serializer_class = SetChargingStageSerializer
+	serializer_class = SetChargingStagesSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update user's company charging stage(s).", 
+		security=[{'Bearer': []}],
+		request_body=SetChargingStagesSerializer(many=True),
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
 		sum_percen=0
-		if len(data)<0:
-			ret["result"]=False
-			ret["reason"]="There must have at least 1 record"
-			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
-		if len(data)>99:
-			ret["result"]=False
-			ret["reason"]="Too many records"
-			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
-		for i in range(len(data)):
-			data[i]["index"]=i+1
-			sum_percen+=data[i]["percentage"]
+
+		for i in range(data.get("quantity")):
+			sum_percen+=data["values"][i]
 		if sum_percen!=100:
 			ret["result"]=False
 			ret["reason"]="The total percentage is not equal to 100."
-			return Response(ret, status=status.HTTP_400_BAD_REQUEST) 
-		serialized = SetChargingStageSerializer(data=data,context={'request': request},many=True)
+			raise serializers.ValidationError(ret)
+		serialized = SetChargingStagesSerializer(data=data,context={'request': request})
 		serialized.is_valid(raise_exception=True)
 		charging_stages=serialized.save()
-		[charging_stage.save() for charging_stage in charging_stages]
-		ChargingStage.objects.filter(index__gt=len(data)).delete()
 		return Response(ret, status=status.HTTP_200_OK)
 
 class GetChargingStagesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
-	model=ChargingStage
+	model=ChargingStages
 
+	@swagger_auto_schema(
+		operation_description="Get user's company charging stages.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ChargingStagesSerializer(many=True),
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		charging_stages=ChargingStage.objects.filter(company=company).order_by('index')
-		ret["charging_stages"]=[charging_stage.as_json() for charging_stage in charging_stages]
+		charging_stages=ChargingStages.objects.get(company=company)
+		ret["charging_stages"]=charging_stages.as_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 #general remarks
@@ -274,6 +349,16 @@ class SetGeneralRemarksView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetGeneralRemarkSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update user's company general remark.", 
+		security=[{'Bearer': []}],
+		request_body=SetGeneralRemarkSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -296,6 +381,15 @@ class GetGeneralRemarksView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=GeneralRemark
 
+	@swagger_auto_schema(
+		operation_description="Get user's company general remarks.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GeneralRemarkSerializer(many=True),
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -345,7 +439,7 @@ class GetProjectView(APIView):
 		data = request.data
 		project=Project.objects.get(id=data.get("id"))
 	
-	#project-customer
+#project-customer
 class SetProjectCustomerView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -361,7 +455,7 @@ class SetProjectCustomerView(APIView):
 		customer=serialized.save()
 		return Response(ret,status=status.HTTP_200_OK)
 
-	#project-room
+#project-room
 
 class CreateProjectRoomView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -376,6 +470,7 @@ class CreateProjectRoomView(APIView):
 		serialized=CreateRoomSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
 		room=serialized.save()
+		ret["room_id"]=room.id
 		return Response(ret,status=status.HTTP_200_OK)
 
 class UpdateProjectRoomView(APIView):
@@ -391,6 +486,8 @@ class UpdateProjectRoomView(APIView):
 		serialized=UpdateRoomSerializer(instance=data.get("id"),data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
 		room=serialized.save()
+
+		return Response(ret,status=status.HTTP_200_OK)
 
 class RemoveProjectRoomView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -417,9 +514,40 @@ class GetProjectRoomListView(APIView):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		project=Project.objects.get(id=data["related_project"])
+		project=Project.objects.get(id=data["project_id"])
 		ret["rooms"]=[room.as_json() for room in project.project_rooms.all()]
 		return Response(ret, status=status.HTTP_200_OK)		
+
+#project-room-item
+class GetProjectRoomItemView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=RoomItem
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		room=Room.objects.get(id=data["room_id"])
+		ret["room_items"]=[rpi.as_json() for rpi in room.room_project_items.all()]
+		return Response(ret,status=status.HTTP_200_OK)
+
+
+class SetProjectRoomItemView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=RoomItem
+	serializer_class=SetRoomItemSerializer
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		serialized=SetRoomItemSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		room_item=serialized.save()
+		ret["room_item_id"]=room_item.id
+		return Response(ret,status=status.HTTP_200_OK)
 
 #district
 
@@ -442,6 +570,6 @@ class GetRoomTypeListView(APIView):
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret['result']=True
-		room_types=ROOM_TYPE
+		room_types=[rt.as_json() for rt in RoomType.objects.filter(is_active=True).all()]
 		ret["room_types"]=room_types
 		return Response(ret, status=status.HTTP_200_OK)
