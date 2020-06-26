@@ -5,7 +5,7 @@ from projects.models import Project
 import numpy as np
 import numexpr as ne
 from django.contrib.postgres.fields import JSONField
-from project_items.models import Item
+from project_items.models import Item, ItemFormula,ItemTypeMaterial
 
 class RoomProperty(models.Model):
 	name=models.CharField(max_length=50)
@@ -24,6 +24,7 @@ class RoomProperty(models.Model):
 class RoomType(models.Model):
 	name=models.CharField(max_length=50)
 	is_active=models.BooleanField(default=True)
+	related_items=models.ManyToManyField(Item,blank=True)
 
 	def __str__(self):
 		return self.name
@@ -77,7 +78,7 @@ class Room(models.Model):
 			name=self.name,
 			value=self.value,
 			room_type=str(self.room_type),
-			room_project_items=[rpi.as_json() for rpi in self.room_project_items]
+			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()]
 		)
 		formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
 		for formula in formulas:
@@ -91,10 +92,12 @@ class RoomItem(models.Model):
 
 	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
 	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.PROTECT)
+	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT)
 	unit_price = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0)
+        max_digits=12, decimal_places=2)
 	value=JSONField(null=True,blank=True)
 	quantity=models.PositiveIntegerField()
+	remark=models.TextField(blank=True,null=True)
 
 	def __str__(self):
 		return str(self.room)+": "+str(self.item)
@@ -112,12 +115,20 @@ class RoomItem(models.Model):
 		return arrow.get(self.last_updated_on).humanize()'''
 
 	def as_json(self):
-		return dict(
+		ret= dict(
 			id=self.id,
-			name=self.name,
-			price=float(self.price),
-			description=self.description
+			name=self.item.name,
+			price=float(self.unit_price),
+			material=self.material.name,
+			quantity=self.quantity,
+			value=self.value,
+			description=self.item.description,
+			remark=self.remark
 		)
+		formulas=ItemFormula.objects.filter(item=self.item)
+		for formula in formulas:
+			ret[formula.name]=formula.cal(self.value)
+		return ret
 
 	class Meta:
 

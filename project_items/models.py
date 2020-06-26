@@ -6,6 +6,7 @@ from project_items.utils import PROJECT_TYPE, PROJECT_STATUS
 from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.postgres.fields import JSONField
 
 class ItemProperty(models.Model):
 	name=models.CharField(max_length=50)
@@ -39,7 +40,7 @@ class ItemTypeMaterial(models.Model):
 	item_type=models.ForeignKey(ItemType,related_name="item_type_materials",on_delete=models.PROTECT)
 
 	def  __str__(self):
-		return self.item_type+": "+self.name
+		return str(self.item_type)+": "+self.name
 
 	def as_json(self):
 		return dict(
@@ -54,6 +55,7 @@ class Item(models.Model):
 	description= models.TextField(blank=True, null=True)
 	item_type=models.ForeignKey(ItemType,related_name="related_items",on_delete=models.PROTECT)
 	is_active=models.BooleanField(default=True)
+	preset_unit_price=JSONField(null=True,blank=True)
 
 
 	def __str__(self):
@@ -75,9 +77,10 @@ class Item(models.Model):
 		return dict(
 			id=self.id,
 			name=self.name,
-			item_properties=[p.as_json() for p in self.item_properties],
+			item_properties=[p.as_json() for p in self.item_properties.all()],
 			description=self.description,
-			item_type=self.item_type
+			item_type=self.item_type.as_json(),
+			preset_unit_price=self.preset_unit_price
 		)
 
 	class Meta:
@@ -88,7 +91,7 @@ class Item(models.Model):
 
 class ItemFormula(models.Model):
 	name=models.CharField(max_length=50)
-	item=models.ForeignKey(Item,on_delete=models.PROTECT)
+	item=models.ForeignKey(Item,related_name="item_formulas",on_delete=models.PROTECT)
 	formula=models.TextField()
 
 	def cal(self,value):
@@ -103,4 +106,4 @@ class ItemFormula(models.Model):
 		return ne.evaluate(cal_formula)
 
 	def __str__(self):
-		return str(self.room_type)+": "+self.name
+		return str(self.item)+": "+self.name

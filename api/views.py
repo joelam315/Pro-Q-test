@@ -31,6 +31,7 @@ from rooms.serializers import (
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
+from project_items.models import ItemType
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -519,7 +520,7 @@ class GetProjectRoomListView(APIView):
 		return Response(ret, status=status.HTTP_200_OK)		
 
 #project-room-item
-class GetProjectRoomItemView(APIView):
+class GetProjectAllRoomItemView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
@@ -528,8 +529,18 @@ class GetProjectRoomItemView(APIView):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		room=Room.objects.get(id=data["room_id"])
-		ret["room_items"]=[rpi.as_json() for rpi in room.room_project_items.all()]
+		project=Project.objects.get(id=data["project_id"])
+		if project.company.owner!=request.user:
+			raise PermissionDenied
+		rooms=project.project_rooms.all()
+		items={}
+		for room in rooms:
+			items[room.name]=[]
+			for item in room.room_project_items.all():
+				items[room.name].append(item.as_json())
+
+
+		ret["items"]=items
 		return Response(ret,status=status.HTTP_200_OK)
 
 
@@ -573,3 +584,17 @@ class GetRoomTypeListView(APIView):
 		room_types=[rt.as_json() for rt in RoomType.objects.filter(is_active=True).all()]
 		ret["room_types"]=room_types
 		return Response(ret, status=status.HTTP_200_OK)
+
+#room - item
+class GetRoomRelatedItemListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		room_type=RoomType.objects.get(id=data["room_type"])
+		related_items=room_type.related_items
+		ret["related_items"]=[ri.as_json() for ri in related_items.all()]
+		return Response(ret,status=status.HTTP_200_OK)

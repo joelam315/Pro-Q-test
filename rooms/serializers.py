@@ -1,9 +1,10 @@
 from django import forms
 from projects.models import Project
-from rooms.models import Room,RoomItem
+from rooms.models import Room,RoomItem,RoomTypeProperties
 from companies.models import Company
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
+import json
 
 class CreateRoomSerializer(serializers.ModelSerializer):
 
@@ -22,6 +23,15 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 		project=Project.objects.get(id=validated_data["related_project"].id)
 		if not project:
 			serializers.ValidationError("Project not found.")
+		_value={}
+		room_properties=RoomTypeProperties.objects.get(room_type=validated_data["room_type"]).room_properties
+		if validated_data["value"]:
+			for room_property in room_properties.all():
+				if room_property.name in validated_data["value"]:
+					_value[room_property.name]=validated_data["value"][room_property.name]
+				else:
+					raise serializers.ValidationError("Room value missing: "+room_property.name)
+		validated_data["value"]=_value
 		if user==project.company.owner:
 			room=Room.objects.create(**validated_data)
 			return room
@@ -49,8 +59,15 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 			serializers.ValidationError("Project not found.")
 		if user==project.company.owner:
 			room=Room.objects.get(id=validated_data["room_id"])
-
-			room.value=validated_data.get("value",room.value)
+			_value={}
+			room_properties=RoomTypeProperties.objects.get(room_type=room.room_type).room_properties
+			if validated_data.get("value"):
+				for room_property in room_properties.all():
+					if room_property.name in validated_data["value"]:
+						_value[room_property.name]=validated_data["value"][room_property.name]
+					else:
+						raise serializers.ValidationError("Room value missing: "+room_property.name)
+			room.value=_value if validated_data.get("value") else room.value
 			room.name=validated_data.get("name",room.name)
 			room.room_type=validated_data.get("room_type",room.room_type)
 
@@ -74,7 +91,18 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 			serializers.ValidationError("You must create a company first.")
 		#project=Project.objects.get(id=validated_data["related_project"].id)
 		if user==validated_data["room"].related_project.company.owner:
-			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults={"unit_price":validated_data["unit_price"],"value":validated_data["value"],"quantity":validated_data["quantity"]})
+			data={}
+			data["unit_price"]=validated_data["unit_price"]
+			_value={}
+			if validated_data["value"]:
+				for item_property in validated_data["item"].item_properties.all():
+					if item_property.name in validated_data["value"]:
+						_value[item_property.name]=validated_data["value"][item_property.name]
+					else:
+						raise serializers.ValidationError("Item value missing: "+item_property.name)
+			data["value"]=_value
+			data["quantity"]=validated_data["quantity"]
+			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
 			return room_item[0]
 		else:
 			raise PermissionDenied
