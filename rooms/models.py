@@ -73,8 +73,18 @@ class Room(models.Model):
 		return self.related_project.project_title+": "+self.name
 
 	def as_json(self):
+		rpis=[rpi.as_json() for rpi in self.room_project_items.all()]
 		ret=dict(
 			id=self.id,
+			name=self.name,
+			room_project_items_count=len(rpis)
+			#room_project_items_price_sum=rpis
+		)
+
+		return ret
+
+	def details(self):
+		ret=dict(
 			name=self.name,
 			value=self.value,
 			room_type=str(self.room_type),
@@ -92,7 +102,7 @@ class RoomItem(models.Model):
 
 	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
 	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.PROTECT)
-	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT)
+	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True)
 	unit_price = models.DecimalField(
         max_digits=12, decimal_places=2)
 	value=JSONField(null=True,blank=True)
@@ -126,8 +136,10 @@ class RoomItem(models.Model):
 			remark=self.remark
 		)
 		formulas=ItemFormula.objects.filter(item=self.item)
+		rfps={rfp.name:rfp.cal() for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
+		vbp=self.material.value_based_price if self.material.value_based_price else (self.item.value_based_price if self.item.value_based_price else 0)
 		for formula in formulas:
-			ret[formula.name]=formula.cal(self.value)
+			ret[formula.name]=formula.cal(self.value,rfps,vbp)
 		return ret
 
 	class Meta:

@@ -1,10 +1,13 @@
 from django import forms
 from projects.models import Project
-from rooms.models import Room,RoomItem,RoomTypeProperties
+from project_items.models import ItemFormula
+from rooms.models import Room,RoomItem,RoomTypeProperties, RoomTypeFormula
 from companies.models import Company
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
 import json
+import numpy as np
+import numexpr as ne
 
 class CreateRoomSerializer(serializers.ModelSerializer):
 
@@ -104,5 +107,32 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 			data["quantity"]=validated_data["quantity"]
 			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
 			return room_item[0]
+		else:
+			raise PermissionDenied
+
+class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
+	value=serializers.JSONField(required=True)
+
+	class Meta:
+		model = RoomItem
+		fields=["item","room","material","value"]
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+
+		if validated_data["room"].related_project.company.owner==user:
+			if not validated_data.get("material") or validated_data.get("material").item_type==validated_data["item"].item_type:
+				formulas=ItemFormula.objects.filter(item=validated_data["item"])
+				rfps={rfp.name:rfp.cal(validated_data["room"].value) for rfp in RoomTypeFormula.objects.filter(room_type=validated_data["room"].room_type)}
+				vbp=validated_data.get("material").value_based_price if validated_data.get("material") and validated_data.get("material").value_based_price else (validated_data["item"].value_based_price if validated_data["item"].value_based_price else 0)
+				ret={}
+				for formula in formulas:
+					ret[formula.name]=formula.cal(value=validated_data["value"],rfps=rfps,vbp=vbp)
+				return ret
+			else:
+				raise serializers.ValidationError("Material not match to this item.")
 		else:
 			raise PermissionDenied

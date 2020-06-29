@@ -27,11 +27,12 @@ from rooms.models import Room, RoomType, RoomItem
 from rooms.serializers import (
 	CreateRoomSerializer,
 	UpdateRoomSerializer,
-	SetRoomItemSerializer
+	SetRoomItemSerializer,
+	PreCalRoomItemFormulaSerializer
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
-from project_items.models import ItemType
+from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -519,6 +520,19 @@ class GetProjectRoomListView(APIView):
 		ret["rooms"]=[room.as_json() for room in project.project_rooms.all()]
 		return Response(ret, status=status.HTTP_200_OK)		
 
+class GetProjectRoomDetailsView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=Room
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		room=Room.objects.get(id=data["room_id"])
+		ret["room"]=room.details()
+		return Response(ret, status=status.HTTP_200_OK)		
+
 #project-room-item
 class GetProjectAllRoomItemView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -560,6 +574,23 @@ class SetProjectRoomItemView(APIView):
 		ret["room_item_id"]=room_item.id
 		return Response(ret,status=status.HTTP_200_OK)
 
+class PreCalProjectRoomItemFormulaView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=RoomItem
+	serializer_class=PreCalRoomItemFormulaSerializer
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		serialized=PreCalRoomItemFormulaSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		result=serialized.save()
+		ret.update(result)
+		return Response(ret,status=status.HTTP_200_OK)
+
+
 #district
 
 class GetDistrictListView(APIView):
@@ -598,3 +629,11 @@ class GetRoomRelatedItemListView(APIView):
 		related_items=room_type.related_items
 		ret["related_items"]=[ri.as_json() for ri in related_items.all()]
 		return Response(ret,status=status.HTTP_200_OK)
+
+#item
+class GetItemMaterials(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=ItemTypeMaterial
+
+	def post 

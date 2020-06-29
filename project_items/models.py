@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.postgres.fields import JSONField
+import numpy as np
+import numexpr as ne
 
 class ItemProperty(models.Model):
 	name=models.CharField(max_length=50)
@@ -38,6 +40,7 @@ class ItemType(models.Model):
 class ItemTypeMaterial(models.Model):
 	name=models.CharField(max_length=50)
 	item_type=models.ForeignKey(ItemType,related_name="item_type_materials",on_delete=models.PROTECT)
+	value_based_price=JSONField(null=True,blank=True)
 
 	def  __str__(self):
 		return str(self.item_type)+": "+self.name
@@ -55,7 +58,7 @@ class Item(models.Model):
 	description= models.TextField(blank=True, null=True)
 	item_type=models.ForeignKey(ItemType,related_name="related_items",on_delete=models.PROTECT)
 	is_active=models.BooleanField(default=True)
-	preset_unit_price=JSONField(null=True,blank=True)
+	value_based_price=JSONField(null=True,blank=True)
 
 
 	def __str__(self):
@@ -80,7 +83,7 @@ class Item(models.Model):
 			item_properties=[p.as_json() for p in self.item_properties.all()],
 			description=self.description,
 			item_type=self.item_type.as_json(),
-			preset_unit_price=self.preset_unit_price
+			value_based_price=self.value_based_price
 		)
 
 	class Meta:
@@ -94,7 +97,7 @@ class ItemFormula(models.Model):
 	item=models.ForeignKey(Item,related_name="item_formulas",on_delete=models.PROTECT)
 	formula=models.TextField()
 
-	def cal(self,value):
+	def cal(self,value,rfps,vbp):
 		cal_formula=self.formula
 		params=[ip.as_json() for ip in self.item.item_properties.all()]
 		#params.sort(key=len_symbol,reverse=True)
@@ -102,7 +105,11 @@ class ItemFormula(models.Model):
 		for param in params:
 			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["name"],0)))
 			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["name"],0)))
-		
+		for key in rfps.keys():
+			cal_formula=cal_formula.replace("\""+key+"\"",str(rfps[key]))
+			cal_formula=cal_formula.replace("\'"+key+"\'",str(rfps[key]))
+		cal_formula=cal_formula.replace("\"value_based_price\"",str(vbp))
+		cal_formula=cal_formula.replace("\'value_based_price\'",str(vbp))
 		return ne.evaluate(cal_formula)
 
 	def __str__(self):
