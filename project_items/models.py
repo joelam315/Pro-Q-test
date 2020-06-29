@@ -40,7 +40,8 @@ class ItemType(models.Model):
 class ItemTypeMaterial(models.Model):
 	name=models.CharField(max_length=50)
 	item_type=models.ForeignKey(ItemType,related_name="item_type_materials",on_delete=models.PROTECT)
-	value_based_price=JSONField(null=True,blank=True)
+	value_based_price=models.DecimalField(
+        max_digits=12, decimal_places=2)
 
 	def  __str__(self):
 		return str(self.item_type)+": "+self.name
@@ -58,7 +59,8 @@ class Item(models.Model):
 	description= models.TextField(blank=True, null=True)
 	item_type=models.ForeignKey(ItemType,related_name="related_items",on_delete=models.PROTECT)
 	is_active=models.BooleanField(default=True)
-	value_based_price=JSONField(null=True,blank=True)
+	value_based_price=models.DecimalField(
+        max_digits=12, decimal_places=2)
 
 
 	def __str__(self):
@@ -110,6 +112,7 @@ class ItemFormula(models.Model):
 			cal_formula=cal_formula.replace("\'"+key+"\'",str(rfps[key]))
 		cal_formula=cal_formula.replace("\"value_based_price\"",str(vbp))
 		cal_formula=cal_formula.replace("\'value_based_price\'",str(vbp))
+		#return (cal_formula)
 		return ne.evaluate(cal_formula)
 
 	def __str__(self):

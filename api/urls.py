@@ -39,6 +39,7 @@ from api.views import (
 	GetDistrictListView,
 	GetRoomTypeListView,
 	GetRoomRelatedItemListView,
+	GetItemMaterials,
 )
 
 app_name = 'api'
@@ -71,4 +72,5 @@ urlpatterns = [
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
+	path('item/materials/get/',GetItemMaterials.as_view(),name="get_item_materials")
 ]

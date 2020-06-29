@@ -636,4 +636,12 @@ class GetItemMaterials(APIView):
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ItemTypeMaterial
 
-	def post 
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("item_type"):
+			ret["materials"]=[itm.as_json() for itm in ItemTypeMaterial.objects.filter(item_type=data.get("item_type"))]
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			raise serializers.ValidationError("Missing item_type.")
