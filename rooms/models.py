@@ -74,13 +74,14 @@ class Room(models.Model):
 
 	def as_json(self):
 		rpis=[rpi.as_json() for rpi in self.room_project_items.all()]
+		_sum=0
 		ret=dict(
 			id=self.id,
 			name=self.name,
 			room_project_items_count=len(rpis)
 			#room_project_items_price_sum=rpis
 		)
-
+		ret["sum_price"]=sum((rpi["unit_price"]*rpi["quantity"]) for rpi in rpis)
 		return ret
 
 	def details(self):
@@ -101,7 +102,7 @@ class RoomItem(models.Model):
 		unique_together = (("item", "room"),)
 
 	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
-	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.PROTECT)
+	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.CASCADE)
 	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True)
 	unit_price = models.DecimalField(
         max_digits=12, decimal_places=2)
@@ -128,7 +129,7 @@ class RoomItem(models.Model):
 		ret= dict(
 			id=self.id,
 			name=self.item.name,
-			price=float(self.unit_price),
+			unit_price=float(self.unit_price),
 			material=self.material.name,
 			quantity=self.quantity,
 			value=self.value,
@@ -136,8 +137,8 @@ class RoomItem(models.Model):
 			remark=self.remark
 		)
 		formulas=ItemFormula.objects.filter(item=self.item)
-		rfps={rfp.name:rfp.cal() for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
-		vbp=self.material.value_based_price if self.material.value_based_price else (self.item.value_based_price if self.item.value_based_price else 0)
+		rfps={rfp.name:rfp.cal(self.value) for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
+		vbp=self.material.value_based_price if self.material!=None and self.material.value_based_price!=None else self.item.value_based_price 
 		for formula in formulas:
 			ret[formula.name]=formula.cal(self.value,rfps,vbp)
 		return ret

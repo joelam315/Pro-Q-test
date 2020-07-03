@@ -32,7 +32,8 @@ from rooms.serializers import (
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
-from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
+from project_items.models import ItemType,ItemFormula,ItemTypeMaterial,ProjectMisc
+from project_items.serializers import SetProjectMiscSerializer
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -590,6 +591,39 @@ class PreCalProjectRoomItemFormulaView(APIView):
 		ret.update(result)
 		return Response(ret,status=status.HTTP_200_OK)
 
+
+#project-misc
+class SetProjectMiscView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=ProjectMisc
+	serializer_class=SetProjectMiscSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		serialized=SetProjectMiscSerializer(data=data,context={'request':request})
+		serialized=is_valid(raise_exception=True)
+		project_misc=serialized.save()
+		ret["project_misc_id"]=project_misc.id
+		return Response(ret,status=status.HTTP_200_OK)
+
+class GetAllProjectMiscView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectMisc
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		project=Project.objects.get(id=data["project_id"])
+		if project.company.owner!=request.user:
+			raise PermissionDenied
+		ret["project_misc"]=[project_misc.as_json() for project_misc in project.project_misc.all()]
+		
+		return Response(ret,status=status.HTTP_200_OK)
 
 #district
 

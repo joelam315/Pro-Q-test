@@ -36,10 +36,13 @@ from api.views import (
 	SetProjectRoomItemView,
 	PreCalProjectRoomItemFormulaView,
 	GetProjectRoomListView,
+	SetProjectMiscView,
+	GetAllProjectMiscView,
 	GetDistrictListView,
 	GetRoomTypeListView,
 	GetRoomRelatedItemListView,
 	GetItemMaterials,
+	GetProjectRoomDetailsView,
 )
 
 app_name = 'api'
@@ -66,9 +69,12 @@ urlpatterns = [
 	path('project/room/update/',UpdateProjectRoomView.as_view(),name="update_project_room"),
 	path('project/room/remove/',RemoveProjectRoomView.as_view(),name="remove_project_room"),
 	path('project/room/list/',GetProjectRoomListView.as_view(),name="list_project_rooms"),
+	path('project/room/get/',GetProjectRoomDetailsView.as_view(),name="get_project_room_details"),
 	path('project/room/item/set/',SetProjectRoomItemView.as_view(),name="set_project_room_item"),
 	path('project/room/item/precal/',PreCalProjectRoomItemFormulaView.as_view(),name="pre_cal_project_room_item_forumla"),
 	path('project/item/get/all/',GetProjectAllRoomItemView.as_view(),name="get_project_all_items"),
+	path('project/misc/set/',SetProjectMiscView.as_view(),name="set_project_misc"),
+	path('project/misc/get/all/',GetAllProjectMiscView.as_view(),name="get_all_project_misc"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
