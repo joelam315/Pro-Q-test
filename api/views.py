@@ -32,8 +32,9 @@ from rooms.serializers import (
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
-from project_items.models import ItemType,ItemFormula,ItemTypeMaterial,ProjectMisc
-from project_items.serializers import SetProjectMiscSerializer
+from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
+from project_misc.models import ProjectMisc
+from project_misc.serializers import SetProjectMiscSerializer
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -440,7 +441,38 @@ class GetProjectView(APIView):
 		ret={}
 		ret["result"]=True
 		data = request.data
+		if data.get("id"):
+			project=Project.objects.get(id=data.get("id"))
+			ret["project"]=project.as_json()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			raise ValidationError("Missing id")
+
+class PreviewProjectQuotation(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("id"):
+			project=Project.objects.get(id=data.get("id"))
+			ret["quot_preview"]=project.quot_preview()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			raise serializers.ValidationError("Missing id")
+
+class GenerateProjectQuotation(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
 		project=Project.objects.get(id=data.get("id"))
+		return Response(ret,status=status.HTTP_200_OK)
 	
 #project-customer
 class SetProjectCustomerView(APIView):
@@ -547,15 +579,15 @@ class GetProjectAllRoomItemView(APIView):
 		project=Project.objects.get(id=data["project_id"])
 		if project.company.owner!=request.user:
 			raise PermissionDenied
-		rooms=project.project_rooms.all()
+		'''rooms=project.project_rooms.all()
 		items={}
 		for room in rooms:
 			items[room.name]=[]
 			for item in room.room_project_items.all():
-				items[room.name].append(item.as_json())
+				items[room.name].append(item.as_json())'''
 
 
-		ret["items"]=items
+		ret["items"]=project.all_room_items()
 		return Response(ret,status=status.HTTP_200_OK)
 
 

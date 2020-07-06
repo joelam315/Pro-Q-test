@@ -32,12 +32,12 @@ class Project(models.Model):
     start_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     company = models.ForeignKey(Company, related_name='company_projects',on_delete=models.CASCADE)
-    teams = models.ManyToManyField(Teams, related_name='projects_teams')
-    function_items=models.ManyToManyField(FunctionItem, related_name='projects_function_items')
-    sub_function_items=models.ManyToManyField(SubFunctionItem,related_name="projects_sub_function_items")
+
     district=models.CharField(choices=HK_DISTRICT,max_length=50)
     work_location=models.CharField(
         _("Details Location"), max_length=1024,null=True, blank=True)
+    document_format=JSONField()
+    charging_stages=JSONField()
 
     class Meta:
         """Meta definition for Project."""
@@ -53,19 +53,13 @@ class Project(models.Model):
 
     def total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
+        
         return total
         #return self.currency + ' ' + str(self.total_amount)
 
     def formatted_total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
+        
         return 'HK$ ' + str(total)
         #return self.currency + ' ' + str(self.total_amount)
 
@@ -110,14 +104,55 @@ class Project(models.Model):
             id=self.id,
             project_title=self.project_title,
             status=self.status,
-            function_items=fis,#[fi.as_json() for fi in self.function_items.all()],
             details=self.details,
             work_location=self.work_location,
             start_date=str(self.start_date),
             due_date=str(self.due_date),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
-
+    def all_room_items(self):
+        items={}
+        rooms=self.project_rooms.all()
+        for room in rooms:
+            items[room.name]=[]
+            for item in room.room_project_items.all():
+                items[room.name].append(item.as_json())
+        return items
+    def all_items(self):
+        items={}
+        rooms=self.project_rooms.all()
+        for room in rooms:
+            for item in room.room_project_items.all():
+                if item.item.item_type.name not in items:
+                    items[item.item.item_type.name]={"items":[],"sum_price":0}
+                items[item.item.item_type.name]["items"].append(item.as_json())
+                items[item.item.item_type.name]["sum_price"]+=item.unit_price*item.quantity
+        return items
+    def quot_format(self):
+        return dict(
+            quot_upper_format=self.document_format["quot_upper_format"],
+            quot_middle_format=self.document_format["quot_middle_format"],
+            quot_lower_format=self.document_format["quot_lower_format"]
+        )
+    def invoice_format(self):
+        return dict(
+            invoice_upper_format=self.document_format["invoice_upper_format"],
+            invoice_middle_format=self.document_format["invoice_middle_format"],
+            invoice_lower_format=self.document_format["invoice_lower_format"]
+        )
+    def receipt_format(self):
+        return dict(
+            receipt_upper_format=self.document_format["receipt_upper_format"],
+            receipt_middle_format=self.document_format["receipt_middle_format"],
+            receipt_lower_format=self.document_format["receipt_lower_format"]
+        )
+    def quot_preview(self):
+        ret=dict(
+            quot_format=self.quot_format(),
+            items=self.all_items(),
+            charging_stages=self.charging_stages
+        )
+        return ret 
 
     @property
     def created_on_arrow(self):

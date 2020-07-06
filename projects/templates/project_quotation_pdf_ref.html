@@ -1,0 +1,203 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700" rel="stylesheet">
+
+<body style="padding:0;margin:0;font-family: 'Roboto', sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" id="backgroundTable"
+    style="height:auto !important; margin:0; padding:30px 0;font-size:13px; width:800px !important; margin:0px auto; background:#fff;color:#353535;font-family: 'Muli', sans-serif;">
+    <tbody>
+      <tr>
+        <td colspan="2" align="right" style="padding:10px 0;">
+          <span
+            style="color:#F9210B;text-transform: uppercase;font-size: 1.5rem;line-height: initial;font-weight:bold;">{{ quotation.quotation_number }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td align="left" style="padding:15px 0;">
+
+          <address style="line-height:20px;font-style:normal;">
+
+            {% if quotation.from_address.address_line %}
+            {{ quotation.from_address.address_line }}<br>
+            {% endif %}
+            {% if quotation.from_address.street %}
+            {{ quotation.from_address.street }},
+            {% endif %}
+            {% if quotation.from_address.city %}
+            {{ quotation.from_address.city }}<br>
+            {% endif %}
+            {% if quotation.from_address.state %}
+            {{ quotation.from_address.state }},
+            {% endif %}
+            {% if quotation.from_address.postcode %}
+            {{ quotation.from_address.postcode }}<br>
+            {% endif %}
+            {% if quotation.from_address.country %}
+            {{ quotation.from_address.country }}
+            {% endif %}
+          </address>
+
+
+          {% if quotation.created_on %}
+
+          <div style="margin-top:20px;">
+            <strong>Date</strong>
+            <p style="margin:2px 0;">{{ quotation.created_on|date:'d-m-Y' }}</p>
+          </div>
+          {% endif %}
+
+        </td>
+        <td align="right" style="padding:15px 0;">
+          <ul style="margin:0;padding:0;line-height:20px;">
+            <li style="list-style:none;">{{ quotation.email }}</li>
+            {% if quotation.name %}
+            <li style="list-style:none;">{{ quotation.name }}</li>
+            {% endif %}
+            {% if quotation.phone %}
+            <li style="list-style:none;">{{ quotation.phone }}</li>
+            {% endif %}
+          </ul>
+          <address style="line-height:20px;font-style:normal;">
+
+            {% if quotation.to_address.address_line %}
+            {{ quotation.to_address.address_line }}<br>
+            {% endif %}
+            {% if quotation.to_address.street %}
+            {{ quotation.to_address.street }},
+            {% endif %}
+            {% if quotation.to_address.city %}
+            {{ quotation.to_address.city }}<br>
+            {% endif %}
+            {% if quotation.to_address.state %}
+            {{ quotation.to_address.state }},
+            {% endif %}
+            {% if quotation.to_address.postcode %}
+            {{ quotation.to_address.postcode }}<br>
+            {% endif %}
+            {% if quotation.to_address.country %}
+            {{ quotation.to_address.country }}
+            {% endif %}
+          </address>
+          {% if quotation.due_date %}
+          <div style="margin-top:20px;">
+            <strong>Due Date</strong>
+            <p style="margin:2px 0;">{{ quotation.due_date|date:'d-m-Y' }}</p>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="border-top:1px solid #ddd;padding:10px 0;">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+
+        <td colspan="2" style="padding:5px 50px;line-height:20px;">
+          <center>
+            {% if quotation.quotation_title %}
+            <div class="content" style="margin-bottom:20px 0;">
+              <h1>{{ quotation.quotation_title|upper }}</h2>
+            </div>
+            {% endif %}
+          </center>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="padding:5px 50px;line-height:20px;">
+          <center>
+            {% if quotation.details %}
+            <div class="content" style="margin-bottom:20px 0;">
+              <p>{{ quotation.details }}</p>
+            </div>
+            {% endif %}
+          </center>
+        </td>
+
+      </tr>
+      <tr>
+        <td colspan="2">
+          <table class="table"
+            style="width:100%;border-radius: 5px; background: #f4f8f9; padding: 5px; width: 100%; background: #f4f8f9; display: table; border-collapse: separate; border-spacing: 0 6px; border-radius: 0;">
+            <thead style="border-collapse: separate; border-spacing: 0 6px;">
+              <!--
+                <tr>
+                <th
+                  style="padding: 5px 10px;border-top: none;text-transform: uppercase;font-size:13px;border: none;text-align:left;">
+                  ID</th>
+                <th
+                  style="padding: 5px 10px;border-top: none;text-transform: uppercase;font-size:13px;border: none;text-align:left;">
+                  Item Description</th>
+                <th
+                  style="padding: 5px 10px;border-top: none;text-transform: uppercase;font-size:13px;border: none;text-align:left;">
+                  Total</th>
+              </tr>
+            -->
+            </thead>
+            <tbody style="font-size:13px;font-weight:400;">
+              <!--
+              <tr>
+                <td style="padding:8px 10px;vertical-align: middle;background: #fff;font-weight: 550;border: none;">
+                </td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #fff;font-weight: 550;border: none;">
+                </td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #fff;font-weight: 550;border: none;">
+                </td>
+              </tr>
+              -->
+              <tr class="sub_total">
+                {% if quotation.quantity %}
+                <td colspan="2"
+                  style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  <b>Quotation Quantity</b></td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  {{ quotation.quantity }}</td>
+                {% endif %}
+              </tr>
+              <tr class="sub_total">
+                {% if quotation.rate %}
+                <td colspan="2"
+                  style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  <b>Quotation Rate</b></td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  {{ quotation.rate }}</td>
+                {% endif %}
+              </tr>
+              <tr class="sub_total">
+                <td colspan="2"
+                  style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  <b>Quotation Total</b></td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  {{ quotation.formatted_total_amount }}</td>
+              </tr>
+              <!--
+                <tr class="sub_total">
+                <td colspan="2"
+                  style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  <b>Amount Paid</b></td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #dedede;font-weight: 800;border: none;">
+                  {{ quotation.formatted_amount_paid }}</td>
+              </tr>
+              <tr class="total">
+                <td colspan="2"
+                  style="padding:8px 10px;vertical-align: middle;background: #cccccc;font-weight: 800;border: none;">
+                  <b>Amount Due</b></td>
+                <td style="padding:8px 10px;vertical-align: middle;background: #cccccc;font-weight: 800;border: none;">
+                  {{ quotation.formatted_amount_due }}</td>
+              </tr>
+            -->
+            </tbody>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        {% if quotation.footer_text %}
+        <td colspan="2" style="padding:20px 50px;line-height:20px;">
+          <div class="content" style="margin:20px 0;">
+            {{ quotation.footer_text|safe }}
+          </div>
+        </td>
+        {% endif %}
+      </tr>
+    </tbody>
+  </table>
+</body>

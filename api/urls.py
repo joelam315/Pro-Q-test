@@ -43,6 +43,7 @@ from api.views import (
 	GetRoomRelatedItemListView,
 	GetItemMaterials,
 	GetProjectRoomDetailsView,
+	PreviewProjectQuotation
 )
 
 app_name = 'api'
@@ -75,6 +76,7 @@ urlpatterns = [
 	path('project/item/get/all/',GetProjectAllRoomItemView.as_view(),name="get_project_all_items"),
 	path('project/misc/set/',SetProjectMiscView.as_view(),name="set_project_misc"),
 	path('project/misc/get/all/',GetAllProjectMiscView.as_view(),name="get_all_project_misc"),
+	path('project/quot/preview/',PreviewProjectQuotation.as_view(),name="preview_project_quotation"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),

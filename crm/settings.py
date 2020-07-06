@@ -58,6 +58,9 @@ INSTALLED_APPS = [
     'rooms',
     'customers',
     'project_items',
+    'project_misc',
+    'project_expenses',
+    'project_timetable',
     'api'
 ]
 

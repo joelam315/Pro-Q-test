@@ -133,7 +133,6 @@ class RoomItem(models.Model):
 			material=self.material.name,
 			quantity=self.quantity,
 			value=self.value,
-			description=self.item.description,
 			remark=self.remark
 		)
 		formulas=ItemFormula.objects.filter(item=self.item)

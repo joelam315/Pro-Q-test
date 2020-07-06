@@ -19,9 +19,33 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			serializers.ValidationError("You must create a company first.")
+		ccss=company.company_charging_stages
+		cs=[]
+		for i in range(ccss.quantity):
+			r={}
+			r["value"]=ccss.values[i]
+			if ccss.descriptions[i]!=None and ccss.descriptions[i]!="":
+				r["description"]=ccss.descriptions[i]
+			cs.append(r)
+		cdf=company.company_doc_format
+		df={
+			"quot_upper_format":cdf.quot_upper_format,
+			"quot_middle_format":cdf.quot_middle_format,
+			"quot_lower_format":cdf.quot_lower_format,
+			"invoice_upper_format":cdf.invoice_upper_format,
+			"invoice_middle_format":cdf.invoice_middle_format,
+			"invoice_lower_format":cdf.invoice_lower_format,
+			"receipt_upper_format":cdf.receipt_upper_format,
+			"receipt_middle_format":cdf.receipt_middle_format,
+			"receipt_lower_format":cdf.receipt_lower_format
+		}
+
 		project=Project.objects.create(project_title=validated_data["project_title"],
 			district=validated_data["district"],
-			company=company
+			company=company,
+			charging_stages=cs,
+			document_format=df,
+			created_by=user
 		)
 		if validated_data.get("work_location"):
 			project.work_location=validated_data["work_location"]
