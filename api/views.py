@@ -1,9 +1,12 @@
 import datetime
 import json
 import os
+import pdfkit
 
-
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.template.loader import render_to_string
+from django.http.response import HttpResponse, JsonResponse
+from django.conf import settings
 
 from common.models import User
 from common.serializers import CreateUserSerializer,LoginSerializer, PhoneVerifySerializer
@@ -42,6 +45,7 @@ from rest_framework.permissions import (IsAuthenticated,AllowAny,)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from phonenumber_field.phonenumber import PhoneNumber, to_python
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -55,7 +59,7 @@ from rest_framework import status
 from rest_framework import serializers
 
 from django.views.generic import (CreateView, DeleteView, DetailView,
-    TemplateView, UpdateView, View)
+	TemplateView, UpdateView, View)
 
 token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,description="Bearer token required", type=openapi.TYPE_STRING)
 
@@ -463,6 +467,7 @@ class PreviewProjectQuotation(APIView):
 		else:
 			raise serializers.ValidationError("Missing id")
 
+
 class GenerateProjectQuotation(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -472,7 +477,43 @@ class GenerateProjectQuotation(APIView):
 		ret["result"]=True
 		data = request.data
 		project=Project.objects.get(id=data.get("id"))
-		return Response(ret,status=status.HTTP_200_OK)
+		context={}
+		context["company"]=project.company
+		html = render_to_string('project_quotation_pdf.html', context=context)
+		footer=render_to_string('quotation_footer.html',context=context)
+		header=render_to_string('quotation_header.html',context=context,request=request)
+		doc_header_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/doc_header.html"
+		os.makedirs(os.path.dirname(doc_header_path), exist_ok=True)
+		with open(doc_header_path, 'w') as static_file:
+			static_file.write(header)
+
+		options={
+			'enable-local-file-access':'',
+			'page-size': 'Letter',
+	        'margin-top': '1.8in',
+	        'margin-right': '0.75in',
+	        'margin-bottom': '0.5in',
+	        'margin-left': '0.75in',
+	        'encoding': "UTF-8",
+	        'header-html': doc_header_path,
+	        'footer-center': 'Page [page] of [topage]',
+	        'footer-font-name':'Arial,serif',
+	        'footer-font-size':'12'
+		}
+		pdfkit.from_string(html, 'out.pdf', options=options)
+		'''options = {
+			'quiet': ''
+		}
+
+		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
+		pdf = open("out.pdf", 'rb')
+		response = HttpResponse(pdf.read(), content_type='application/pdf')
+		response['Content-Disposition'] = 'attachment; filename=Quotation.pdf'
+		pdf.close()
+		os.remove("out.pdf")
+		#os.remove(doc_header_path)
+		return response
+		#return Response(ret,status=status.HTTP_200_OK)
 	
 #project-customer
 class SetProjectCustomerView(APIView):

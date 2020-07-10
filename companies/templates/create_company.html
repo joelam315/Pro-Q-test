@@ -15,7 +15,6 @@
 </nav>
 {% endblock %}
 {% block content %}
-{% if contact_count %}
 <form id="formid" action='' method="POST" novalidate enctype="multipart/form-data">
   <div class="overview_form_block row marl justify-content-center">
     <div class="col-md-9">
@@ -143,22 +142,6 @@
               </div>
             </div>
             <div class="col-md-4">
-              {% if request.user.is_superuser or request.user.role == 'ADMIN' %}
-              <div class="filter_col col-12">
-                <div class="form-group">
-                  <label for="id_sattus">Teams{% if company_form.teams.field.required %}<span
-                      class="error">*</span>{% endif %}</label>
-                  <select name="teams" id="id_teams" class="assigned_users form-control" multiple>
-                    {% for team in teams %}
-                    <option data-users="{{team.get_users}}" value="{{team.id}}" {% if team in company_obj.teams.all %}
-                      selected="" {% endif %}>
-                      {{team}}</option>
-                    {% endfor %}
-                  </select>
-                  <span class="error" id="id__teams">{{ company_form.teams.errors }}</span>
-                </div>
-              </div>
-              {% endif %}
               <div class="filter_col col-12">
                 <div class="form-group">
                   <label for="exampleInputEmail1">Assign To </label>
@@ -228,11 +211,6 @@
   </div>
   <!-- overview ends here -->
 </form>
-{% else %}
-<div class="justify-content-center text-center">
-  <h3 class="mt-5">Create a <a href="{% url 'contacts:add_contact' %}">contact</a> to create an company</h3>
-</div>
-{% endif %}
 {% endblock %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 {% block js_block %}

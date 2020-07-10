@@ -76,13 +76,6 @@ class Company(models.Model):
     '''lead = models.ForeignKey(
         'leads.Lead', related_name="company_leads",
         on_delete=models.SET_NULL, null=True)'''
-    contact_name = models.CharField(pgettext_lazy(
-        "Name of Contact", "Contact Name"), max_length=120)
-    contacts = models.ManyToManyField(
-        'contacts.Contact', related_name="company_contacts")
-    assigned_to = models.ManyToManyField(
-        User, related_name='company_assigned_users')
-    teams = models.ManyToManyField(Teams, related_name='company_teams')
     owner =models.OneToOneField(User,related_name='owned_company',on_delete=models.CASCADE)
     logo_pic = models.FileField(
         max_length=1000, upload_to=logo_url, null=True, blank=True)

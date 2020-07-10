@@ -155,10 +155,10 @@ class CreateCompanyView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView
                 else:
                     tag = Tags.objects.create(name=t.lower())
                 company_object.tags.add(tag)
-        if self.request.POST.getlist('contacts', []):
+        '''if self.request.POST.getlist('contacts', []):
             company_object.contacts.add(*self.request.POST.getlist('contacts'))
         if self.request.POST.getlist('assigned_to', []):
-            company_object.assigned_to.add(*self.request.POST.getlist('assigned_to'))
+            company_object.assigned_to.add(*self.request.POST.getlist('assigned_to'))'''
         if self.request.FILES.get('company_attachment'):
             attachment = Attachments()
             attachment.created_by = self.request.user
@@ -210,19 +210,19 @@ class CreateCompanyView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView
         if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
             context["leads"] = Lead.objects.exclude(
                 status__in=['converted', 'closed'])
-            context["contacts"] = Contact.objects.all()
+            #context["contacts"] = Contact.objects.all()
         else:
-            context["leads"] = Lead.objects.filter(
+           ''' context["leads"] = Lead.objects.filter(
                 Q(assigned_to__in=[self.request.user]) | Q(created_by=self.request.user)).exclude(
-                status__in=['converted', 'closed'])
+                status__in=['converted', 'closed'])'''
         context["lead_count"] = context["leads"].count()
-        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+        '''if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
             context["lead_count"] = Lead.objects.filter(
                 Q(assigned_to__in=[self.request.user]) | Q(created_by=self.request.user)).exclude(status='closed').count()
             context["contacts"] = Contact.objects.filter(
                 Q(assigned_to__in=[self.request.user]) | Q(created_by=self.request.user))
         context["contact_count"] = context["contacts"].count()
-        context["teams"] = Teams.objects.all()
+        context["teams"] = Teams.objects.all()'''
         return context
 
 
@@ -259,7 +259,7 @@ class CompanyDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView
             "attachments": company_record.company_attachment.all(),
             "opportunity_list": Opportunity.objects.filter(
                 company=company_record),
-            "contacts": company_record.contacts.all(),
+            #"contacts": company_record.contacts.all(),
             "users": User.objects.filter(is_active=True).order_by('email'),
             "cases": Case.objects.filter(company=company_record),
             "stages": STAGES,

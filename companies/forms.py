@@ -42,19 +42,21 @@ class CompanyForm(forms.ModelForm):
         # self.fields["lead"].queryset = Lead.objects.all(
         # ).exclude(status='closed')
         if request_user.role == 'ADMIN':
+            pass
             '''self.fields["lead"].queryset = Lead.objects.filter().exclude(
                 status='closed').order_by('title')'''
-            self.fields["contacts"].queryset = Contact.objects.filter()
-            self.fields["teams"].choices = [(team.get('id'), team.get('name')) for team in Teams.objects.all().values('id', 'name')]
-            self.fields["teams"].required = False
+            '''self.fields["contacts"].queryset = Contact.objects.filter()'''
+            '''self.fields["teams"].choices = [(team.get('id'), team.get('name')) for team in Teams.objects.all().values('id', 'name')]
+            self.fields["teams"].required = False'''
         else:
+            pass
             '''self.fields["lead"].queryset = Lead.objects.filter(
                 Q(assigned_to__in=[request_user]) | Q(created_by=request_user)).exclude(status='closed').order_by('title')'''
-            self.fields["contacts"].queryset = Contact.objects.filter(
-                Q(assigned_to__in=[request_user]) | Q(created_by=request_user))
-            self.fields["teams"].required = False
+            '''self.fields["contacts"].queryset = Contact.objects.filter(
+                Q(assigned_to__in=[request_user]) | Q(created_by=request_user))'''
+            '''self.fields["teams"].required = False'''
 
-        self.fields['assigned_to'].required = False
+        '''self.fields['assigned_to'].required = False'''
         if company_view:
             #self.fields['billing_address_line'].required = True
             #self.fields['billing_street'].required = True
@@ -72,10 +74,10 @@ class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
         fields = ('name', 'phone', 'email', 'website', 'industry',
-                  'description', 'status', 'assigned_to',
+                  'description', 'status',
                   'billing_address_line', 'billing_street',
                   'billing_city', 'billing_state',
-                  'billing_postcode', 'billing_country', 'contacts')
+                  'billing_postcode', 'billing_country')
 
 
 class CompanyCommentForm(forms.ModelForm):
@@ -117,7 +119,7 @@ class EmailForm(forms.ModelForm):
         self.fields['scheduled_date_time'].required = False
         self.fields['scheduled_later'].required = False
         self.fields['recipients'].required = True
-        self.fields['recipients'].query = self.company_obj.contacts.all()
+        #self.fields['recipients'].query = self.company_obj.contacts.all()
         # self.fields['recipients'].choices = list((contact.get('id'), contact.get('email'))
         #     for contact in self.company_obj.contacts.values('id', 'email'))
 
