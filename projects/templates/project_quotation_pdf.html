@@ -1,7 +1,13 @@
+{% load staticfiles %}
+{% load thumbnail %}
 <!DOCTYPE html>
 <html>
-
-<body>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+</head>
+<body style="
+    font-family: Microsoft JhengHei;
+">
 
   <table>
 
@@ -18,8 +24,53 @@
       <tr>
         <td>
           <!--*** CONTENT GOES HERE ***-->
-          <div class="page"> 
-            PAGE 0
+          <div class="page" style="margin: 0 0.05in;"> 
+            <table style="width:100%">
+              <tbody>
+                <tr style="vertical-align: text-top;">
+                  <td>
+                    <table style="margin-left: 0; margin-right: auto;">
+                    <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
+                    <tr><td class="first_td">Co</td><td>:</td></tr>
+                    <tr><td class="first_td">To</td><td>: Calvin</td></tr>
+                    <tr><td class="first_td">From</td><td>: Kingson Wan</td></tr>
+                    <tr><td class="first_td">Ref</td><td>: 工程地點<br>: 維景灣畔15座31樓A室</td></tr>
+                    </table>
+                  </td>
+                  <td>
+                    <table style="margin-right: 0; margin-left: auto;">
+                      <tr><td class="first_td">&nbsp;</td></tr>
+                      <tr><td class="first_td">Date</td><td>: 13 July 2020</td></tr>
+                      <tr><td class="first_td">Job No</td><td>: J2567</td></tr>
+                      <tr><td class="first_td">&nbsp;</td></tr>
+                      <tr><td class="first_td">&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+              
+            </table>
+            <hr size="2" style="color: black;background: black;margin-bottom: 2px;">
+            <hr size="2" style="color: black;background: black;margin-top: 2px;">
+            <table style="width:100%">
+              <colgroup>
+                <col span="1" style="width: 5%;">
+                <col span="1" style="width: 45%;">
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 20%;">
+                <col span="1" style="width: 20%;">
+              </colgroup>
+              <thead>
+                <tr><td>Items</td><td></td><td>Qty</td><td class="item_value">Unit Rate</td><td class="item_value">Amount (HK$)</td></tr>
+              </thead>
+              <tbody>
+                <tr><th class="item_index">1</th><th class="underline item_name">前期項目</th></tr>
+                <tr><td class="item_index">1.1</td><td class="item_name">第三者保險</td><td  class="item_value">1 job</td><td class="item_value">2500</td><td class="item_value">2,500</td></tr>
+                <tr><td class="item_index">1.2</td><td class="item_name"><span style="white-space: pre-line">全屋清拆泥頭,舊有傢俬,門連門框
+                清走全屋所有傢俱,原有房間格及雜物清走以上列出的項目及雜物/工程中廢料/泥頭
+              註：以上費用已包括政府收取之泥頭費用</span></td><td  class="item_value">1 job</td><td class="item_value">2500</td><td class="item_value">2,500</td></tr>
+              </tbody>
+            </table>
           </div>
           <div class="page">
             PAGE 2
@@ -64,6 +115,33 @@
   page-break-after: always;
 }
 
+tr{
+  vertical-align: text-top;
+}
+
+ thead{
+  font-weight: bold; text-decoration:underline;
+ }
+
+ th{
+  font-weight: bold;
+ }
+
+.first_td{
+  padding-right: 50px;
+}
+.underline{
+  text-decoration:underline;
+}
+.item_name{
+  text-align: left;
+}
+.item_index{
+  text-align: center;
+}
+.item_value{
+  text-align: right;
+}
 @page {
   margin: 20mm
 }
