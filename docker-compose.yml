@@ -10,7 +10,7 @@ services:
 
   web:
     build: .
-    image: micropyramid/django-crm:1
+    image: vidarquoteapp/vidarquoteapp:proq_backend
     env_file: 
       - ./db.env
     ports:
