@@ -479,6 +479,8 @@ class GenerateProjectQuotation(APIView):
 		project=Project.objects.get(id=data.get("id"))
 		context={}
 		context["company"]=project.company
+		context["project"]=project
+		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		html = render_to_string('project_quotation_pdf.html', context=context)
 		footer=render_to_string('quotation_footer.html',context=context)
 		header=render_to_string('quotation_header.html',context=context,request=request)
@@ -509,6 +511,98 @@ class GenerateProjectQuotation(APIView):
 		pdf = open("out.pdf", 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
 		response['Content-Disposition'] = 'attachment; filename=Quotation.pdf'
+		pdf.close()
+		os.remove("out.pdf")
+		#os.remove(doc_header_path)
+		return response
+		#return Response(ret,status=status.HTTP_200_OK)
+
+class GenerateProjectInvoice(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		project=Project.objects.get(id=data.get("id"))
+		charging_stage=data.get("charging_stage")
+		context={}
+		context["company"]=project.company
+		context["project"]=project
+		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
+		html = render_to_string('project_invoice_pdf.html', context=context)
+		header=render_to_string('invoice_header.html',context=context,request=request)
+		doc_header_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/doc_header.html"
+		os.makedirs(os.path.dirname(doc_header_path), exist_ok=True)
+		with open(doc_header_path, 'w') as static_file:
+			static_file.write(header)
+
+		options={
+			'enable-local-file-access':'',
+			'page-size': 'Letter',
+	        'margin-top': '1.8in',
+	        'margin-right': '0.75in',
+	        'margin-bottom': '0.5in',
+	        'margin-left': '0.75in',
+	        'encoding': "UTF-8",
+	        'header-html': doc_header_path
+		}
+		pdfkit.from_string(html, 'out.pdf', options=options)
+		'''options = {
+			'quiet': ''
+		}
+
+		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
+		pdf = open("out.pdf", 'rb')
+		response = HttpResponse(pdf.read(), content_type='application/pdf')
+		response['Content-Disposition'] = 'attachment; filename=Invoice.pdf'
+		pdf.close()
+		os.remove("out.pdf")
+		#os.remove(doc_header_path)
+		return response
+		#return Response(ret,status=status.HTTP_200_OK)
+
+class GenerateProjectReceipt(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		project=Project.objects.get(id=data.get("id"))
+		charging_stage=data.get("charging_stage")
+		context={}
+		context["company"]=project.company
+		context["project"]=project
+		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
+		html = render_to_string('project_receipt_pdf.html', context=context)
+		header=render_to_string('receipt_header.html',context=context,request=request)
+		doc_header_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/doc_header.html"
+		os.makedirs(os.path.dirname(doc_header_path), exist_ok=True)
+		with open(doc_header_path, 'w') as static_file:
+			static_file.write(header)
+
+		options={
+			'enable-local-file-access':'',
+			'page-size': 'Letter',
+	        'margin-top': '1.8in',
+	        'margin-right': '0.75in',
+	        'margin-bottom': '0.5in',
+	        'margin-left': '0.75in',
+	        'encoding': "UTF-8",
+	        'header-html': doc_header_path
+		}
+		pdfkit.from_string(html, 'out.pdf', options=options)
+		'''options = {
+			'quiet': ''
+		}
+
+		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
+		pdf = open("out.pdf", 'rb')
+		response = HttpResponse(pdf.read(), content_type='application/pdf')
+		response['Content-Disposition'] = 'attachment; filename=Receipt.pdf'
 		pdf.close()
 		os.remove("out.pdf")
 		#os.remove(doc_header_path)
