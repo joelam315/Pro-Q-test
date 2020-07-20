@@ -1,0 +1,187 @@
+{% load staticfiles %}
+{% load thumbnail %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+</head>
+<body style="
+    font-family: Microsoft JhengHei;
+">
+
+  <table style="width:100%">
+
+    <thead>
+      <tr>
+        <td>
+          <!--place holder for the fixed-position header-->
+          <div class="page-header-space"></div>
+        </td>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td>
+          <!--*** CONTENT GOES HERE ***-->
+          <div style="margin: 0 0.05in;"> 
+            <table style="width:100%">
+              <tbody>
+                <tr style="vertical-align: text-top;">
+                  <td>
+                    <table style="margin-left: 0; margin-right: auto;">
+                    <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
+                    <tr><td class="first_td">Co</td><td>:</td></tr>
+                    <tr><td class="first_td">To</td><td>: Calvin</td></tr>
+                    <tr><td class="first_td">From</td><td>: {{company.owner.name}}</td></tr>
+                    <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
+                    </table>
+                  </td>
+                  <td>
+                    <table style="margin-right: 0; margin-left: auto;">
+                      <tr><td class="first_td">&nbsp;</td></tr>
+                      <tr><td class="first_td">Date</td><td>: {{date}}</td></tr>
+                      <tr><td class="first_td">Job No</td><td>: J2567</td></tr>
+                      <tr><td class="first_td">&nbsp;</td></tr>
+                      <tr><td class="first_td">&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="lrborder" style="width:100%;">
+              <colgroup>
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 60%;">
+                <col span="1" style="width: 30%;">
+              </colgroup>
+              <thead>
+                <tr><td class="allborder">Date</td><td style="border-top: 3px solid;">Description</td><td class="item_value" style="border-top: 3px solid;">Amount (HK$)</td></tr>
+              </thead>
+              <tbody>
+                <tr><td></td><td class="item_name">Total Contract Sum</td><td class="item_value">437,000</td></tr>
+                <tr><td>25-Apr-20</td><td class="item_name">Our Quotation No.Q-200206b dated :9 APR 2020</td><td>&nbsp;</td></tr>
+                <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                <tr><td style="border-bottom: 3px solid"></td><td class="item_name" style="border-bottom: 3px solid">1st Payment=10%(Deposit paid upon signing the quotation)</td><td class="item_value" style="border-bottom: 3px solid">43,700</td></tr>
+                <tr><td class="noborder"></td><td class="noborder"></td><td style="border-bottom: 3px solid"><div style="width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td style="border-left: none;border-right:none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;border-left: none;border-right:none;">17,500</td></tr></table></div><div style="margin-top:2px;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
+              </tbody>
+            </table>
+            <br>
+
+            <br>
+            <br>
+            <div>
+              <table style="width: 100%;">
+                <colgroup>
+                  <col span="1" style="width: 60%;">
+                  <col span="1" style="width: 40%;">
+                </colgroup>
+                <tbody>
+                  <tr>
+                    <td>
+                    </td>
+                    <td>
+                      <span style="white-space: pre-line;font-weight: bold;">
+                        For and on behalf of
+                        {{ company.name }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr style="height:150px; vertical-align: bottom;">
+                    <td>
+                      
+                    </td>
+                    <td>
+                      {% if company.logo_pic %}
+                          {% thumbnail company.logo_pic "125x125" as im %}
+                          <img src="\app/{{ im.url }}">
+                          {% endthumbnail %}
+                      {% endif %}
+                    </td>
+                    
+                  </tr>
+                  <tr>
+                    <td>
+                    </td>
+                    <td>
+                      <div style="width:46.47%;border-top:1px solid;text-align: left;">Authorized Signature</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+<style>
+/* Styles go here */
+
+.page {
+  page-break-after: always;
+}
+table {
+  border-collapse: collapse;
+}
+td{
+  border-collapse: collapse;
+}
+
+tr{
+  vertical-align: text-top;
+}
+
+ thead{
+  font-weight: bold; 
+ }
+
+ th{
+  font-weight: bold;
+  border-collapse: collapse;
+ }
+
+ .allborder{
+  border: 3px solid;
+ }
+
+ .lrborder td{
+   border-left: 3px solid;
+   border-right: 3px solid;
+ }
+
+ .noborder{
+  border:none!Important;
+ }
+
+
+.first_td{
+  padding-right: 50px;
+}
+.underline{
+  text-decoration:underline;
+}
+.item_name{
+  text-align: left;
+}
+.item_index{
+  text-align: center;
+}
+.item_value{
+  text-align: right;
+}
+@page {
+  margin: 20mm
+}
+
+@media print {
+   thead {display: table-header-group;} 
+   tfoot {display: table-footer-group;}
+   
+   button {display: none;}
+   
+   body {margin: 0;}
+}
+</style>
+</html>

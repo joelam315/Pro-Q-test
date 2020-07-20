@@ -1,0 +1,57 @@
+{% load staticfiles %}
+{% load thumbnail %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+</head>
+<body style="
+    font-family: Microsoft JhengHei;
+">
+
+{% block content %}
+<table>
+	<tbody>
+		<tr>
+			<td rowspan="5">
+				{% if company.logo_pic %}
+                   	{% thumbnail company.logo_pic "125x125" as im %}
+                    <img src="\app/{{ im.url }}">
+                    {% endthumbnail %}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size: 14px;font-weight: 900;font-family: 'Arial Black', Gadget, sans-serif">
+            	{{ company.name|upper }}
+            </td>
+		</tr>
+		{% if company.billing_address_line%}
+		<tr>
+            <td style="font-size: 9px;">
+            	Address: {{ company.billing_address_line }}
+            </td>
+		</tr>
+		{% endif %}
+		<tr>
+            <td style="font-size: 9px;">
+            	Tel: {{ company.phone }}
+            </td>
+		</tr>
+		<tr>	
+            <td style="font-size: 9px;">
+            	Fax: (852) 3705-8465
+            </td>
+		</tr>
+	</tbody>
+</table>
+<br>
+<div style="margin: 0 0.05in;text-align:center;">
+<span style="text-align:center;font-size:16;">RECEIPT</span>
+<br>
+<span style="text-align:center;font-size:16;">收據</span>
+<hr size="3" style="color: black;background: black;">
+</div>
+{% endblock content %}
+</body>
+</html>
