@@ -1,5 +1,5 @@
 from django import forms
-from .models import Company, Email
+from .models import Company, Email,ChargingStages
 from common.models import Comment, Attachments, User
 #from leads.models import Lead
 from contacts.models import Contact
@@ -165,3 +165,16 @@ class EmailForm(forms.ModelForm):
         if count != 0:
             raise forms.ValidationError('Brackets do not match, Enter valid tags.')
         return message_body
+
+from django import forms
+
+
+
+class ChargingStagesForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['descriptions'].delimiter = '|'  # Or whichever other character you want.
+
+    class Meta:
+        model = ChargingStages
+        fields = '__all__'

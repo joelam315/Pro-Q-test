@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     'project_misc',
     'project_expenses',
     'project_timetable',
-    'api'
+    'api',
 ]
 
 MIDDLEWARE = [

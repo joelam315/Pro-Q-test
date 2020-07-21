@@ -94,6 +94,17 @@ class Company(models.Model):
     class Meta:
         ordering = ['-created_on']
 
+    def get_general_remarks_json(self):
+        general_remarks=self.company_general_remarks.order_by('index')
+        return [general_remark.as_json() for general_remark in general_remarks]
+
+    def get_charging_stages_json(self):
+        charging_stages=self.company_charging_stages
+        ret=[]
+        for i in range(charging_stages.quantity-1):
+            ret.append({"index":i+1,"value":charging_stages.values[i],"content":charging_stages.descriptions[i]})
+        return ret
+
     def get_complete_address(self):
         address = ""
         if self.billing_address_line:
@@ -220,7 +231,7 @@ class GeneralRemark(models.Model):
     content=models.TextField()
 
     def __str__(self):
-        return str(self.company)+" Remark: "+self.index
+        return str(self.company)+" Remark: "+str(self.index)
 
     def as_json(self):
         return dict(

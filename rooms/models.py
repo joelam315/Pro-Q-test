@@ -103,7 +103,7 @@ class RoomItem(models.Model):
 
 	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
 	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.CASCADE)
-	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True)
+	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True,blank=True)
 	unit_price = models.DecimalField(
         max_digits=12, decimal_places=2)
 	value=JSONField(null=True,blank=True)
@@ -130,11 +130,13 @@ class RoomItem(models.Model):
 			id=self.id,
 			name=self.item.name,
 			unit_price=float(self.unit_price),
-			material=self.material.name,
+			room=self.room.name,
 			quantity=self.quantity,
 			value=self.value,
 			remark=self.remark
 		)
+		if self.material:
+			ret["material"]=self.material.name
 		formulas=ItemFormula.objects.filter(item=self.item)
 		rfps={rfp.name:rfp.cal(self.value) for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
 		vbp=self.material.value_based_price if self.material!=None and self.material.value_based_price!=None else self.item.value_based_price 

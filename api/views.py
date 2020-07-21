@@ -347,8 +347,7 @@ class GetChargingStagesView(APIView):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		charging_stages=ChargingStages.objects.get(company=company)
-		ret["charging_stages"]=charging_stages.as_json()
+		ret["charging_stages"]=company.get_charging_stages_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 #general remarks
@@ -402,8 +401,7 @@ class GetGeneralRemarksView(APIView):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		general_remarks=GeneralRemark.objects.filter(company=company).order_by('index')
-		ret["general_remarks"]=[general_remark.as_json() for general_remark in general_remarks]
+		ret["general_remarks"]=company.get_general_remarks_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 #project
@@ -477,10 +475,14 @@ class GenerateProjectQuotation(APIView):
 		ret["result"]=True
 		data = request.data
 		project=Project.objects.get(id=data.get("id"))
+		
 		context={}
 		context["company"]=project.company
 		context["project"]=project
+		context["items"]=project.all_items()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
+		context["general_remarks"]=project.company.get_general_remarks_json()
+		context["charging_stages"]=project.company.get_charging_stages_json()
 		html = render_to_string('project_quotation_pdf.html', context=context)
 		footer=render_to_string('quotation_footer.html',context=context)
 		header=render_to_string('quotation_header.html',context=context,request=request)
@@ -699,7 +701,33 @@ class GetProjectRoomDetailsView(APIView):
 		data=request.data
 		room=Room.objects.get(id=data["room_id"])
 		ret["room"]=room.details()
-		return Response(ret, status=status.HTTP_200_OK)		
+		return Response(ret, status=status.HTTP_200_OK)
+
+#project-item
+
+#project-room-item
+class GetProjectAllItemView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=RoomItem
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		project=Project.objects.get(id=data["project_id"])
+		if project.company.owner!=request.user:
+			raise PermissionDenied
+		'''rooms=project.project_rooms.all()
+		items={}
+		for room in rooms:
+			items[room.name]=[]
+			for item in room.room_project_items.all():
+				items[room.name].append(item.as_json())'''
+
+
+		ret["items"]=project.all_items()
+		return Response(ret,status=status.HTTP_200_OK)		
 
 #project-room-item
 class GetProjectAllRoomItemView(APIView):

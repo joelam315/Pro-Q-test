@@ -20,7 +20,6 @@ class Project(models.Model):
     created_by = models.ForeignKey(
         User, related_name='project_created_by',
         on_delete=models.SET_NULL, null=True)
-
     amount_due = models.DecimalField(
         blank=True, null=True, max_digits=12, decimal_places=2)
     amount_paid = models.DecimalField(

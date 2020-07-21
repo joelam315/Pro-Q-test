@@ -1,5 +1,6 @@
 {% load staticfiles %}
 {% load thumbnail %}
+{% load general %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -32,7 +33,7 @@
                     <table style="margin-left: 0; margin-right: auto;">
                     <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
                     <tr><td class="first_td">Co</td><td>:</td></tr>
-                    <tr><td class="first_td">To</td><td>: Calvin</td></tr>
+                    <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
                     <tr><td class="first_td">From</td><td>: {{company.owner.name}}</td></tr>
                     <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
@@ -41,7 +42,7 @@
                     <table style="margin-right: 0; margin-left: auto;">
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">Date</td><td>: {{date}}</td></tr>
-                      <tr><td class="first_td">Job No</td><td>: J2567</td></tr>
+                      <!--<tr><td class="first_td">Job No</td><td>: J2567</td></tr>-->
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                     </table>
@@ -63,7 +64,19 @@
               <thead>
                 <tr><td>Items</td><td></td><td>Qty</td><td class="item_value">Unit Rate</td><td class="item_value">Amount (HK$)</td></tr>
               </thead>
-              <tbody>
+              <tbody id="items_content">
+
+                {% for type,arr in items.items %}
+
+                <tr><th class="item_index">1</th><th class="underline item_name">{{type}}</th></tr>
+                {% for item in arr.items %}
+
+                <tr><td class="item_index">1.{{ forloop.counter }}</td><td class="item_name">{{item.name}}</td><td  class="item_value">{{item.quantity}} job</td><td class="item_value">{{item.unit_price}}</td><td class="item_value">{{item.quantity|multipy:item.unit_price}}</td></tr>
+
+                {% endfor %}
+
+                {% endfor %}
+
                 <!-- 前期項目 -->
                 <tr><th class="item_index">1</th><th class="underline item_name">前期項目</th></tr>
                 <tr><td class="item_index">1.1</td><td class="item_name">第三者保險</td><td  class="item_value">1 job</td><td class="item_value">2500</td><td class="item_value">2,500</td></tr>
@@ -99,7 +112,7 @@
             </table>
             <br>
             <div>
-              <span style="white-space: pre-line;">
+              <span style="white-space: pre-line;" id="general_remarks_content">
                 備註:
                 註1工程進行期間,客人不可存放任何私人物品,傢俱,電器等於工程地盤內,如有任何損壞或遺失,本公司一概不負責!
                 註2:以上工程價目已包現場傢俬收口
@@ -133,7 +146,7 @@
                 <col span="1" style="width: 10%;">
                 <col span="1" style="width: 70%;">
               </colgroup>
-              <tbody>
+              <tbody id="charging_stages_content">
                 <tr><td>Payment Terms:</td></tr>
                 <tr><td>1st payment</td><td class="item_value" style="padding-right: 20px">10%</td><td>(報價單簽署確定及) deposit paid upon signing the quotation.</td></tr>
                 <tr><td>2nd payment</td><td class="item_value" style="padding-right: 20px">20%</td><td>(施工前付) to be paid before starting.</td></tr>
@@ -201,6 +214,63 @@
     </tbody>
   </table>
 </body>
+<script>
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function getGetOrdinal (n) {
+    var s=["th","st","nd","rd"],
+      v=n%100;
+    return n+(s[(v-20)%10]||s[v]||s[0]);
+  }
+
+  (function(){
+
+    var items_content="";
+    var general_remarks_content="";
+    var charging_stages_content="";
+    var i=0;
+    {% for type,arr in items.items %}
+      i++;
+      items_content+='<tr><th class="item_index">'+i+'</th><th class="underline item_name">{{type}}</th></tr>';
+      {% for item in arr.items %}
+        var unit_price={{item.unit_price}}
+        var quantity={{item.quantity}}
+
+        items_content+='<tr><td class="item_index">'+i+'.{{ forloop.counter }}</td><td class="item_name">{{item.name}}({{item.room}})</td><td  class="item_value">{{item.quantity}} job</td><td class="item_value">'+unit_price.toString()+'</td><td class="item_value">'+numberWithCommas(unit_price*quantity)+'</td></tr>';
+      {% endfor %}
+
+      items_content+='<tr style=""><td colspan="3"></td><td colspan="2"><div style="border-top:1px solid;border-bottom:1px solid;width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td>Sub Total: </td><td style="text-align: right;">'+numberWithCommas({{arr.sum_price}})+'</td></tr></table></div><div style="margin-top:2px;border-top:1px solid;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>'
+        
+       items_content+='<tr><td>&nbsp;</td></tr>'
+
+    {% endfor %}
+
+    general_remarks_content+="備註:\n";
+
+    {% for general_remark in general_remarks %}
+
+      general_remarks_content+="註{{forloop.counter}}: {{general_remark.content}}\n";
+
+    {% endfor %}
+
+    charging_stages_content+="<tr><td>Payment Terms:</td></tr>"
+
+    {% for charging_stage in charging_stages %}
+                
+      charging_stages_content+='<tr><td>'+getGetOrdinal({{forloop.counter}})+' payment</td><td class="item_value" style="padding-right: 20px">{{charging_stage.value}}%</td><td>{{charging_stage.content}}</td></tr>'
+
+    {% endfor %}
+
+    document.getElementById("items_content").innerHTML=items_content;
+    document.getElementById("general_remarks_content").innerHTML=general_remarks_content;
+    document.getElementById("charging_stages_content").innerHTML=charging_stages_content;
+  })();
+
+
+
+</script>
 <style>
 /* Styles go here */
 
