@@ -32,8 +32,8 @@
                     <table style="margin-left: 0; margin-right: auto;">
                     <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
                     <tr><td class="first_td">Co</td><td>:</td></tr>
-                    <tr><td class="first_td">To</td><td>: Calvin</td></tr>
-                    <tr><td class="first_td">From</td><td>: {{company.owner.name}}</td></tr>
+                    <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
+                    <tr><td class="first_td">From</td><td>: {{company.owner.first_name}} {{company.owner.last_name}}</td></tr>
                     <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
                   </td>
@@ -41,7 +41,7 @@
                     <table style="margin-right: 0; margin-left: auto;">
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">Date</td><td>: {{date}}</td></tr>
-                      <tr><td class="first_td">Job No</td><td>: J2567</td></tr>
+                      <tr><td class="first_td">Job No</td><td id="job_no_content"></td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                     </table>
@@ -117,6 +117,32 @@
     </tbody>
   </table>
 </body>
+<script>
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function getGetOrdinal (n) {
+    var s=["th","st","nd","rd"],
+      v=n%100;
+    return n+(s[(v-20)%10]||s[v]||s[0]);
+  }
+
+  function prependZero(digit,number) { 
+    var str="";
+    for(var i=0;i<digit-number.toString().length;i++){
+      str+="0";
+    }
+    str+=number.toString();
+    return str;
+  }
+
+  (function(){
+    var job_no_content=": J"+prependZero(4,{{project.job_no}});
+
+    document.getElementById("job_no_content").innerHTML=job_no_content;
+  })();
+</script>
 <style>
 /* Styles go here */
 

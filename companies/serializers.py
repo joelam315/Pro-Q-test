@@ -1,7 +1,7 @@
 import PIL
 
 from django import forms
-from companies.models import Company,DocumentFormat,ChargingStages,GeneralRemark
+from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from rest_framework import serializers
 
 
@@ -145,18 +145,18 @@ class SetChargingStagesSerializer(serializers.ModelSerializer):
 		charging_stages=ChargingStages.objects.update_or_create (company=company,defaults={"quantity":validated_data["quantity"],"values":validated_data["values"],"descriptions":validated_data["descriptions"]})
 		return charging_stages[0]
 
-class GeneralRemarkSerializer(serializers.ModelSerializer):
+class QuotationGeneralRemarkSerializer(serializers.ModelSerializer):
 	class Meta:
-		model=GeneralRemark
+		model=QuotationGeneralRemark
 		fields=(
 			"index",
 			"content"
 		)
 
-class SetGeneralRemarkSerializer(serializers.ModelSerializer):
+class SetQuotationGeneralRemarkSerializer(serializers.ModelSerializer):
 	
 	class Meta:
-		model=GeneralRemark
+		model=QuotationGeneralRemark
 		fields=(
 			"index",
 			"content"
@@ -170,5 +170,61 @@ class SetGeneralRemarkSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
-		general_remark=GeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
+		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
+		return general_remark[0]
+
+class InvoiceGeneralRemarkSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=InvoiceGeneralRemark
+		fields=(
+			"index",
+			"content"
+		)
+
+class SetInvoiceGeneralRemarkSerializer(serializers.ModelSerializer):
+	
+	class Meta:
+		model=InvoiceGeneralRemark
+		fields=(
+			"index",
+			"content"
+		)
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise serializers.ValidationError("You must create a company first.")
+		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
+		return general_remark[0]
+
+class ReceiptGeneralRemarkSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ReceiptGeneralRemark
+		fields=(
+			"index",
+			"content"
+		)
+
+class SetReceiptGeneralRemarkSerializer(serializers.ModelSerializer):
+	
+	class Meta:
+		model=ReceiptGeneralRemark
+		fields=(
+			"index",
+			"content"
+		)
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise serializers.ValidationError("You must create a company first.")
+		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
 		return general_remark[0]

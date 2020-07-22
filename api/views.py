@@ -11,16 +11,20 @@ from django.conf import settings
 from common.models import User
 from common.serializers import CreateUserSerializer,LoginSerializer, PhoneVerifySerializer
 from common.utils import HK_DISTRICT
-from companies.models import Company,DocumentFormat,ChargingStages,GeneralRemark
+from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from companies.serializers import (
 	SetCompanySerializer, 
 	CompanySerializer, 
 	SetDocumentFormatSerializer,
 	SetChargingStagesSerializer,
-	SetGeneralRemarkSerializer,
+	SetQuotationGeneralRemarkSerializer,
+	SetInvoiceGeneralRemarkSerializer,
+	SetReceiptGeneralRemarkSerializer,
 	DocumentFormatSerializer,
 	ChargingStagesSerializer,
-	GeneralRemarkSerializer
+	QuotationGeneralRemarkSerializer,
+	InvoiceGeneralRemarkSerializer,
+	ReceiptGeneralRemarkSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project
@@ -351,15 +355,15 @@ class GetChargingStagesView(APIView):
 		return Response(ret, status=status.HTTP_200_OK)
 
 #general remarks
-class SetGeneralRemarksView(APIView):
+class SetQuotationGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
-	serializer_class = SetGeneralRemarkSerializer
+	serializer_class = SetQuotationGeneralRemarkSerializer
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company general remark.", 
 		security=[{'Bearer': []}],
-		request_body=SetGeneralRemarkSerializer,
+		request_body=SetQuotationGeneralRemarkSerializer,
 		manual_parameters=[token_param],
 		responses={
 			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
@@ -376,24 +380,130 @@ class SetGeneralRemarksView(APIView):
 			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
 		for i in range(len(data)):
 			data[i]["index"]=i+1
-		serialized = SetGeneralRemarkSerializer(data=data,context={'request': request},many=True)
+		serialized = SetQuotationGeneralRemarkSerializer(data=data,context={'request': request},many=True)
 		serialized.is_valid(raise_exception=True)
 		general_remarks=serialized.save()
 		[general_remark.save() for general_remark in general_remarks]
-		GeneralRemark.objects.filter(index__gt=len(data)).delete()
+		QuotationGeneralRemark.objects.filter(index__gt=len(data)).delete()
 		return Response(ret, status=status.HTTP_200_OK)
 
-class GetGeneralRemarksView(APIView):
+class GetQuotationGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
-	model=GeneralRemark
+	model=QuotationGeneralRemark
 
 	@swagger_auto_schema(
 		operation_description="Get user's company general remarks.", 
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: GeneralRemarkSerializer(many=True),
+			status.HTTP_200_OK: QuotationGeneralRemarkSerializer(many=True),
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		company=Company.objects.get(owner=request.user)
+		ret["general_remarks"]=company.get_general_remarks_json()
+		return Response(ret, status=status.HTTP_200_OK)
+
+class SetInvoiceGeneralRemarksView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class = SetInvoiceGeneralRemarkSerializer
+
+	@swagger_auto_schema(
+		operation_description="Create/update user's company general remark.", 
+		security=[{'Bearer': []}],
+		request_body=SetInvoiceGeneralRemarkSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if len(data)>99:
+			ret["result"]=False
+			ret["reason"]="Too many remarks"
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
+		for i in range(len(data)):
+			data[i]["index"]=i+1
+		serialized = SetInvoiceGeneralRemarkSerializer(data=data,context={'request': request},many=True)
+		serialized.is_valid(raise_exception=True)
+		general_remarks=serialized.save()
+		[general_remark.save() for general_remark in general_remarks]
+		InvoiceGeneralRemark.objects.filter(index__gt=len(data)).delete()
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetInvoiceGeneralRemarksView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=InvoiceGeneralRemark
+
+	@swagger_auto_schema(
+		operation_description="Get user's company general remarks.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: InvoiceGeneralRemarkSerializer(many=True),
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		company=Company.objects.get(owner=request.user)
+		ret["general_remarks"]=company.get_general_remarks_json()
+		return Response(ret, status=status.HTTP_200_OK)
+
+class SetReceiptGeneralRemarksView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class = SetReceiptGeneralRemarkSerializer
+
+	@swagger_auto_schema(
+		operation_description="Create/update user's company general remark.", 
+		security=[{'Bearer': []}],
+		request_body=SetReceiptGeneralRemarkSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if len(data)>99:
+			ret["result"]=False
+			ret["reason"]="Too many remarks"
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
+		for i in range(len(data)):
+			data[i]["index"]=i+1
+		serialized = SetReceiptGeneralRemarkSerializer(data=data,context={'request': request},many=True)
+		serialized.is_valid(raise_exception=True)
+		general_remarks=serialized.save()
+		[general_remark.save() for general_remark in general_remarks]
+		ReceiptGeneralRemark.objects.filter(index__gt=len(data)).delete()
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetReceiptGeneralRemarksView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ReceiptGeneralRemark
+
+	@swagger_auto_schema(
+		operation_description="Get user's company general remarks.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ReceiptGeneralRemarkSerializer(many=True),
 			status.HTTP_400_BAD_REQUEST: "Validation Error"
 		}
 	)
@@ -481,8 +591,9 @@ class GenerateProjectQuotation(APIView):
 		context["project"]=project
 		context["items"]=project.all_items()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
-		context["general_remarks"]=project.company.get_general_remarks_json()
-		context["charging_stages"]=project.company.get_charging_stages_json()
+		context["general_remarks"]=project.company.get_quotation_general_remarks_json()
+		context["charging_stages"]=project.charging_stages
+		context["quotation_no"]=project.generate_quot_no()
 		html = render_to_string('project_quotation_pdf.html', context=context)
 		footer=render_to_string('quotation_footer.html',context=context)
 		header=render_to_string('quotation_header.html',context=context,request=request)
@@ -519,6 +630,21 @@ class GenerateProjectQuotation(APIView):
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
+class PreviewProjectInvoice(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("id"):
+			project=Project.objects.get(id=data.get("id"))
+			ret["invoice_preview"]=project.invoice_preview()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			raise serializers.ValidationError("Missing id")
+
 class GenerateProjectInvoice(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -532,6 +658,7 @@ class GenerateProjectInvoice(APIView):
 		context={}
 		context["company"]=project.company
 		context["project"]=project
+		context["charging_stage"];
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		html = render_to_string('project_invoice_pdf.html', context=context)
 		header=render_to_string('invoice_header.html',context=context,request=request)

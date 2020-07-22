@@ -31,10 +31,10 @@
                 <tr style="vertical-align: text-top;">
                   <td>
                     <table style="margin-left: 0; margin-right: auto;">
-                    <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
+                    <tr> <td class="first_td">No.</td><td>{{quotation_no}}</td></tr>
                     <tr><td class="first_td">Co</td><td>:</td></tr>
                     <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
-                    <tr><td class="first_td">From</td><td>: {{company.owner.name}}</td></tr>
+                    <tr><td class="first_td">From</td><td>: {{company.owner.first_name}} {{company.owner.last_name}}</td></tr>
                     <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
                   </td>
@@ -42,7 +42,7 @@
                     <table style="margin-right: 0; margin-left: auto;">
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">Date</td><td>: {{date}}</td></tr>
-                      <!--<tr><td class="first_td">Job No</td><td>: J2567</td></tr>-->
+                      <tr><td class="first_td">Job No</td><td id="job_no_content"></td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                     </table>
@@ -113,18 +113,6 @@
             <br>
             <div>
               <span style="white-space: pre-line;" id="general_remarks_content">
-                備註:
-                註1工程進行期間,客人不可存放任何私人物品,傢俱,電器等於工程地盤內,如有任何損壞或遺失,本公司一概不負責!
-                註2:以上工程價目已包現場傢俬收口
-                註3:廚櫃用實木夾板料,外用$200件富美家/西德防火膠板 所有掩門較用台灣緩沖油壓較,柜桶用三節路軌
-                註4: 木器傢俬用實木夾板料, 外用木皮面料. 內籠用白膠板
-                註5: 所有全高身木器傢俬到天花
-                註6: 完工後有一年的維修保養責任,不包人為損壞,樓宇結構問題
-                註7:所有木器傢俱包出施工圖及3D效果圖
-                註8:所有雲石包$80/sq/ft 之價格雲石
-                註9:3D效果圖的傢俱,燈飾不能作交貨標準,只供參巧之用
-                註10:所有木器傢俬不包燈飾配件(如LED燈帶,射燈等), 如需燈飾則要額外報價
-                註11: 以下材料會由戶住提供:**廚房,厠所牆身及地下磁磚**厠所坐厠,洗手盆,五金,潔具**廚房鋅盆,硬件,五金**全屋燈飾(除廚、厠筒燈)
               </span>
             </div>
             <br>
@@ -136,7 +124,7 @@
             <div>
               <span style="white-space: pre-line;">
                 施工期:
-                60工作天
+                ?工作天
               </span>
             </div>
             <br>
@@ -147,13 +135,6 @@
                 <col span="1" style="width: 70%;">
               </colgroup>
               <tbody id="charging_stages_content">
-                <tr><td>Payment Terms:</td></tr>
-                <tr><td>1st payment</td><td class="item_value" style="padding-right: 20px">10%</td><td>(報價單簽署確定及) deposit paid upon signing the quotation.</td></tr>
-                <tr><td>2nd payment</td><td class="item_value" style="padding-right: 20px">20%</td><td>(施工前付) to be paid before starting.</td></tr>
-                <tr><td>3rd payment</td><td class="item_value" style="padding-right: 20px">20%</td><td>(完成水電日付) to be paid after drainage and electrical work</td></tr>
-                <tr><td>4th payment</td><td class="item_value" style="padding-right: 20px">40%</td><td>(傢俬日付) to be paid on after furniture ordering</td></tr>
-                <tr><td>5th payment</td><td class="item_value" style="padding-right: 20px">5%</td><td>(完工日付) to be paid on after job handover.</td></tr>
-                <tr><td>6th payment</td><td class="item_value" style="padding-right: 20px">5%</td><td>(完工30日付) to be paid on after job handover 30 celendar day.</td></tr>
               </tbody>
             </table>
             <div>
@@ -225,6 +206,15 @@
     return n+(s[(v-20)%10]||s[v]||s[0]);
   }
 
+  function prependZero(digit,number) { 
+    var str="";
+    for(var i=0;i<digit-number.toString().length;i++){
+      str+="0";
+    }
+    str+=number.toString();
+    return str;
+  }
+
   (function(){
 
     var items_content="";
@@ -259,10 +249,13 @@
 
     {% for charging_stage in charging_stages %}
                 
-      charging_stages_content+='<tr><td>'+getGetOrdinal({{forloop.counter}})+' payment</td><td class="item_value" style="padding-right: 20px">{{charging_stage.value}}%</td><td>{{charging_stage.content}}</td></tr>'
+      charging_stages_content+='<tr><td>'+getGetOrdinal({{forloop.counter}})+' payment</td><td class="item_value" style="padding-right: 20px">{{charging_stage.value}}%</td><td>{{charging_stage.description}}</td></tr>'
 
     {% endfor %}
 
+    var job_no_content=": J"+prependZero(4,{{project.job_no}});
+
+    document.getElementById("job_no_content").innerHTML=job_no_content;
     document.getElementById("items_content").innerHTML=items_content;
     document.getElementById("general_remarks_content").innerHTML=general_remarks_content;
     document.getElementById("charging_stages_content").innerHTML=charging_stages_content;

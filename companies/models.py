@@ -47,6 +47,7 @@ class Company(models.Model):
         _("Industry Type"),
         max_length=255, choices=INDCHOICES,
         blank=True, null=True)
+    job_no=models.PositiveIntegerField(default=1)
     # billing_address = models.ForeignKey(
     #     Address, related_name='company_billing_address', on_delete=models.CASCADE, blank=True, null=True)
     # shipping_address = models.ForeignKey(
@@ -94,14 +95,22 @@ class Company(models.Model):
     class Meta:
         ordering = ['-created_on']
 
-    def get_general_remarks_json(self):
-        general_remarks=self.company_general_remarks.order_by('index')
+    def get_quotation_general_remarks_json(self):
+        general_remarks=self.company_quotation_general_remarks.order_by('index')
+        return [general_remark.as_json() for general_remark in general_remarks]
+
+    def get_invoice_general_remarks_json(self):
+        general_remarks=self.company_invoice_general_remarks.order_by('index')
+        return [general_remark.as_json() for general_remark in general_remarks]
+
+    def get_receipt_general_remarks_json(self):
+        general_remarks=self.company_receipt_general_remarks.order_by('index')
         return [general_remark.as_json() for general_remark in general_remarks]
 
     def get_charging_stages_json(self):
         charging_stages=self.company_charging_stages
         ret=[]
-        for i in range(charging_stages.quantity-1):
+        for i in range(charging_stages.quantity):
             ret.append({"index":i+1,"value":charging_stages.values[i],"content":charging_stages.descriptions[i]})
         return ret
 
@@ -224,14 +233,44 @@ class ChargingStages(models.Model):
             descriptions=self.descriptions
         )
 
-class GeneralRemark(models.Model):
-    company =models.ForeignKey(Company,related_name='company_general_remarks',on_delete=models.CASCADE)
+class QuotationGeneralRemark(models.Model):
+    company =models.ForeignKey(Company,related_name='company_quotation_general_remarks',on_delete=models.CASCADE)
 
     index=models.PositiveIntegerField()
     content=models.TextField()
 
     def __str__(self):
-        return str(self.company)+" Remark: "+str(self.index)
+        return str(self.company)+"Quotation Remark: "+str(self.index)
+
+    def as_json(self):
+        return dict(
+            index=self.index,
+            content=self.content
+        )
+
+class InvoiceGeneralRemark(models.Model):
+    company =models.ForeignKey(Company,related_name='company_invoice_general_remarks',on_delete=models.CASCADE)
+
+    index=models.PositiveIntegerField()
+    content=models.TextField()
+
+    def __str__(self):
+        return str(self.company)+"Invoice Remark: "+str(self.index)
+
+    def as_json(self):
+        return dict(
+            index=self.index,
+            content=self.content
+        )
+
+class ReceiptGeneralRemark(models.Model):
+    company =models.ForeignKey(Company,related_name='company_receipt_general_remarks',on_delete=models.CASCADE)
+
+    index=models.PositiveIntegerField()
+    content=models.TextField()
+
+    def __str__(self):
+        return str(self.company)+"Receipt Remark: "+str(self.index)
 
     def as_json(self):
         return dict(

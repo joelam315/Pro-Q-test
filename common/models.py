@@ -38,7 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(('date joined'), auto_now_add=True)
-    role = models.CharField(max_length=50, choices=ROLES)
+    role = models.CharField(max_length=50, choices=ROLES,default="USER")
     profile_pic = models.FileField(
         max_length=1000, upload_to=img_url, null=True, blank=True)
     has_sales_access = models.BooleanField(default=False)

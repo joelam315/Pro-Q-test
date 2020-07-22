@@ -1,4 +1,6 @@
 import arrow
+import math
+from decimal import Decimal
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -6,16 +8,29 @@ from django.contrib.postgres.fields import JSONField,ArrayField
 from common.models import Address, User
 from common.utils import CURRENCY_CODES,HK_DISTRICT
 from companies.models import Company
+from companies.utils import *
 from phonenumber_field.modelfields import PhoneNumberField
 from teams.models import Teams
 from function_items.models import FunctionItem, FunctionItemHistory,SubFunctionItem, SubFunctionItemHistory
 from projects.utils import PROJECT_STATUS
 
+def number2alphabet(number):
+    str=""
+    clone=Decimal(number)
+    while clone>0:
+        letterNum=Decimal((clone-1)%26)
+        letter=chr(letterNum+65)
+        str=letter+str
+        clone=(clone-(letterNum+1))/26
+    
+    return str
 
 class Project(models.Model):
     """Model definition for Project."""
 
     project_title = models.CharField(_('Project Title'), max_length=50)
+    quotation_no =models.CharField(max_length=50,blank=True, null=True)
+    job_no=models.PositiveIntegerField()
     created_on = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User, related_name='project_created_by',
@@ -52,14 +67,16 @@ class Project(models.Model):
 
     def total_amount(self):
         total=0
-        
+        rooms=self.project_rooms.all()
+        for room in rooms:
+            for item in room.room_project_items.all():
+                total+=item.unit_price*item.quantity
         return total
         #return self.currency + ' ' + str(self.total_amount)
 
     def formatted_total_amount(self):
-        total=0
         
-        return 'HK$ ' + str(total)
+        return 'HK$ ' + str(self.total_amount())
         #return self.currency + ' ' + str(self.total_amount)
 
     def is_draft(self):
@@ -127,6 +144,7 @@ class Project(models.Model):
                 items[item.item.item_type.name]["items"].append(item.as_json())
                 items[item.item.item_type.name]["sum_price"]+=item.unit_price*item.quantity
         return items
+
     def quot_format(self):
         return dict(
             quot_upper_format=self.document_format["quot_upper_format"],
@@ -153,6 +171,31 @@ class Project(models.Model):
         )
         return ret 
 
+    def invoice_preview(self,stage_id):
+        ret=dict(
+            invoice_format=self.invoice_format(),
+            charging_stage=self.charging_stages[stage_id]
+        )
+    def generate_quot_no(self):
+        quot_no=""
+        quot_format=self.quot_format()
+        quot_no+=quot_format["quot_upper_format"]
+        quot_no+="-"
+        if quot_format["quot_middle_format"]=="Date":
+            quot_no+=self.created_on.strftime("%Y%m%d")
+        elif quot_format["quot_middle_format"]=="Number":
+            quot_no+=str(self.job_no)
+        elif quot_format["quot_middle_format"]=="Alphabet":
+            quot_no+=number2alphabet(self.job_no)
+
+        if quot_format["quot_lower_format"]=="Date":
+            quot_no+=self.created_on.strftime("%Y%m%d")
+        elif quot_format["quot_lower_format"]=="Number":
+            quot_no+=str(self.job_no)
+        elif quot_format["quot_lower_format"]=="Alphabet":
+            quot_no+=number2alphabet(self.job_no) 
+
+        return quot_no
     @property
     def created_on_arrow(self):
         return arrow.get(self.created_on).humanize()

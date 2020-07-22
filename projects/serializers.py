@@ -9,7 +9,7 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=Project
-		fields=("project_title","district","work_location","status","start_date","due_date")
+		fields=("project_title","job_no","district","work_location","status","start_date","due_date")
 
 	def create(self, validated_data):
 		user = None
@@ -45,8 +45,11 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 			company=company,
 			charging_stages=cs,
 			document_format=df,
-			created_by=user
+			created_by=user,
+			job_no=company.job_no
 		)
+		company.job_no+=1
+		company.save()
 		if validated_data.get("work_location"):
 			project.work_location=validated_data["work_location"]
 		if validated_data.get("status"):
