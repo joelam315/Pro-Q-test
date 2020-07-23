@@ -30,7 +30,7 @@
                 <tr style="vertical-align: text-top;">
                   <td>
                     <table style="margin-left: 0; margin-right: auto;">
-                    <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
+                    <tr> <td class="first_td">No.</td><td>{{invoice_no}}</td></tr>
                     <tr><td class="first_td">Co</td><td>:</td></tr>
                     <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
                     <tr><td class="first_td">From</td><td>: {{company.owner.first_name}} {{company.owner.last_name}}</td></tr>
@@ -59,16 +59,16 @@
                 <tr><td>Description</td><td class="item_value">Amount (HK$)</td></tr>
               </thead>
               <tbody>
-                <tr><td class="item_name">Total Contract Sum</td><td class="item_value">437,000</td></tr>
-                <tr><td class="item_name">Our Quotation No.Q-200206b dated :9 APR 2020</td></tr>
+                <tr><td class="item_name">Total Contract Sum</td><td class="item_value" id="amount_content"></td></tr>
+                <tr><td class="item_name">Our Quotation No.{{quotation_no}} dated :{{quotation_date}}</td></tr>
                 <tr><td class="first_td">&nbsp;</td></tr>
-                <tr><td class="item_name">1st Payment=10%(Deposit paid upon signing the quotation)</td><td class="item_value">43,700</td></tr>
-                <tr style=""><td></td><td><div style="border-top:1px solid;border-bottom:1px solid;width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;">17,500</td></tr></table></div><div style="margin-top:2px;border-top:1px solid;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
+                <tr><td class="item_name" id="charging_stage_content">1st Payment=10%(Deposit paid upon signing the quotation)</td><td class="item_value" id="stage_amount_content">43,700</td></tr>
+                <tr style=""><td></td><td><div style="border-top:1px solid;border-bottom:1px solid;width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;" id="stage_total_amount_content">17,500</td></tr></table></div><div style="margin-top:2px;border-top:1px solid;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
               </tbody>
             </table>
             <br>
             <div>
-              <span style="white-space: pre-line;">
+              <span style="white-space: pre-line;" id="general_remarks_content">
                 Remarks: All payment must be  paid by crossed cheque to "{{company.name}}" Or Bank-In to XXXXXXX
 
                 Total due in 15 days. Overdue accounts subject to a service charge of 1% per month 
@@ -138,9 +138,29 @@
   }
 
   (function(){
+    var charging_stage_content=""
+    var remarks_content=""
+    var amount_content=numberWithCommas({{amount}});
+    var stage_amount_content=numberWithCommas({{amount}}*{{charging_stage.value}}/100);
     var job_no_content=": J"+prependZero(4,{{project.job_no}});
+    var general_remarks_content=""
+
+    charging_stage_content+=getGetOrdinal({{charging_stage_id}})+" Payment={{charging_stage.value}}% {{charging_stage.description}}";
+
+    general_remarks_content+="Remarks:\n";
+
+    {% for general_remark in general_remarks %}
+
+      general_remarks_content+="{{general_remark.content}}\n\n";
+
+    {% endfor %}
 
     document.getElementById("job_no_content").innerHTML=job_no_content;
+    document.getElementById("amount_content").innerHTML=amount_content;
+    document.getElementById("stage_amount_content").innerHTML=stage_amount_content;
+    document.getElementById("stage_total_amount_content").innerHTML=stage_amount_content;
+    document.getElementById("charging_stage_content").innerHTML=charging_stage_content;
+    document.getElementById("general_remarks_content").innerHTML=general_remarks_content;
   })();
 </script>
 <style>

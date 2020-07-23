@@ -35,6 +35,8 @@ class Project(models.Model):
     created_by = models.ForeignKey(
         User, related_name='project_created_by',
         on_delete=models.SET_NULL, null=True)
+    updated_on = models.DateTimeField(auto_now_add=True)
+    quotation_generated_on = models.DateTimeField(blank=True,null=True)
     amount_due = models.DecimalField(
         blank=True, null=True, max_digits=12, decimal_places=2)
     amount_paid = models.DecimalField(
@@ -196,6 +198,48 @@ class Project(models.Model):
             quot_no+=number2alphabet(self.job_no) 
 
         return quot_no
+
+    def generate_invoice_no(self):
+        invoice_no=""
+        invoice_format=self.invoice_format()
+        invoice_no+=invoice_format["invoice_upper_format"]
+        invoice_no+="-"
+        if invoice_format["invoice_middle_format"]=="Date":
+            invoice_no+=self.created_on.strftime("%Y%m%d")
+        elif invoice_format["invoice_middle_format"]=="Number":
+            invoice_no+=str(self.job_no)
+        elif invoice_format["invoice_middle_format"]=="Alphabet":
+            invoice_no+=number2alphabet(self.job_no)
+
+        if invoice_format["invoice_lower_format"]=="Date":
+            invoice_no+=self.created_on.strftime("%Y%m%d")
+        elif invoice_format["invoice_lower_format"]=="Number":
+            invoice_no+=str(self.job_no)
+        elif invoice_format["invoice_lower_format"]=="Alphabet":
+            invoice_no+=number2alphabet(self.job_no) 
+
+        return invoice_no
+
+    def generate_receipt_no(self):
+        receipt_no=""
+        receipt_format=self.receipt_format()
+        receipt_no+=receipt_format["receipt_upper_format"]
+        receipt_no+="-"
+        if receipt_format["receipt_middle_format"]=="Date":
+            receipt_no+=self.created_on.strftime("%Y%m%d")
+        elif receipt_format["receipt_middle_format"]=="Number":
+            receipt_no+=str(self.job_no)
+        elif receipt_format["receipt_middle_format"]=="Alphabet":
+            receipt_no+=number2alphabet(self.job_no)
+
+        if receipt_format["receipt_lower_format"]=="Date":
+            receipt_no+=self.created_on.strftime("%Y%m%d")
+        elif receipt_format["receipt_lower_format"]=="Number":
+            receipt_no+=str(self.job_no)
+        elif receipt_format["receipt_lower_format"]=="Alphabet":
+            receipt_no+=number2alphabet(self.job_no) 
+
+        return receipt_no
     @property
     def created_on_arrow(self):
         return arrow.get(self.created_on).humanize()
@@ -306,3 +350,17 @@ class ProjectChargingStages(models.Model):
             values=self.values,
             descriptions=self.descriptions
         )
+
+class ProjectInvoice(models.Model):
+    class Meta:
+        unique_together = (('project', 'invoice_id'),)
+    generated_on = models.DateTimeField(auto_now_add=True)
+    project=models.ForeignKey(Project,on_delete=models.CASCADE)
+    invoice_id=models.PositiveIntegerField()
+
+class ProjectReceipt(models.Model):
+    class Meta:
+        unique_together = (('project', 'receipt_id'),)
+    generated_on = models.DateTimeField(auto_now_add=True)
+    project=models.ForeignKey(Project,on_delete=models.CASCADE)
+    receipt_id=models.PositiveIntegerField()

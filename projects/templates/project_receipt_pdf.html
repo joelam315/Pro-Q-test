@@ -30,10 +30,10 @@
                 <tr style="vertical-align: text-top;">
                   <td>
                     <table style="margin-left: 0; margin-right: auto;">
-                    <tr> <td class="first_td">No.</td><td>A-20200713</td></tr>
+                    <tr> <td class="first_td">No.</td><td>{{receipt_no}}</td></tr>
                     <tr><td class="first_td">Co</td><td>:</td></tr>
-                    <tr><td class="first_td">To</td><td>: Calvin</td></tr>
-                    <tr><td class="first_td">From</td><td>: {{company.owner.name}}</td></tr>
+                    <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
+                    <tr><td class="first_td">From</td><td>: {{company.owner.first_name}} {{company.owner.last_name}}</td></tr>
                     <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
                   </td>
@@ -41,7 +41,7 @@
                     <table style="margin-right: 0; margin-left: auto;">
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">Date</td><td>: {{date}}</td></tr>
-                      <tr><td class="first_td">Job No</td><td>: J2567</td></tr>
+                      <tr><td class="first_td">Job No</td><td id="job_no_content"></td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                     </table>
@@ -59,11 +59,13 @@
                 <tr><td class="allborder">Date</td><td style="border-top: 3px solid;">Description</td><td class="item_value" style="border-top: 3px solid;">Amount (HK$)</td></tr>
               </thead>
               <tbody>
-                <tr><td></td><td class="item_name">Total Contract Sum</td><td class="item_value">437,000</td></tr>
-                <tr><td>25-Apr-20</td><td class="item_name">Our Quotation No.Q-200206b dated :9 APR 2020</td><td>&nbsp;</td></tr>
+                <tr><td></td><td class="item_name">Total Contract Sum</td><td class="item_value" id="amount_content"></td></tr>
+
                 <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-                <tr><td style="border-bottom: 3px solid"></td><td class="item_name" style="border-bottom: 3px solid">1st Payment=10%(Deposit paid upon signing the quotation)</td><td class="item_value" style="border-bottom: 3px solid">43,700</td></tr>
-                <tr><td class="noborder"></td><td class="noborder"></td><td style="border-bottom: 3px solid"><div style="width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td style="border-left: none;border-right:none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;border-left: none;border-right:none;">17,500</td></tr></table></div><div style="margin-top:2px;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
+                <tr><td>{{invoice_date}}</td><td class="item_name" id="charging_stage_content"></td><td class="item_value" id="stage_amount_content"></td></tr>
+                <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                <tr><td class="first_td" style="border-bottom: 3px solid">&nbsp;</td><td style="border-bottom: 3px solid;padding-bottom: 50px"><span style="white-space: pre-line;" id="general_remarks_content"></span></td><td style="border-bottom: 3px solid">&nbsp;</td></tr>
+                <tr><td class="noborder"></td><td class="noborder"></td><td style="border-bottom: 3px solid"><div style="width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td style="border-left: none;border-right:none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;border-left: none;border-right:none;" id="stage_total_amount_content"></td></tr></table></div><div style="margin-top:2px;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
               </tbody>
             </table>
             <br>
@@ -116,6 +118,52 @@
     </tbody>
   </table>
 </body>
+<script>
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function getGetOrdinal (n) {
+    var s=["th","st","nd","rd"],
+      v=n%100;
+    return n+(s[(v-20)%10]||s[v]||s[0]);
+  }
+
+  function prependZero(digit,number) { 
+    var str="";
+    for(var i=0;i<digit-number.toString().length;i++){
+      str+="0";
+    }
+    str+=number.toString();
+    return str;
+  }
+
+  (function(){
+    var charging_stage_content="";
+    var remarks_content="";
+    var amount_content=numberWithCommas({{amount}});
+    var stage_amount_content=numberWithCommas({{amount}}*{{charging_stage.value}}/100);
+    var job_no_content=": J"+prependZero(4,{{project.job_no}});
+    var general_remarks_content="";
+
+    charging_stage_content+=getGetOrdinal({{charging_stage_id}})+" ({{charging_stage.value}}%) Payment for {{charging_stage.description}}";
+
+    general_remarks_content+="Remarks:\n";
+
+    {% for general_remark in general_remarks %}
+
+      general_remarks_content+="{{general_remark.content}}\n\n";
+
+    {% endfor %}
+
+    document.getElementById("job_no_content").innerHTML=job_no_content;
+    document.getElementById("amount_content").innerHTML=amount_content;
+    document.getElementById("stage_amount_content").innerHTML=stage_amount_content;
+    document.getElementById("stage_total_amount_content").innerHTML=stage_amount_content;
+    document.getElementById("charging_stage_content").innerHTML=charging_stage_content;
+    document.getElementById("general_remarks_content").innerHTML=general_remarks_content;
+  })();
+</script>
 <style>
 /* Styles go here */
 

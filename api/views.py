@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.template.loader import render_to_string
 from django.http.response import HttpResponse, JsonResponse
 from django.conf import settings
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
 from common.models import User
 from common.serializers import CreateUserSerializer,LoginSerializer, PhoneVerifySerializer
@@ -27,9 +28,9 @@ from companies.serializers import (
 	ReceiptGeneralRemarkSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
-from projects.models import Project
+from projects.models import Project, ProjectInvoice, ProjectReceipt
 from projects.utils import ROOM_TYPE
-from projects.serializers import CreateProjectSerializer
+from projects.serializers import CreateProjectSerializer, UpdateProjectSerializer
 from rooms.models import Room, RoomType, RoomItem
 from rooms.serializers import (
 	CreateRoomSerializer,
@@ -544,6 +545,25 @@ class CreateProjectView(APIView):
 		ret["project_id"]=project.id
 		return Response(ret,status=status.HTTP_200_OK)
 
+class UpdateProjectView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Project
+	serializer_class=UpdateProjectSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_id"):
+			serialized=UpdateProjectSerializer(instance=data.get("project_id"),data=data,context={'request':request})
+			serialized.is_valid(raise_exception=True)
+			project=serialized.save()
+			ret["project_id"]=project.id
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			return serializers.ValidationError("project_id is required.")
+
 class GetProjectView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -627,6 +647,9 @@ class GenerateProjectQuotation(APIView):
 		pdf.close()
 		os.remove("out.pdf")
 		#os.remove(doc_header_path)
+		if not project.quotation_generated_on or project.updated_on>project.quotation_generated_on:
+			project.quotation_generated_on=datetime.datetime.now()
+			project.save()
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
@@ -654,11 +677,19 @@ class GenerateProjectInvoice(APIView):
 		ret["result"]=True
 		data = request.data
 		project=Project.objects.get(id=data.get("id"))
-		charging_stage=data.get("charging_stage")
+		if data.get("charging_stage")>len(project.charging_stages)-1:
+			return serializers.ValidationError("Charging Stage is not in the Project.")
+		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
 		context["project"]=project
-		context["charging_stage"];
+		context["charging_stage_id"]=charging_stage_id
+		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
+		context["general_remarks"]=project.company.get_invoice_general_remarks_json()
+		context["amount"]=project.total_amount()
+		context["quotation_no"]=project.generate_quot_no()
+		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
+		context["invoice_no"]=project.generate_invoice_no()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		html = render_to_string('project_invoice_pdf.html', context=context)
 		header=render_to_string('invoice_header.html',context=context,request=request)
@@ -689,6 +720,7 @@ class GenerateProjectInvoice(APIView):
 		pdf.close()
 		os.remove("out.pdf")
 		#os.remove(doc_header_path)
+		ProjectInvoice.objects.get_or_create(project=project,invoice_id=charging_stage_id)
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
@@ -701,10 +733,24 @@ class GenerateProjectReceipt(APIView):
 		ret["result"]=True
 		data = request.data
 		project=Project.objects.get(id=data.get("id"))
-		charging_stage=data.get("charging_stage")
+		try:
+			project_invoice=ProjectInvoice.objects.get(project=project,invoice_id=data.get("charging_stage"))
+		except ObjectDoesNotExist:
+			return serializers.ValidationError("Please Generate Invoice First")
+			
+		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
 		context["project"]=project
+		context["charging_stage_id"]=charging_stage_id
+		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
+		context["general_remarks"]=project.company.get_receipt_general_remarks_json()
+		context["amount"]=project.total_amount()
+		context["quotation_no"]=project.generate_quot_no()
+		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
+		context["invoice_no"]=project.generate_invoice_no()
+		context["invoice_date"]=project_invoice.generated_on.strftime("%d-%B-%Y")
+		context["receipt_no"]=project.generate_receipt_no()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		html = render_to_string('project_receipt_pdf.html', context=context)
 		header=render_to_string('receipt_header.html',context=context,request=request)
