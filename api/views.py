@@ -44,6 +44,15 @@ from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
 from project_misc.models import ProjectMisc
 from project_misc.serializers import SetProjectMiscSerializer
 
+from project_timetable.models import ProjectWork, ProjectMilestone
+from project_timetable.serializers import (
+	CreateProjectWorkSerializer,
+	UpdateProjectWorkSerializer,
+	CreateProjectMilestoneSerializer,
+	UpdateProjectMilestoneSerializer
+
+)
+
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
 from rest_framework.permissions import (IsAuthenticated,AllowAny,)
@@ -992,6 +1001,78 @@ class GetAllProjectMiscView(APIView):
 		ret["project_misc"]=[project_misc.as_json() for project_misc in project.project_misc.all()]
 		
 		return Response(ret,status=status.HTTP_200_OK)
+
+#project-project_timetable
+class CreateProjectWorkView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectWork
+	serializer_class=CreateProjectWorkSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		serialized=CreateProjectWorkSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		project_work=serialized.save()
+		ret["project_work_id"]=project_work.id
+		return Response(ret,status=status.HTTP_200_OK)
+
+class UpdateProjectWorkView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectWork
+	serializer_class=UpdateProjectWorkSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_work"):
+			serialized=UpdateProjectWorkSerializer(instance=data.get("project_work"),data=data,context={'request':request})
+			serialized.is_valid(raise_exception=True)
+			project_work=serialized.save()
+			ret["project_work_id"]=project_work.id
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			return serializers.ValidationError("project_work is required.")
+
+class CreateProjectMilestoneView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectMilestone
+	serializer_class=CreateProjectMilestoneSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		serialized=CreateProjectMilestoneSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		project_milestone=serialized.save()
+		ret["project_milestone_id"]=project_milestone.id
+		return Response(ret,status=status.HTTP_200_OK)
+
+class UpdateProjectProjectMilestoneView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectMilestone
+	serializer_class=UpdateProjectMilestoneSerializer
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_milestone"):
+			serialized=UpdateProjectMilestoneSerializer(instance=data.get("project_milestone"),data=data,context={'request':request})
+			serialized.is_valid(raise_exception=True)
+			project_milestone=serialized.save()
+			ret["project_milestone_id"]=project_milestone.id
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			return serializers.ValidationError("project_milestone is required.")
+
 
 #district
 

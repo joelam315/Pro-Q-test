@@ -69,7 +69,10 @@ class Project(models.Model):
 
     def total_amount(self):
         total=0
+        miscs=self.project_misc.all()
         rooms=self.project_rooms.all()
+        for misc in miscs:
+            total+=misc.unit_price*misc.quantity
         for room in rooms:
             for item in room.room_project_items.all():
                 total+=item.unit_price*item.quantity
@@ -136,9 +139,18 @@ class Project(models.Model):
             for item in room.room_project_items.all():
                 items[room.name].append(item.as_json())
         return items
+    def all_misc(self):
+        miscs=self.project_misc.all()
+        items=[misc.as_json() for misc in miscs]
+        return items
     def all_items(self):
         items={}
         rooms=self.project_rooms.all()
+        miscs=self.project_misc.all()
+        items["前期項目"]={"items":[],"sum_price":0}
+        for misc in miscs:
+            items["前期項目"]["items"].append(misc.as_json())
+            items["前期項目"]["sum_price"]+=misc.unit_price*misc.quantity
         for room in rooms:
             for item in room.room_project_items.all():
                 if item.item.item_type.name not in items:

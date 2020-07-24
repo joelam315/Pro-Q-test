@@ -1,4 +1,3 @@
-from django import forms
 from django.shortcuts import get_object_or_404
 from projects.models import Project
 from datetime import datetime
@@ -82,9 +81,9 @@ class UpdateProjectSerializer(serializers.ModelSerializer):
 		if user==project.company.owner:
 
 			if validated_data.get("project_title"):
-				project.work_location=validated_data["project_title"]
+				project.project_title=validated_data["project_title"]
 			if validated_data.get("district"):
-				project.work_location=validated_data["district"]
+				project.district=validated_data["district"]
 			if validated_data.get("work_location"):
 				project.work_location=validated_data["work_location"]
 			if validated_data.get("status"):

@@ -1,6 +1,5 @@
 import PIL
 
-from django import forms
 from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from rest_framework import serializers
 

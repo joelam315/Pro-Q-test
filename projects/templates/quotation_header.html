@@ -33,16 +33,20 @@
             </td>
 		</tr>
 		{% endif %}
-		<tr>
+		{% if company.phone%}
+        <tr>
             <td style="font-size: 9px;">
-            	Tel: {{ company.phone }}
+                Tel: {{ company.phone }}
             </td>
-		</tr>
-		<tr>	
+        </tr>
+        {% endif %}
+        {% if company.email%}
+        <tr>    
             <td style="font-size: 9px;">
-            	Fax: (852) 3705-8465
+                Email: {{ company.email }}
             </td>
-		</tr>
+        </tr>
+        {% endif %}
 	</tbody>
 </table>
 <br>
