@@ -178,6 +178,10 @@ SWAGGER_SETTINGS = {
     }
 }
 
+REDOC_SETTINGS ={
+    'NATIVE_SCROLLBARS':True
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 

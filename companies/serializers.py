@@ -2,6 +2,7 @@ import PIL
 
 from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from rest_framework import serializers
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
 
 
 class Base64ImageField(serializers.ImageField):
@@ -141,8 +142,25 @@ class SetChargingStagesSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
+		sum_percen=0
+
+		for i in range(validated_data.get("quantity")):
+			sum_percen+=validated_data["values"][i]
+		if sum_percen!=100:
+			raise ValidationError("The total percentage is not equal to 100.")
 		charging_stages=ChargingStages.objects.update_or_create (company=company,defaults={"quantity":validated_data["quantity"],"values":validated_data["values"],"descriptions":validated_data["descriptions"]})
 		return charging_stages[0]
+
+class ChargingStageJsonSerializer(serializers.Serializer):
+	index=serializers.IntegerField()
+	value=serializers.IntegerField()
+	content=serializers.CharField()
+
+class GetChargingStagesResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	charging_stages=ChargingStageJsonSerializer(many=True)
+
+
 
 class QuotationGeneralRemarkSerializer(serializers.ModelSerializer):
 	class Meta:

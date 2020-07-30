@@ -46,5 +46,11 @@ class PhoneVerifySerializer(serializers.ModelSerializer):
 		model=User
 		fields=("phone",)
 
+class CommonTrueResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+
+class CommonFalseResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	reason=serializers.CharField()
 
 

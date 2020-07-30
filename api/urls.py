@@ -48,7 +48,11 @@ from api.views import (
 	PreviewProjectQuotation,
 	GenerateProjectQuotation,
 	GenerateProjectInvoice,
-	GenerateProjectReceipt
+	GenerateProjectReceipt,
+	CreateProjectWorkView,
+	UpdateProjectWorkView,
+	CreateProjectMilestoneView,
+	UpdateProjectMilestoneView
 )
 
 
@@ -88,6 +92,10 @@ urlpatterns = [
 	path('project/quot/generate/',GenerateProjectQuotation.as_view(),name="generate_project_quotation"),
 	path('project/invoice/generate/',GenerateProjectInvoice.as_view(),name="generate_project_invoice"),
 	path('project/receipt/generate/',GenerateProjectReceipt.as_view(),name="generate_project_receipt"),
+	path('project/work/create/',CreateProjectWorkView.as_view(),name="create_project_work"),
+	path('project/work/update/',UpdateProjectWorkView.as_view(),name="update_project_work"),
+	path('project/milestone/create/',CreateProjectMilestoneView.as_view(),name="create_project_milestone"),
+	path('project/milestone/update/',UpdateProjectMilestoneView.as_view(),name="update_project_milestone"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),

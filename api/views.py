@@ -7,10 +7,16 @@ from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.template.loader import render_to_string
 from django.http.response import HttpResponse, JsonResponse
 from django.conf import settings
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
 
 from common.models import User
-from common.serializers import CreateUserSerializer,LoginSerializer, PhoneVerifySerializer
+from common.serializers import (
+	CreateUserSerializer,
+	LoginSerializer, 
+	PhoneVerifySerializer,
+	CommonTrueResponseSerializer,
+	CommonFalseResponseSerializer
+)
 from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from companies.serializers import (
@@ -25,7 +31,8 @@ from companies.serializers import (
 	ChargingStagesSerializer,
 	QuotationGeneralRemarkSerializer,
 	InvoiceGeneralRemarkSerializer,
-	ReceiptGeneralRemarkSerializer
+	ReceiptGeneralRemarkSerializer,
+	GetChargingStagesResponseSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project, ProjectInvoice, ProjectReceipt
@@ -77,7 +84,7 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
 
 token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,description="Bearer token required", type=openapi.TYPE_STRING)
 
-default_param = openapi.Parameter(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
+default_param = openapi.Response(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
 
 #User
 
@@ -319,28 +326,31 @@ class SetChargingStagesView(APIView):
 	@swagger_auto_schema(
 		operation_description="Create/update user's company charging stage(s).", 
 		security=[{'Bearer': []}],
-		request_body=SetChargingStagesSerializer(many=True),
+		request_body=SetChargingStagesSerializer(),
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST:CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		sum_percen=0
-
-		for i in range(data.get("quantity")):
-			sum_percen+=data["values"][i]
-		if sum_percen!=100:
-			ret["result"]=False
-			ret["reason"]="The total percentage is not equal to 100."
-			raise serializers.ValidationError(ret)
+		
 		serialized = SetChargingStagesSerializer(data=data,context={'request': request})
 		serialized.is_valid(raise_exception=True)
-		charging_stages=serialized.save()
+		try:
+			charging_stages=serialized.save()
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret, status=status.HTTP_404_NOT_FOUND)
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
 		return Response(ret, status=status.HTTP_200_OK)
 
 class GetChargingStagesView(APIView):
@@ -353,14 +363,19 @@ class GetChargingStagesView(APIView):
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: ChargingStagesSerializer(many=True),
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetChargingStagesResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
-		company=Company.objects.get(owner=request.user)
+		try:
+			company=Company.objects.get(owner=request.user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret, status=status.HTTP_404_NOT_FOUND)
 		ret["charging_stages"]=company.get_charging_stages_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
@@ -1054,7 +1069,7 @@ class CreateProjectMilestoneView(APIView):
 		ret["project_milestone_id"]=project_milestone.id
 		return Response(ret,status=status.HTTP_200_OK)
 
-class UpdateProjectProjectMilestoneView(APIView):
+class UpdateProjectMilestoneView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectMilestone
@@ -1079,6 +1094,16 @@ class UpdateProjectProjectMilestoneView(APIView):
 class GetDistrictListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Get district list", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_201_CREATED: "{\n&emsp;result: boolean,\n&emsp;access: string,\n&emsp;refresh:string\n}",
+			status.HTTP_400_BAD_REQUEST: "Validation Error"
+		}
+	)
 
 	def post(self,request, *args, **kwargs):
 		ret={}
