@@ -89,7 +89,7 @@ class Company(models.Model):
     def as_json(self):
         return dict(
             name=self.name,
-            logo="api/media/"+str(self.logo_pic)
+            logo_path="api/media/"+str(self.logo_pic)
         )
 
     class Meta:

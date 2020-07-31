@@ -53,4 +53,11 @@ class CommonFalseResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	reason=serializers.CharField()
 
+class DistrictJsonSerializer(serializers.Serializer):
+	district=serializers.ListField(child=serializers.CharField(),max_length=2,min_length=2)
+
+class ListDistrictResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	districts=DistrictJsonSerializer()
+
 

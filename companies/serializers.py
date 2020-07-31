@@ -84,6 +84,15 @@ class SetCompanySerializer(serializers.ModelSerializer):
 		comapny = Company.objects.update_or_create(owner=user,defaults={"name":validated_data["name"],"logo_pic":validated_data["logo_pic"],"br_pic":validated_data["br_pic"]})[0]
 		return comapny
 
+class CompanyJsonSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+	name=serializers.CharField()
+	logo_path=serializers.CharField()
+
+class GetCompanyResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	company=CompanyJsonSerializer()
+
 class DocumentFormatSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=DocumentFormat
@@ -114,6 +123,27 @@ class SetDocumentFormatSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("You must create a company first.")
 		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"]})
 		return doc_format[0]
+
+class DocumentFormatJsonSerializer(serializers.Serializer):
+	quot_upper_format=serializers.CharField(max_length=1)
+	quot_middle_format=serializers.CharField()
+	quot_lower_format=serializers.CharField()
+	invoice_upper_format=serializers.CharField(max_length=1)
+	invoice_middle_format=serializers.CharField()
+	invoice_lower_format=serializers.CharField()
+	receipt_upper_format=serializers.CharField(max_length=1)
+	receipt_middle_format=serializers.CharField()
+	receipt_lower_format=serializers.CharField()
+
+class GetDocumentFormatResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	doc_format=DocumentFormatJsonSerializer()
+
+class GetDocumentFormatChoiceResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	upper_choices=serializers.ListField(child=serializers.CharField())
+	middle_choices=serializers.ListField(child=serializers.CharField())
+	lower_choices=serializers.ListField(child=serializers.CharField())
 
 class ChargingStagesSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -190,6 +220,14 @@ class SetQuotationGeneralRemarkSerializer(serializers.ModelSerializer):
 		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
 		return general_remark[0]
 
+class GeneralRemarkJsonSerializer(serializers.Serializer):
+	index=serializers.IntegerField()
+	content=serializers.CharField()
+
+class GetGeneralRemarksSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	general_remarks=GeneralRemarkJsonSerializer(many=True)
+
 class InvoiceGeneralRemarkSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=InvoiceGeneralRemark
@@ -217,6 +255,7 @@ class SetInvoiceGeneralRemarkSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("You must create a company first.")
 		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
 		return general_remark[0]
+
 
 class ReceiptGeneralRemarkSerializer(serializers.ModelSerializer):
 	class Meta:

@@ -15,7 +15,8 @@ from common.serializers import (
 	LoginSerializer, 
 	PhoneVerifySerializer,
 	CommonTrueResponseSerializer,
-	CommonFalseResponseSerializer
+	CommonFalseResponseSerializer,
+	ListDistrictResponseSerializer
 )
 from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
@@ -32,7 +33,11 @@ from companies.serializers import (
 	QuotationGeneralRemarkSerializer,
 	InvoiceGeneralRemarkSerializer,
 	ReceiptGeneralRemarkSerializer,
-	GetChargingStagesResponseSerializer
+	GetChargingStagesResponseSerializer,
+	GetCompanyResponseSerializer,
+	GetDocumentFormatResponseSerializer,
+	GetDocumentFormatChoiceResponseSerializer,
+	GetGeneralRemarksSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project, ProjectInvoice, ProjectReceipt
@@ -48,6 +53,10 @@ from rooms.serializers import (
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
 from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
+from project_items.serializers import (
+	GetItemMaterialsRequest,
+	GetItemMaterialsResponse
+)
 from project_misc.models import ProjectMisc
 from project_misc.serializers import SetProjectMiscSerializer
 
@@ -163,8 +172,8 @@ class UserPhoneVerifyView(APIView):
 		manual_parameters=[token_param],
 		request_body=PhoneVerifySerializer,
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -196,14 +205,21 @@ class GetCompanyView(APIView):
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: CompanySerializer,
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetCompanyResponseSerializer,
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer 
 		}
 	)
 	def post(self,request, *args, **kwargs):
-
-		company=Company.objects.get(owner=request.user)
-		return Response(company.as_json())
+		ret={}
+		try:
+			company=Company.objects.get(owner=request.user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret, status=status.HTTP_404_NOT_FOUND)
+		ret["result"]=True
+		ret["company"]=company.as_json()
+		return Response(ret,status=status.HTTP_200_OK)
 
 '''
 class GetCompanyLogoView(APIView):
@@ -229,8 +245,8 @@ class SetCompanyView(APIView):
 		request_body=SetCompanySerializer,
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -241,8 +257,12 @@ class SetCompanyView(APIView):
 		serialized = SetCompanySerializer(data=data,context={'request': request})
 		serialized.owner=request.user
 		serialized.is_valid(raise_exception=True)
-		company=serialized.save()
-		company.save()
+		try:
+			company=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
 		return Response(ret, status=status.HTTP_200_OK)
 
@@ -255,8 +275,8 @@ class GetDocumentFormatChoicesView(APIView):
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;upper_choice: array[string],\n&emsp;middle_choice: array[string],\n&emsp;lower_choice: array[string],\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetDocumentFormatChoiceResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self,request, *args, **kwargs):
@@ -280,8 +300,8 @@ class SetDocumentFormatView(APIView):
 		request_body=SetDocumentFormatSerializer,
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self,request, *args, **kwargs):
@@ -305,8 +325,8 @@ class GetDocumentFormatView(APIView):
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: DocumentFormatSerializer,
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetDocumentFormatResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -386,13 +406,13 @@ class SetQuotationGeneralRemarksView(APIView):
 	serializer_class = SetQuotationGeneralRemarkSerializer
 
 	@swagger_auto_schema(
-		operation_description="Create/update user's company general remark.", 
+		operation_description="Create/update user's company quotation general remark.", 
 		security=[{'Bearer': []}],
 		request_body=SetQuotationGeneralRemarkSerializer,
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self,request, *args, **kwargs):
@@ -418,19 +438,19 @@ class GetQuotationGeneralRemarksView(APIView):
 	model=QuotationGeneralRemark
 
 	@swagger_auto_schema(
-		operation_description="Get user's company general remarks.", 
+		operation_description="Get user's company quotation general remarks.", 
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: QuotationGeneralRemarkSerializer(many=True),
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetGeneralRemarksSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		ret["general_remarks"]=company.get_general_remarks_json()
+		ret["general_remarks"]=company.get_quotation_general_remarks_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 class SetInvoiceGeneralRemarksView(APIView):
@@ -439,13 +459,13 @@ class SetInvoiceGeneralRemarksView(APIView):
 	serializer_class = SetInvoiceGeneralRemarkSerializer
 
 	@swagger_auto_schema(
-		operation_description="Create/update user's company general remark.", 
+		operation_description="Create/update user's company invoice general remark.", 
 		security=[{'Bearer': []}],
 		request_body=SetInvoiceGeneralRemarkSerializer,
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self,request, *args, **kwargs):
@@ -471,12 +491,12 @@ class GetInvoiceGeneralRemarksView(APIView):
 	model=InvoiceGeneralRemark
 
 	@swagger_auto_schema(
-		operation_description="Get user's company general remarks.", 
+		operation_description="Get user's company invoice general remarks.", 
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: InvoiceGeneralRemarkSerializer(many=True),
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetGeneralRemarksSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -492,13 +512,13 @@ class SetReceiptGeneralRemarksView(APIView):
 	serializer_class = SetReceiptGeneralRemarkSerializer
 
 	@swagger_auto_schema(
-		operation_description="Create/update user's company general remark.", 
+		operation_description="Create/update user's company receipt general remark.", 
 		security=[{'Bearer': []}],
 		request_body=SetReceiptGeneralRemarkSerializer,
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self,request, *args, **kwargs):
@@ -524,12 +544,12 @@ class GetReceiptGeneralRemarksView(APIView):
 	model=ReceiptGeneralRemark
 
 	@swagger_auto_schema(
-		operation_description="Get user's company general remarks.", 
+		operation_description="Get user's company receipt general remarks.", 
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: ReceiptGeneralRemarkSerializer(many=True),
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: GetGeneralRemarksSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -1100,8 +1120,8 @@ class GetDistrictListView(APIView):
 		security=[{'Bearer': []}],
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_201_CREATED: "{\n&emsp;result: boolean,\n&emsp;access: string,\n&emsp;refresh:string\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_201_CREATED: ListDistrictResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 
@@ -1143,13 +1163,29 @@ class GetItemMaterials(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ItemTypeMaterial
+	serializer_class=GetItemMaterialsRequest
+
+	@swagger_auto_schema(
+		operation_description="Get Item Material List", 
+		security=[{'Bearer': []}],
+		request_body=GetItemMaterialsRequest(),
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetItemMaterialsResponse(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret['result']=True
 		data=request.data
-		if data.get("item_type"):
-			ret["materials"]=[itm.as_json() for itm in ItemTypeMaterial.objects.filter(item_type=data.get("item_type"))]
+		try:
+			serialized=GetItemMaterialsRequest(data=data,context={'request':request})
+			serialized.is_valid(raise_exception=True)
+			ret["materials"]=serialized.save()
 			return Response(ret,status=status.HTTP_200_OK)
-		else:
-			raise serializers.ValidationError("Missing item_type.")
+		except ValidationError as err:
+			ret['result']=False
+			ret['reason']=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
