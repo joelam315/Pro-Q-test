@@ -3,7 +3,7 @@ from project_items.models import ItemFormula, ItemTypeMaterial
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist,ValidationError
 
-class GetItemMaterialsRequest(serializers.ModelSerializer):
+class GetItemMaterialsRequestSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=ItemTypeMaterial
@@ -15,10 +15,10 @@ class GetItemMaterialsRequest(serializers.ModelSerializer):
 		else:
 			raise ValidationError("Missing item_type.")
 
-class ItemMaterialJson(serializers.Serializer):
+class ItemMaterialJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
 	name=serializers.CharField()
 
-class GetItemMaterialsResponse(serializers.Serializer):
+class GetItemMaterialsResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
-	materials=ItemMaterialJson(many=True)
+	materials=ItemMaterialJsonSerializer(many=True)

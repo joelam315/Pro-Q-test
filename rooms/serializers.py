@@ -136,3 +136,12 @@ class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 				raise serializers.ValidationError("Material not match to this item.")
 		else:
 			raise PermissionDenied
+
+class RoomItemJsonSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+	name=serializers.CharField()
+	unit_price=serializers.FloatField()
+	room=serializers.CharField()
+	quantity=serializers.IntegerField()
+	value=serializers.JSONField()
+	remark=serializers.CharField()

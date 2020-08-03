@@ -116,11 +116,7 @@ class Project(models.Model):
 
         )
     def as_json(self):
-        fis=[]
-        for fi in self.function_items.all():
-            fis.append(fi.as_json())
-            sfis=self.sub_function_items.filter(related_function_item=fi)
-            fis[-1]["sub_function_items"]=[sfi.as_json() for sfi in sfis]
+
         return dict(
             id=self.id,
             project_title=self.project_title,

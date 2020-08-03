@@ -3,8 +3,10 @@ from projects.models import Project
 from datetime import datetime
 from companies.models import Company
 from customers.models import Customer
+from customers.serializers import CustomerJsonSerializer
+from rooms.serializers import RoomItemJsonSerializer
 from rest_framework import serializers
-from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied,ObjectDoesNotExist, ValidationError
 
 class CreateProjectSerializer(serializers.ModelSerializer):
 
@@ -19,7 +21,7 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 			user = request.user
 		company=Company.objects.get(owner=user)
 		if not company:
-			serializers.ValidationError("You must create a company first.")
+			raise ValidationError("You must create a company first.")
 		ccss=company.company_charging_stages
 		cs=[]
 		for i in range(ccss.quantity):
@@ -63,9 +65,10 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 		return project
 
 class UpdateProjectSerializer(serializers.ModelSerializer):
+	project_id=serializers.IntegerField()
 	class Meta:
 		model=Project
-		fields=("project_title","district","work_location","status","start_date","due_date")
+		fields=("project_id","project_title","district","work_location","status","start_date","due_date")
 
 	def update(self, instance,validated_data):
 		user = None
@@ -74,7 +77,7 @@ class UpdateProjectSerializer(serializers.ModelSerializer):
 			user = request.user
 		company=Company.objects.get(owner=user)
 		if not company:
-			serializers.ValidationError("You must create a company first.")
+			raise ValidationError("You must create a company first.")
 
 		project=get_object_or_404(Project,id=instance)
 
@@ -97,5 +100,54 @@ class UpdateProjectSerializer(serializers.ModelSerializer):
 			return project
 		else:
 			raise PermissionDenied
+
+class GetProjectRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=Project
+		fields=("id",)
+
+class ProjectJsonSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+	project_title=serializers.CharField()
+	status=serializers.CharField()
+	details=serializers.CharField()
+	work_location=serializers.CharField()
+	start_date=serializers.DateField()
+	due_date=serializers.DateField()
+	customer=CustomerJsonSerializer()
+
+
+class GetProjectResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	project=ProjectJsonSerializer()
+
+class ListProjectResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	projects=ProjectJsonSerializer(many=True)
+
+class QuotationFormatJsonSerializer(serializers.Serializer):
+	quot_upper_format=serializers.CharField()
+	quot_middle_format=serializers.CharField()
+	quot_lower_format=serializers.CharField()
+
+class ProjectAllItemJsonSerializer(serializers.Serializer):
+	items=RoomItemJsonSerializer(many=True)
+
+class ProjectChargingStageSerializer(serializers.Serializer):
+	value=serializers.IntegerField()
+	content=serializers.CharField()
+
+class ProjectChargingStagesSeriailizer(serializers.Serializer):
+	charging_stages=ProjectChargingStageSerializer(many=True)
+
+class ProjectQuotationPreviewJsonSerializer(serializers.Serializer):
+	quot_format=QuotationFormatJsonSerializer()
+	items=serializers.DictField(child=ProjectAllItemJsonSerializer())
+	charging_stages=ProjectChargingStagesSeriailizer()
+
+class ProjectQutationPreviewResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	quot_preview=ProjectQuotationPreviewJsonSerializer()
+
 
 

@@ -39,6 +39,11 @@ class LoginSerializer(serializers.ModelSerializer):
 		model=User
 		fields=("phone","password")
 
+class LoginResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	access=serializers.CharField()
+	refresh=serializers.CharField()
+
 class PhoneVerifySerializer(serializers.ModelSerializer):
 	phone=PhoneNumberField()
 

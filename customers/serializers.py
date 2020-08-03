@@ -4,6 +4,7 @@ from companies.models import Company
 from customers.models import Customer
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
+from phonenumber_field.serializerfields import PhoneNumberField
 
 class SetProjectCustomerSerializer(serializers.ModelSerializer):
 
@@ -37,4 +38,12 @@ class SetProjectCustomerSerializer(serializers.ModelSerializer):
 			return customer
 		else:
 			raise PermissionDenied
+
+class CustomerJsonSerializer(serializers.Serializer):
+	name=serializers.CharField()
+	company_name=serializers.CharField()
+	email=serializers.EmailField()
+	phone=PhoneNumberField()
+	address=serializers.CharField()
+
 

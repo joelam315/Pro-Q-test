@@ -16,7 +16,8 @@ from common.serializers import (
 	PhoneVerifySerializer,
 	CommonTrueResponseSerializer,
 	CommonFalseResponseSerializer,
-	ListDistrictResponseSerializer
+	ListDistrictResponseSerializer,
+	LoginResponseSerializer
 )
 from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
@@ -42,7 +43,13 @@ from companies.serializers import (
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project, ProjectInvoice, ProjectReceipt
 from projects.utils import ROOM_TYPE
-from projects.serializers import CreateProjectSerializer, UpdateProjectSerializer
+from projects.serializers import (
+	CreateProjectSerializer, 
+	UpdateProjectSerializer,
+	GetProjectRequestSerializer,
+	GetProjectResponseSerializer,
+	ProjectQutationPreviewResponseSerializer
+)
 from rooms.models import Room, RoomType, RoomItem
 from rooms.serializers import (
 	CreateRoomSerializer,
@@ -54,8 +61,8 @@ from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
 from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
 from project_items.serializers import (
-	GetItemMaterialsRequest,
-	GetItemMaterialsResponse
+	GetItemMaterialsRequestSerializer,
+	GetItemMaterialsResponseSerializer
 )
 from project_misc.models import ProjectMisc
 from project_misc.serializers import SetProjectMiscSerializer
@@ -136,8 +143,8 @@ class UserLoginView(APIView):
 		security=[{'Basic': []}],
 		request_body=LoginSerializer,
 		responses={
-			status.HTTP_200_OK: "{\n&emsp;result: boolean,\n&emsp;access: string,\n&emsp;refresh:string\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_200_OK: LoginResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -566,6 +573,16 @@ class GetProjectListView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Project
 
+	@swagger_auto_schema(
+		operation_description="List all projects", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListProjectResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -579,13 +596,29 @@ class CreateProjectView(APIView):
 	model=Project
 	serializer_class=CreateProjectSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create a project", 
+		security=[{'Bearer': []}],
+		request_body=CreateProjectSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
 		serialized=CreateProjectSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		project=serialized.save()
+		try:
+			project=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 		ret["project_id"]=project.id
 		return Response(ret,status=status.HTTP_200_OK)
 
@@ -595,6 +628,18 @@ class UpdateProjectView(APIView):
 	model=Project
 	serializer_class=UpdateProjectSerializer
 
+	@swagger_auto_schema(
+		operation_description="Update a project", 
+		security=[{'Bearer': []}],
+		request_body=UpdateProjectSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
@@ -602,16 +647,39 @@ class UpdateProjectView(APIView):
 		if data.get("project_id"):
 			serialized=UpdateProjectSerializer(instance=data.get("project_id"),data=data,context={'request':request})
 			serialized.is_valid(raise_exception=True)
-			project=serialized.save()
-			ret["project_id"]=project.id
+			try:
+				project=serialized.save()
+			except ValidationError as err:
+				ret["result"]=False
+				ret["reason"]=err.messages[0]
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			except PermissionDenied:
+				ret["result"]=False
+				ret["reason"]="Permission Denied"
+				return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
-			return serializers.ValidationError("project_id is required.")
+			ret["result"]=False
+			ret["reason"]="project_id is required."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
 class GetProjectView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Project
+	serializer_class=GetProjectRequestSerializer
+
+	@swagger_auto_schema(
+		operation_description="Get specify project information", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args,**kwargs):
 		ret={}
@@ -627,6 +695,18 @@ class GetProjectView(APIView):
 class PreviewProjectQuotation(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Preview a project quotation", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ProjectQutationPreviewResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args,**kwargs):
 		ret={}
@@ -1163,15 +1243,15 @@ class GetItemMaterials(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ItemTypeMaterial
-	serializer_class=GetItemMaterialsRequest
+	serializer_class=GetItemMaterialsRequestSerializer
 
 	@swagger_auto_schema(
 		operation_description="Get Item Material List", 
 		security=[{'Bearer': []}],
-		request_body=GetItemMaterialsRequest(),
+		request_body=GetItemMaterialsRequestSerializer(),
 		manual_parameters=[token_param],
 		responses={
-			status.HTTP_200_OK: GetItemMaterialsResponse(),
+			status.HTTP_200_OK: GetItemMaterialsResponseSerializer(),
 			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
@@ -1181,7 +1261,7 @@ class GetItemMaterials(APIView):
 		ret['result']=True
 		data=request.data
 		try:
-			serialized=GetItemMaterialsRequest(data=data,context={'request':request})
+			serialized=GetItemMaterialsRequestSerializer(data=data,context={'request':request})
 			serialized.is_valid(raise_exception=True)
 			ret["materials"]=serialized.save()
 			return Response(ret,status=status.HTTP_200_OK)
