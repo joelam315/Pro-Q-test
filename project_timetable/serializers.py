@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
 
-class CreateProjectWorkSerializer:
+class CreateProjectWorkSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=ProjectWork
@@ -28,7 +28,7 @@ class CreateProjectWorkSerializer:
 		else:
 			raise PermissionDenied
 
-class UpdateProjectWorkSerializer:
+class UpdateProjectWorkSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=ProjectWork
@@ -60,7 +60,7 @@ class UpdateProjectWorkSerializer:
 		else:
 			raise PermissionDenied
 
-class CreateProjectMilestoneSerializer:
+class CreateProjectMilestoneSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=ProjectMilestone
@@ -73,7 +73,7 @@ class CreateProjectMilestoneSerializer:
 			user = request.user
 		company=Company.objects.get(owner=user)
 		if not company:
-			serializers.ValidationError("You must create a company first.")
+			raise ValidationError("You must create a company first.")
 
 		project=get_object_or_404(Project,id=instance)
 
@@ -97,7 +97,7 @@ class UpdateProjectMilestoneSerializer:
 			user = request.user
 		company=Company.objects.get(owner=user)
 		if not company:
-			serializers.ValidationError("You must create a company first.")
+			raise ValidationError("You must create a company first.")
 
 		project_milestone=get_object_or_404(ProjectMilestone,id=instance)
 
@@ -115,3 +115,11 @@ class UpdateProjectMilestoneSerializer:
 			project_milestone.save()
 		else:
 			raise PermissionDenied
+
+class CreateProjectWorkResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	project_work_id=serializers.IntegerField()
+
+class CreateProjectMilestoneResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	project_milestone_id=serializers.IntegerField()

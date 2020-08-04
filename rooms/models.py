@@ -93,7 +93,7 @@ class Room(models.Model):
 		)
 		formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
 		for formula in formulas:
-			ret[formula.name]=formula.cal(self.value)
+			ret["properties"][formula.name]=formula.cal(self.value)
 		return ret
 
 class RoomItem(models.Model):

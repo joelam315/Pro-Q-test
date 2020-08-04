@@ -48,14 +48,29 @@ from projects.serializers import (
 	UpdateProjectSerializer,
 	GetProjectRequestSerializer,
 	GetProjectResponseSerializer,
-	ProjectQutationPreviewResponseSerializer
+	ProjectQutationPreviewResponseSerializer,
+	ProjectInvoicePreviewResponseSerializer,
+	ProjectReceiptPreviewResponseSerializer,
+	ListProjectResponseSerializer,
+	GetProjectWithChargingStageRequestSerializer,
+	GetProjectAllItemResponseSerializer,
+	GetProjectAllRoomItemResponseSerializer
+
 )
 from rooms.models import Room, RoomType, RoomItem
 from rooms.serializers import (
 	CreateRoomSerializer,
 	UpdateRoomSerializer,
 	SetRoomItemSerializer,
-	PreCalRoomItemFormulaSerializer
+	PreCalRoomItemFormulaSerializer,
+	CreateRoomResponseSerializer,
+	GetRoomRequestSerializer,
+	GetProjectRoomListResponseSerializer,
+	GetProjectRoomDetailsResponseSerializer,
+	PreCalProjectRoomItemFormulaResponseSerializer,
+	SetProjectRoomItemResponseSerializer,
+	GetRoomTypeListResponseSerializer,
+	GetRoomRelatedItemResponseSerializer
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
@@ -65,14 +80,20 @@ from project_items.serializers import (
 	GetItemMaterialsResponseSerializer
 )
 from project_misc.models import ProjectMisc
-from project_misc.serializers import SetProjectMiscSerializer
+from project_misc.serializers import (
+	SetProjectMiscSerializer,
+	SetProjectMiscResponseSerializer,
+	GetAllProjectMiscResponseSerializer
+)
 
 from project_timetable.models import ProjectWork, ProjectMilestone
 from project_timetable.serializers import (
 	CreateProjectWorkSerializer,
 	UpdateProjectWorkSerializer,
 	CreateProjectMilestoneSerializer,
-	UpdateProjectMilestoneSerializer
+	UpdateProjectMilestoneSerializer,
+	CreateProjectWorkResponseSerializer,
+	CreateProjectMilestoneResponseSerializer
 
 )
 
@@ -704,7 +725,8 @@ class PreviewProjectQuotation(APIView):
 		responses={
 			status.HTTP_200_OK: ProjectQutationPreviewResponseSerializer(),
 			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
-			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
 		}
 	)
 
@@ -712,30 +734,108 @@ class PreviewProjectQuotation(APIView):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		if data.get("id"):
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
 			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
 			ret["quot_preview"]=project.quot_preview()
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
-			raise serializers.ValidationError("Missing id")
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class UpdateProjectQuotationRemarks(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Update a project quotation remarks to comany latest quotation remarks", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			project.quotation_remarks=project.company.get_quotation_general_remarks_json()
+			project.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
 
 class GenerateProjectQuotation(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 
+	@swagger_auto_schema(
+		operation_description="Generate a project quotation", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectWithChargingStageRequestSerializer,
+		manual_parameters=[token_param],
+		produces='application/pdf',
+		responses={
+			status.HTTP_200_OK: openapi.Response('File Attachment', schema=openapi.Schema(type=openapi.TYPE_FILE)),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		project=Project.objects.get(id=data.get("id"))
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner!=request.user:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		
 		context={}
 		context["company"]=project.company
 		context["project"]=project
 		context["items"]=project.all_items()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
-		context["general_remarks"]=project.company.get_quotation_general_remarks_json()
+		context["general_remarks"]=project.quotation_remarks
 		context["charging_stages"]=project.charging_stages
 		context["quotation_no"]=project.generate_quot_no()
 		html = render_to_string('project_quotation_pdf.html', context=context)
@@ -780,27 +880,121 @@ class GenerateProjectQuotation(APIView):
 class PreviewProjectInvoice(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class=GetProjectWithChargingStageRequestSerializer
+
+	@swagger_auto_schema(
+		operation_description="Preview a project invoice", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectWithChargingStageRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ProjectInvoicePreviewResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		if data.get("id"):
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		if data.get("charging_stage")==None:
+			ret["result"]=False
+			ret["reason"]="Missing charging_stage"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
 			project=Project.objects.get(id=data.get("id"))
-			ret["invoice_preview"]=project.invoice_preview()
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+			ret["invoice_preview"]=project.invoice_preview(data.get("charging_stage"))
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
-			raise serializers.ValidationError("Missing id")
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+			
+class UpdateProjectInvoiceRemarks(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Update a project invoice remarks to comany latest invoice remarks", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			project.invoice_remarks=project.company.get_invoice_general_remarks_json()
+			project.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)			
 
 class GenerateProjectInvoice(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 
+	@swagger_auto_schema(
+		operation_description="Generate a project invoice", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectWithChargingStageRequestSerializer,
+		manual_parameters=[token_param],
+		produces='application/pdf',
+		responses={
+			status.HTTP_200_OK: openapi.Response('File Attachment', schema=openapi.Schema(type=openapi.TYPE_FILE)),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		project=Project.objects.get(id=data.get("id"))
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner!=request.user:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		if data.get("charging_stage")>len(project.charging_stages)-1:
 			return serializers.ValidationError("Charging Stage is not in the Project.")
 		charging_stage_id=data.get("charging_stage")
@@ -809,7 +1003,7 @@ class GenerateProjectInvoice(APIView):
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
 		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
-		context["general_remarks"]=project.company.get_invoice_general_remarks_json()
+		context["general_remarks"]=project.invoice_remarks
 		context["amount"]=project.total_amount()
 		context["quotation_no"]=project.generate_quot_no()
 		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
@@ -848,15 +1042,124 @@ class GenerateProjectInvoice(APIView):
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
-class GenerateProjectReceipt(APIView):
+class PreviewProjectReceipt(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class=GetProjectWithChargingStageRequestSerializer
+
+	@swagger_auto_schema(
+		operation_description="Preview a project receipt", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectWithChargingStageRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ProjectReceiptPreviewResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		project=Project.objects.get(id=data.get("id"))
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		if data.get("charging_stage")==None:
+			ret["result"]=False
+			ret["reason"]="Missing charging_stage"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+			ret["receipt_preview"]=project.receipt_preview(data.get("charging_stage"))
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class UpdateProjectReceiptRemarks(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Update a project receipt remarks to comany latest receipt remarks", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			project.receipt_remarks=project.company.get_receipt_general_remarks_json()
+			project.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class GenerateProjectReceipt(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Generate a project receipt", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectWithChargingStageRequestSerializer,
+		manual_parameters=[token_param],
+		produces='application/pdf',
+		responses={
+			status.HTTP_200_OK: openapi.Response('File Attachment', schema=openapi.Schema(type=openapi.TYPE_FILE)),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		try:
+			project=Project.objects.get(id=data.get("id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner!=request.user:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		try:
 			project_invoice=ProjectInvoice.objects.get(project=project,invoice_id=data.get("charging_stage"))
 		except ObjectDoesNotExist:
@@ -868,7 +1171,7 @@ class GenerateProjectReceipt(APIView):
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
 		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
-		context["general_remarks"]=project.company.get_receipt_general_remarks_json()
+		context["general_remarks"]=project.receipt_remarks
 		context["amount"]=project.total_amount()
 		context["quotation_no"]=project.generate_quot_no()
 		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
@@ -915,13 +1218,39 @@ class SetProjectCustomerView(APIView):
 	model=Customer
 	serializer_class=SetProjectCustomerSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update a customer to a project", 
+		security=[{'Bearer': []}],
+		request_body=SetProjectCustomerSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
 		serialized=SetProjectCustomerSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		customer=serialized.save()
+		try:
+			customer=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission PermissionDenied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		return Response(ret,status=status.HTTP_200_OK)
 
 #project-room
@@ -932,13 +1261,39 @@ class CreateProjectRoomView(APIView):
 	model=Room
 	serializer_class=CreateRoomSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create a room to a project", 
+		security=[{'Bearer': []}],
+		request_body=CreateRoomSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CreateRoomResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret['result']=True
 		data=request.data
 		serialized=CreateRoomSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		room=serialized.save()
+		try:
+			room=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["room_id"]=room.id
 		return Response(ret,status=status.HTTP_200_OK)
 
@@ -948,13 +1303,39 @@ class UpdateProjectRoomView(APIView):
 	model=Room
 	serializer_class=UpdateRoomSerializer
 
+	@swagger_auto_schema(
+		operation_description="Update a room in a project", 
+		security=[{'Bearer': []}],
+		request_body=UpdateRoomSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret['result']=True
 		data=request.data
 		serialized=UpdateRoomSerializer(instance=data.get("id"),data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		room=serialized.save()
+		try:
+			room=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 
 		return Response(ret,status=status.HTTP_200_OK)
 
@@ -963,42 +1344,114 @@ class RemoveProjectRoomView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Room
 
+	@swagger_auto_schema(
+		operation_description="Remove a room in a project", 
+		security=[{'Bearer': []}],
+		request_body=GetRoomRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret['result']=True
 		data=request.data
-		room=get_object_or_404(Room, id=data.get("id"))
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			room=Room.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if room.related_project.company.owner==request.user:
 			room.delete()
 			return Response(ret, status=status.HTTP_200_OK)
 		else:
-			raise PermissionDenied
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
 class GetProjectRoomListView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=Room
 
+	@swagger_auto_schema(
+		operation_description="Get all rooms in a project", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectRoomListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		project=Project.objects.get(id=data["project_id"])
-		ret["rooms"]=[room.as_json() for room in project.project_rooms.all()]
-		return Response(ret, status=status.HTTP_200_OK)		
+		try:
+			project=Project.objects.get(id=data["project_id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+			ret["rooms"]=[room.as_json() for room in project.project_rooms.all()]
+			return Response(ret, status=status.HTTP_200_OK)		
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
 class GetProjectRoomDetailsView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=Room
 
+	@swagger_auto_schema(
+		operation_description="Get a specific room in a project", 
+		security=[{'Bearer': []}],
+		request_body=GetRoomRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectRoomDetailsResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		room=Room.objects.get(id=data["room_id"])
-		ret["room"]=room.details()
-		return Response(ret, status=status.HTTP_200_OK)
+		try:
+			room=Room.objects.get(id=data["room_id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+
+		if room.related_project.company.owner==request.user:
+
+			ret["room"]=room.details()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
 #project-item
 
@@ -1008,13 +1461,37 @@ class GetProjectAllItemView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
 
+	@swagger_auto_schema(
+		operation_description="Get all items by type in a project", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectAllItemResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		project=Project.objects.get(id=data["project_id"])
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			project=Project.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if project.company.owner!=request.user:
-			raise PermissionDenied
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		'''rooms=project.project_rooms.all()
 		items={}
 		for room in rooms:
@@ -1032,13 +1509,37 @@ class GetProjectAllRoomItemView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
 
+	@swagger_auto_schema(
+		operation_description="Get all items by room in a project", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectAllRoomItemResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		project=Project.objects.get(id=data["project_id"])
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			project=Project.objects.get(id=data["project_id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if project.company.owner!=request.user:
-			raise PermissionDenied
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		'''rooms=project.project_rooms.all()
 		items={}
 		for room in rooms:
@@ -1057,13 +1558,39 @@ class SetProjectRoomItemView(APIView):
 	model=RoomItem
 	serializer_class=SetRoomItemSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update a project room item", 
+		security=[{'Bearer': []}],
+		request_body=SetRoomItemSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: SetProjectRoomItemResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
 		serialized=SetRoomItemSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		room_item=serialized.save()
+		try:
+			room_item=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["room_item_id"]=room_item.id
 		return Response(ret,status=status.HTTP_200_OK)
 
@@ -1073,14 +1600,40 @@ class PreCalProjectRoomItemFormulaView(APIView):
 	model=RoomItem
 	serializer_class=PreCalRoomItemFormulaSerializer
 
+	@swagger_auto_schema(
+		operation_description="Pre-calculate project room item formula", 
+		security=[{'Bearer': []}],
+		request_body=PreCalRoomItemFormulaSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: PreCalProjectRoomItemFormulaResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
 		serialized=PreCalRoomItemFormulaSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		result=serialized.save()
-		ret.update(result)
+		try:
+			result=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		ret["formula"](result)
 		return Response(ret,status=status.HTTP_200_OK)
 
 
@@ -1091,13 +1644,39 @@ class SetProjectMiscView(APIView):
 	model=ProjectMisc
 	serializer_class=SetProjectMiscSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create/update project miscellaneous", 
+		security=[{'Bearer': []}],
+		request_body=SetProjectMiscSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: SetProjectMiscResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
 		serialized=SetProjectMiscSerializer(data=data,context={'request':request})
 		serialized=is_valid(raise_exception=True)
-		project_misc=serialized.save()
+		try:
+			project_misc=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["project_misc_id"]=project_misc.id
 		return Response(ret,status=status.HTTP_200_OK)
 
@@ -1106,13 +1685,33 @@ class GetAllProjectMiscView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectMisc
 
+	@swagger_auto_schema(
+		operation_description="Get all miscellaneous in a project", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetAllProjectMiscResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self, request, *args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		project=Project.objects.get(id=data["project_id"])
+		try:
+			project=Project.objects.get(id=data["project_id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if project.company.owner!=request.user:
-			raise PermissionDenied
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		ret["project_misc"]=[project_misc.as_json() for project_misc in project.project_misc.all()]
 		
 		return Response(ret,status=status.HTTP_200_OK)
@@ -1124,13 +1723,39 @@ class CreateProjectWorkView(APIView):
 	model=ProjectWork
 	serializer_class=CreateProjectWorkSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create a work to project timetable", 
+		security=[{'Bearer': []}],
+		request_body=CreateProjectWorkSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CreateProjectWorkResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
 		serialized=CreateProjectWorkSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		project_work=serialized.save()
+		try:
+			project_work=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["project_work_id"]=project_work.id
 		return Response(ret,status=status.HTTP_200_OK)
 
@@ -1139,6 +1764,19 @@ class UpdateProjectWorkView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectWork
 	serializer_class=UpdateProjectWorkSerializer
+
+	@swagger_auto_schema(
+		operation_description="Update a work in project timetable", 
+		security=[{'Bearer': []}],
+		request_body=UpdateProjectWorkSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args, **kwargs):
 		ret={}
@@ -1159,14 +1797,39 @@ class CreateProjectMilestoneView(APIView):
 	model=ProjectMilestone
 	serializer_class=CreateProjectMilestoneSerializer
 
+	@swagger_auto_schema(
+		operation_description="Create a milestone to project timetable", 
+		security=[{'Bearer': []}],
+		request_body=CreateProjectMilestoneSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CreateProjectMilestoneResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args, **kwargs):
 		ret={}
 		ret["result"]=True
 		data = request.data
 		serialized=CreateProjectMilestoneSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
-		project_milestone=serialized.save()
-		ret["project_milestone_id"]=project_milestone.id
+		try:
+			project_milestone=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		return Response(ret,status=status.HTTP_200_OK)
 
 class UpdateProjectMilestoneView(APIView):
@@ -1174,6 +1837,19 @@ class UpdateProjectMilestoneView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectMilestone
 	serializer_class=UpdateProjectMilestoneSerializer
+
+	@swagger_auto_schema(
+		operation_description="Update a milestone in project timetable", 
+		security=[{'Bearer': []}],
+		request_body=UpdateProjectWorkSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
 
 	def post(self,request,*args, **kwargs):
 		ret={}
@@ -1183,7 +1859,6 @@ class UpdateProjectMilestoneView(APIView):
 			serialized=UpdateProjectMilestoneSerializer(instance=data.get("project_milestone"),data=data,context={'request':request})
 			serialized.is_valid(raise_exception=True)
 			project_milestone=serialized.save()
-			ret["project_milestone_id"]=project_milestone.id
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
 			return serializers.ValidationError("project_milestone is required.")
@@ -1217,6 +1892,16 @@ class GetRoomTypeListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 
+	@swagger_auto_schema(
+		operation_description="Get room type list", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_201_CREATED: GetRoomTypeListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request, *args, **kwargs):
 		ret={}
 		ret['result']=True
@@ -1229,11 +1914,34 @@ class GetRoomRelatedItemListView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 
+	@swagger_auto_schema(
+		operation_description="Get room related item list by room type id", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_201_CREATED: GetRoomRelatedItemResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret['result']=True
 		data=request.data
-		room_type=RoomType.objects.get(id=data["room_type"])
+		if data.get("room_type")==None:
+			ret["result"]=False
+			ret["reason"]="Missing room_type"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			room_type=RoomType.objects.get(id=data["room_type"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Room type not found"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except ValueError:
+			ret["result"]=False
+			ret["reason"]="Please confirm you input the room type id, not the name"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 		related_items=room_type.related_items
 		ret["related_items"]=[ri.as_json() for ri in related_items.all()]
 		return Response(ret,status=status.HTTP_200_OK)

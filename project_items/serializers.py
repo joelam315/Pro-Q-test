@@ -22,3 +22,19 @@ class ItemMaterialJsonSerializer(serializers.Serializer):
 class GetItemMaterialsResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	materials=ItemMaterialJsonSerializer(many=True)
+
+class ProjectItemPropertyJsonSerializer(serializers.Serializer):
+	name=serializers.CharField()
+	symbol=serializers.CharField()
+
+class ProjectItemTypeJsonSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+	name=serializers.CharField()
+
+class ProjectItemJsonSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+	name=serializers.CharField()
+	item_properties=ProjectItemPropertyJsonSerializer(many=True)
+	item_type=ProjectItemTypeJsonSerializer()
+	value_based_price=serializers.FloatField()
+

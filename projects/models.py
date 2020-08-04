@@ -54,6 +54,9 @@ class Project(models.Model):
         _("Details Location"), max_length=1024,null=True, blank=True)
     document_format=JSONField()
     charging_stages=JSONField()
+    quotation_remarks=JSONField(null=True,blank=True)
+    invoice_remarks=JSONField(null=True,blank=True)
+    receipt_remarks=JSONField(null=True,blank=True)
 
     class Meta:
         """Meta definition for Project."""
@@ -173,19 +176,6 @@ class Project(models.Model):
             receipt_middle_format=self.document_format["receipt_middle_format"],
             receipt_lower_format=self.document_format["receipt_lower_format"]
         )
-    def quot_preview(self):
-        ret=dict(
-            quot_format=self.quot_format(),
-            items=self.all_items(),
-            charging_stages=self.charging_stages
-        )
-        return ret 
-
-    def invoice_preview(self,stage_id):
-        ret=dict(
-            invoice_format=self.invoice_format(),
-            charging_stage=self.charging_stages[stage_id]
-        )
     def generate_quot_no(self):
         quot_no=""
         quot_format=self.quot_format()
@@ -248,6 +238,42 @@ class Project(models.Model):
             receipt_no+=number2alphabet(self.job_no) 
 
         return receipt_no
+    def quot_preview(self):
+        ret=dict(
+            job_no='J'+format(self.job_no, "04"),
+            quot_format=self.quot_format(),
+            items=self.all_items(),
+            charging_stages=self.charging_stages,
+            general_remarks=self.quotation_remarks,
+            quotation_no=self.generate_quot_no(),
+            customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
+        )
+        return ret 
+
+    def invoice_preview(self,stage_id):
+        ret=dict(
+            job_no='J'+format(self.job_no, "04"),
+            invoice_format=self.invoice_format(),
+            amount=((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100),
+            total_amount=(float)(self.total_amount()),
+            charging_stage=self.charging_stages[stage_id],
+            general_remarks=self.invoice_remarks,
+            invoice_no=self.generate_invoice_no(),
+            customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
+        )
+        return ret
+    def receipt_preview(self,stage_id):
+        ret=dict(
+            job_no='J'+format(self.job_no, "04"),
+            receipt_format=self.receipt_format(),
+            amount=((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100),
+            total_amount=(float)(self.total_amount()),
+            charging_stage=self.charging_stages[stage_id],
+            general_remarks=self.receipt_remarks,
+            receipt_no=self.generate_receipt_no(),
+            customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
+        )
+        return ret
     @property
     def created_on_arrow(self):
         return arrow.get(self.created_on).humanize()
@@ -337,28 +363,6 @@ class ProjectHistory(models.Model):
     class Meta:
         ordering = ('-created_on',)
 
-
-class ProjectChargingStages(models.Model):
-    project =models.OneToOneField(Project,related_name='project_charging_stages',on_delete=models.CASCADE)
-
-    quantity=models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(99)])
-
-    values=ArrayField(models.PositiveIntegerField(),size=99)
-
-    descriptions=ArrayField(models.TextField(blank=True),size=99)
-
-
-
-    def __str__(self):
-        return str(self.project)+"'s Charging Stage"
-
-    def as_json(self):
-        return dict(
-            quantity=self.quantity,
-            values=self.values,
-            descriptions=self.descriptions
-        )
-
 class ProjectInvoice(models.Model):
     class Meta:
         unique_together = (('project', 'invoice_id'),)
@@ -366,9 +370,15 @@ class ProjectInvoice(models.Model):
     project=models.ForeignKey(Project,on_delete=models.CASCADE)
     invoice_id=models.PositiveIntegerField()
 
+    def __str__(self):
+        return str(self.project) +" stage "+str(self.invoice_id)
+
 class ProjectReceipt(models.Model):
     class Meta:
         unique_together = (('project', 'receipt_id'),)
     generated_on = models.DateTimeField(auto_now_add=True)
     project=models.ForeignKey(Project,on_delete=models.CASCADE)
     receipt_id=models.PositiveIntegerField()
+
+    def __str__(self):
+        return str(self.project) +" stage "+str(self.receipt_id)

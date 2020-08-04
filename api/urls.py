@@ -52,12 +52,17 @@ from api.views import (
 	GetProjectRoomDetailsView,
 	PreviewProjectQuotation,
 	GenerateProjectQuotation,
+	PreviewProjectInvoice,
 	GenerateProjectInvoice,
+	PreviewProjectReceipt,
 	GenerateProjectReceipt,
 	CreateProjectWorkView,
 	UpdateProjectWorkView,
 	CreateProjectMilestoneView,
-	UpdateProjectMilestoneView
+	UpdateProjectMilestoneView,
+	UpdateProjectQuotationRemarks,
+	UpdateProjectInvoiceRemarks,
+	UpdateProjectReceiptRemarks
 )
 
 
@@ -99,8 +104,13 @@ urlpatterns = [
 	path('project/misc/set/',SetProjectMiscView.as_view(),name="set_project_misc"),
 	path('project/misc/get/all/',GetAllProjectMiscView.as_view(),name="get_all_project_misc"),
 	path('project/quot/preview/',PreviewProjectQuotation.as_view(),name="preview_project_quotation"),
+	path('project/quot/remarks/update/',UpdateProjectQuotationRemarks.as_view(),name="update_project_quotation_remarks"),
 	path('project/quot/generate/',GenerateProjectQuotation.as_view(),name="generate_project_quotation"),
+	path('project/invoice/preview/',PreviewProjectInvoice.as_view(),name="preivew_project_invoice"),
+	path('project/invoice/remarks/update/',UpdateProjectInvoiceRemarks.as_view(),name="update_project_invoice_remarks"),
 	path('project/invoice/generate/',GenerateProjectInvoice.as_view(),name="generate_project_invoice"),
+	path('project/receipt/preview/',PreviewProjectReceipt.as_view(),name="preview_project_receipt"),
+	path('project/receipt/remarks/update/',UpdateProjectReceiptRemarks.as_view(),name="update_project_receipt_remarks"),
 	path('project/receipt/generate/',GenerateProjectReceipt.as_view(),name="generate_project_receipt"),
 	path('project/work/create/',CreateProjectWorkView.as_view(),name="create_project_work"),
 	path('project/work/update/',UpdateProjectWorkView.as_view(),name="update_project_work"),
