@@ -31,6 +31,11 @@ class CreateUserSerializer(serializers.ModelSerializer):
 		user = User.objects.create_user(username=validated_data["phone"],phone=validated_data["phone"],password=validated_data["password"])
 		return user
 
+class RegisterResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	access=serializers.CharField()
+	refresh=serializers.CharField()
+
 class LoginSerializer(serializers.ModelSerializer):
 	phone=PhoneNumberField()
 	password=serializers.CharField()

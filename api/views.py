@@ -38,7 +38,8 @@ from companies.serializers import (
 	GetCompanyResponseSerializer,
 	GetDocumentFormatResponseSerializer,
 	GetDocumentFormatChoiceResponseSerializer,
-	GetGeneralRemarksSerializer
+	GetGeneralRemarksSerializer,
+	RegisterResponseSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project, ProjectInvoice, ProjectReceipt
@@ -135,8 +136,8 @@ class UserRegisterView(APIView):
 		security=None,
 		request_body=CreateUserSerializer,
 		responses={
-			status.HTTP_201_CREATED: "{\n&emsp;result: boolean,\n&emsp;access: string,\n&emsp;refresh:string\n}",
-			status.HTTP_400_BAD_REQUEST: "Validation Error"
+			status.HTTP_201_CREATED: RegisterResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
@@ -165,7 +166,7 @@ class UserLoginView(APIView):
 		request_body=LoginSerializer,
 		responses={
 			status.HTTP_200_OK: LoginResponseSerializer(),
-			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
 	def post(self, request, *args, **kwargs):
