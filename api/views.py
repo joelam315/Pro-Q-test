@@ -17,7 +17,8 @@ from common.serializers import (
 	CommonTrueResponseSerializer,
 	CommonFalseResponseSerializer,
 	ListDistrictResponseSerializer,
-	LoginResponseSerializer
+	LoginResponseSerializer,
+	RegisterResponseSerializer
 )
 from common.utils import HK_DISTRICT
 from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
@@ -38,8 +39,7 @@ from companies.serializers import (
 	GetCompanyResponseSerializer,
 	GetDocumentFormatResponseSerializer,
 	GetDocumentFormatChoiceResponseSerializer,
-	GetGeneralRemarksSerializer,
-	RegisterResponseSerializer
+	GetGeneralRemarksSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
 from projects.models import Project, ProjectInvoice, ProjectReceipt
@@ -96,6 +96,16 @@ from project_timetable.serializers import (
 	CreateProjectWorkResponseSerializer,
 	CreateProjectMilestoneResponseSerializer
 
+)
+
+from project_expenses.models import (
+	ExpenseType,
+	ProjectExpense
+)
+from project_expenses.serializers import (
+	GetExpenseTypeListResponseSerializer,
+	CreateProjectExpenseSerializer,
+	UpdateProjectExpenseSerializer
 )
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
@@ -1335,7 +1345,7 @@ class UpdateProjectRoomView(APIView):
 			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		except ObjectDoesNotExist:
 			ret["result"]=False
-			ret["reason"]="Project not found."
+			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 
 		return Response(ret,status=status.HTTP_200_OK)
@@ -1370,7 +1380,7 @@ class RemoveProjectRoomView(APIView):
 			room=Room.objects.get(id=data["id"])
 		except ObjectDoesNotExist:
 			ret["result"]=False
-			ret["reason"]="Project not found."
+			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if room.related_project.company.owner==request.user:
 			room.delete()
@@ -1442,7 +1452,7 @@ class GetProjectRoomDetailsView(APIView):
 			room=Room.objects.get(id=data["room_id"])
 		except ObjectDoesNotExist:
 			ret["result"]=False
-			ret["reason"]="Project not found."
+			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 
 		if room.related_project.company.owner==request.user:
@@ -1590,7 +1600,7 @@ class SetProjectRoomItemView(APIView):
 			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		except ObjectDoesNotExist:
 			ret["result"]=False
-			ret["reason"]="Project not found."
+			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["room_item_id"]=room_item.id
 		return Response(ret,status=status.HTTP_200_OK)
@@ -1632,7 +1642,7 @@ class PreCalProjectRoomItemFormulaView(APIView):
 			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		except ObjectDoesNotExist:
 			ret["result"]=False
-			ret["reason"]="Project not found."
+			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["formula"](result)
 		return Response(ret,status=status.HTTP_200_OK)
@@ -1862,7 +1872,9 @@ class UpdateProjectMilestoneView(APIView):
 			project_milestone=serialized.save()
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
-			return serializers.ValidationError("project_milestone is required.")
+			ret["result"]=False
+			ret["reason"]="project_milestone is required."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
 
 #district
@@ -1969,12 +1981,112 @@ class GetItemMaterials(APIView):
 		ret={}
 		ret['result']=True
 		data=request.data
+		serialized=GetItemMaterialsRequestSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
 		try:
-			serialized=GetItemMaterialsRequestSerializer(data=data,context={'request':request})
-			serialized.is_valid(raise_exception=True)
 			ret["materials"]=serialized.save()
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Item type not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 			return Response(ret,status=status.HTTP_200_OK)
 		except ValidationError as err:
 			ret['result']=False
 			ret['reason']=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except ValueError:
+			ret['result']=False
+			ret['reason']="Please input item type id, not name."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+#project-expense
+
+class GetExpenseTypeListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=ExpenseType
+
+	@swagger_auto_schema(
+		operation_description="Get expense type list", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_201_CREATED: GetExpenseTypeListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		ret["expense_types"]=[et.as_json() for et in ExpenseType.objects.filter(is_active=True)]
+		return Response(ret, status=status.HTTP_200_OK)
+
+class CreateProjectExpenseView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=ProjectExpense
+	serializer_class=CreateProjectExpenseSerializer
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		serialized=CreateProjectExpenseSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		try:
+			project_expense=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		ret["project_expense_id"]=project_expense.id
+		return Response(ret,status=status.HTTP_200_OK)
+
+
+
+class UpdateProjectExpenseView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	model=ProjectExpense
+	serializer_class=UpdateProjectExpenseSerializer
+
+	@swagger_auto_schema(
+		operation_description="Update a expense in project", 
+		security=[{'Bearer': []}],
+		request_body=UpdateProjectExpenseSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_expense"):
+			serialized=UpdateProjectExpenseSerializer(instance=data.get("project_expense"),data=data,context={'request':request})
+			serialized.is_valid(raise_exception=True)
+			project_expense=serialized.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="project_expense is required."
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)

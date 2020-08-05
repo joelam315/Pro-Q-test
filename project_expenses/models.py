@@ -18,11 +18,11 @@ class ExpenseType(models.Model):
 
 class ProjectExpense(models.Model):
 	name=models.CharField(max_length=50)
-	project=models.ForeignKey(Project,related_name="project_expend",on_delete=models.CASCADE)
-	expend_type=models.ForeignKey(ExpenseType,related_name="type_related_expend",on_delete=models.PROTECT)
+	project=models.ForeignKey(Project,related_name="project_expense",on_delete=models.CASCADE)
+	expense_type=models.ForeignKey(ExpenseType,related_name="type_related_expense",on_delete=models.PROTECT)
 	price=models.DecimalField(
         max_digits=12, decimal_places=2)
-	pic=models.CharField(max_length=50,blank=True,null=True)
+	pic=models.CharField(max_length=50,blank=True,null=True,verbose_name="Person in charge")
 	remark=models.TextField(blank=True,null=True)
 	pay_date=models.DateField()
 
@@ -33,7 +33,7 @@ class ProjectExpense(models.Model):
 		ret=dict(
 			id=self.id,
 			name=self.name,
-			expend_type=self.expend_type.as_json(),
+			expense_type=self.expense_type.as_json(),
 			price=self.price,
 			pic=self.pic,
 			remark=self.remark,

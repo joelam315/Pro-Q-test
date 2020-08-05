@@ -34,7 +34,7 @@ class UpdateProjectWorkSerializer(serializers.ModelSerializer):
 		model=ProjectWork
 		fields=("name","pic","start_date","end_date","description")
 
-	def update(slef,instance,validation_data):
+	def update(self,instance,validation_data):
 		user = None
 		request = self.context.get("request")
 		if request and hasattr(request, "user"):
@@ -90,7 +90,7 @@ class UpdateProjectMilestoneSerializer:
 		model=ProjectMilestone
 		fields=("name","pic","date","remind","description")
 
-	def update(slef,instance,validation_data):
+	def update(self,instance,validation_data):
 		user = None
 		request = self.context.get("request")
 		if request and hasattr(request, "user"):
