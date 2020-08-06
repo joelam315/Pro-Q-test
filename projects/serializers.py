@@ -6,6 +6,7 @@ from companies.serializers import GeneralRemarkJsonSerializer
 from customers.models import Customer
 from customers.serializers import CustomerJsonSerializer
 from rooms.serializers import RoomItemJsonSerializer,ProjectItemByRoomJsonSerializer
+from project_expenses.serializers import ProjectExpenseJsonSerializer
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist, ValidationError
 
@@ -203,7 +204,7 @@ class ProjectReceiptPreviewResponseSerializer(serializers.Serializer):
 
 class ProjectItemByTypeJsonSerializer(serializers.Serializer):
 	items=RoomItemJsonSerializer(many=True)
-	sum_price=serializers.IntegerField()
+	sum_price=serializers.FloatField()
 
 class GetProjectAllItemResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
@@ -213,8 +214,20 @@ class GetProjectAllRoomItemResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	items=serializers.DictField(child=ProjectItemByRoomJsonSerializer())
 
+class ProjectExpenseByTypeJsonSerializer(serializers.Serializer):
+	items=ProjectExpenseJsonSerializer(many=True)
+	sum_price=serializers.FloatField()
+
+class GetProjectProfitAnalysisJsonSerializer(serializers.Serializer):
+	income_items=serializers.DictField(child=ProjectItemByTypeJsonSerializer())
+	outcome_items=serializers.DictField(child=ProjectItemByTypeJsonSerializer())
+	total_income=serializers.FloatField()
+	total_outcome=serializers.FloatField()
+	gross_profit_margin=serializers.FloatField()
 
 
-
+class GetProjectProfitAnalysisResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	project_profit_analysis=GetProjectProfitAnalysisJsonSerializer()
 
 

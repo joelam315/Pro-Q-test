@@ -157,7 +157,15 @@ class Project(models.Model):
                 items[item.item.item_type.name]["items"].append(item.as_json())
                 items[item.item.item_type.name]["sum_price"]+=item.unit_price*item.quantity
         return items
-
+    def all_expense(self):
+        items={}
+        expenses=self.project_expense.all()
+        for expense in expenses:
+            if expense.expense_type not in items:
+                items[expense.expense_type]={"items":[],"sum_price":0}
+            items[expense.expense_type]["items"].append(expense.as_json())
+            items[expense.expense_type]["sum_price"]+=expense.price
+        return items
     def quot_format(self):
         return dict(
             quot_upper_format=self.document_format["quot_upper_format"],
@@ -273,6 +281,20 @@ class Project(models.Model):
             receipt_no=self.generate_receipt_no(),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        return ret
+    def profit_analyse(self):
+        income=self.all_items()
+        outcome=self.all_expense()
+        total_income=sum(income[item]["sum_price"] for item in income)
+        total_outcome=sum(outcome[item]["sum_price"] for item in outcome)
+        ret=dict(
+            income_items=income,
+            outcome_items=outcome,
+            total_income=total_income,
+            total_outcome=total_outcome,
+            gross_profit_margin=((float)((total_income-total_outcome)/total_income))*100
+        )
+
         return ret
     @property
     def created_on_arrow(self):

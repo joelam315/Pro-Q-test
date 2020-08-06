@@ -55,7 +55,8 @@ from projects.serializers import (
 	ListProjectResponseSerializer,
 	GetProjectWithChargingStageRequestSerializer,
 	GetProjectAllItemResponseSerializer,
-	GetProjectAllRoomItemResponseSerializer
+	GetProjectAllRoomItemResponseSerializer,
+	GetProjectProfitAnalysisResponseSerializer
 
 )
 from rooms.models import Room, RoomType, RoomItem
@@ -2090,3 +2091,44 @@ class UpdateProjectExpenseView(APIView):
 			ret["result"]=False
 			ret["reason"]="project_expense is required."
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+class GetProjectProfitAnalysisView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+
+	@swagger_auto_schema(
+		operation_description="Get specify project profit analysis", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectProfitAnalysisResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("id"):
+			try:
+				project=Project.objects.get(id=data.get("id"))
+			except ObjectDoesNotExist:
+				ret["result"]=False
+				ret["reason"]="Project not found"
+				return Response(ret,status=status.HTTP_404_NOT_FOUND)
+			if project.company.owner==request.user:
+
+				ret["project_profit_analysis"]=project.profit_analyse()
+				return Response(ret,status=status.HTTP_200_OK)
+			else:
+				ret["result"]=False
+				ret["reason"]="Permission Denied"
+				return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			raise ValidationError("Missing id")
+

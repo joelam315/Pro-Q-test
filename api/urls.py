@@ -65,7 +65,8 @@ from api.views import (
 	UpdateProjectReceiptRemarks,
 	GetExpenseTypeListView,
 	CreateProjectExpenseView,
-	UpdateProjectExpenseView
+	UpdateProjectExpenseView,
+	GetProjectProfitAnalysisView
 )
 
 
@@ -121,6 +122,7 @@ urlpatterns = [
 	path('project/milestone/update/',UpdateProjectMilestoneView.as_view(),name="update_project_milestone"),
 	path('project/expense/create/',CreateProjectExpenseView.as_view(),name="create_project_expense"),
 	path('project/expense/update/',UpdateProjectExpenseView.as_view(),name="update_project_expense"),
+	path('project/profit/analysis/get/',GetProjectProfitAnalysisView.as_view(),name="get_project_profit_analysis"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
