@@ -5,15 +5,12 @@
   {% if request.user.is_superuser or request.user.role == 'ADMIN' or request.user.has_sales_access %}
   <li class="nav-item"><a class="nav-link" id="dashboard" href="{% url 'common:home' %}">Dashboard</a></li>
   <li class="nav-item"><a class="nav-link" id="companies" href="{% url 'companies:list' %}">Companies</a></li>
-  <li class="nav-item"><a class="nav-link" id="contacts" href="{% url 'contacts:list' %}">Contacts</a></li>
   <li class="nav-item"><a class="nav-link" id="leads" href="{% url 'leads:list' %}">Leads</a></li>
   <li class="nav-item"><a class="nav-link" id="opportunities" href="{% url 'opportunities:list' %}">Opportunities</a>
   </li>
   <li class="nav-item"><a class="nav-link" id="cases" href="{% url 'cases:list' %}">Cases</a></li>
   <li class="nav-item"><a class="nav-link" id="documents" href="{% url 'common:doc_list' %}">Documents</a></li>
   <li class="nav-item"><a class="nav-link" id="tasks" href="{% url 'tasks:tasks_list' %}">Tasks</a></li>
-  <li class="nav-item"><a class="nav-link" id="function_items" href="{% url 'function_items:list' %}">Function Items</a></li>
-  <li class="nav-item"><a class="nav-link" id="quotations" href="{% url 'quotations:quotations_list' %}">Quotations</a></li>
   <li class="nav-item"><a class="nav-link" id="events" href="{% url 'events:events_list' %}">Events</a></li>
   {% endif %}
 

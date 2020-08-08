@@ -11,7 +11,6 @@ from companies.models import Company
 from companies.utils import *
 from phonenumber_field.modelfields import PhoneNumberField
 from teams.models import Teams
-from function_items.models import FunctionItem, FunctionItemHistory,SubFunctionItem, SubFunctionItemHistory
 from projects.utils import PROJECT_STATUS
 
 def number2alphabet(number):
@@ -346,8 +345,8 @@ class ProjectHistory(models.Model):
     # details or description here stores the fields changed in the original project object
     details = models.TextField(_('Details'), null=True, blank=True)
     due_date = models.DateField(blank=True, null=True)
-    function_items=models.ManyToManyField(FunctionItemHistory, related_name='projects_history_function_items')
-    sub_function_items=models.ManyToManyField(SubFunctionItemHistory,related_name="projects_history_sub_function_items")
+    #function_items=models.ManyToManyField(FunctionItemHistory, related_name='projects_history_function_items')
+    #sub_function_items=models.ManyToManyField(SubFunctionItemHistory,related_name="projects_history_sub_function_items")
 
 
     def __str__(self):
@@ -356,19 +355,11 @@ class ProjectHistory(models.Model):
 
     def total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
         return total
         #return self.currency + ' ' + str(self.total_amount)
 
     def formatted_total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
         return 'HK$ ' + str(total)
         #return self.currency + ' ' + str(self.total_amount)
 

@@ -74,7 +74,7 @@ class HomeView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(HomeView, self).get_context_data(**kwargs)
         companies = Company.objects.filter(status="open")
-        contacts = Contact.objects.all()
+        #contacts = Contact.objects.all()
         leads = Lead.objects.exclude(
             status='converted').exclude(status='closed')
         opportunities = Opportunity.objects.all()
@@ -84,9 +84,9 @@ class HomeView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
             companies = companies.filter(
                 Q(assigned_to__id__in=[self.request.user.id]) |
                 Q(created_by=self.request.user.id))
-            contacts = contacts.filter(
+            '''contacts = contacts.filter(
                 Q(assigned_to__id__in=[self.request.user.id]) |
-                Q(created_by=self.request.user.id))
+                Q(created_by=self.request.user.id))'''
             leads = leads.filter(
                 Q(assigned_to__id__in=[self.request.user.id]) |
                 Q(created_by=self.request.user.id)).exclude(status='closed')
@@ -95,7 +95,7 @@ class HomeView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
                 Q(created_by=self.request.user.id))
 
         context["companies"] = companies
-        context["contacts_count"] = contacts.count()
+        #context["contacts_count"] = contacts.count()
         context["leads_count"] = leads
         context["opportunities"] = opportunities
         return context

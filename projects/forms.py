@@ -4,7 +4,6 @@ from common.models import User, Comment, Attachments, Address
 from django.db.models import Q
 from teams.models import Teams
 from companies.models import Company
-from function_items.models import FunctionItem
 
 class ProjectForm(forms.ModelForm):
     teams_queryset = []
@@ -18,8 +17,7 @@ class ProjectForm(forms.ModelForm):
             field.widget.attrs = {"class": "form-control"}
             field.required = False
 
-        #self.fields['function_items'].queryset=FunctionItem.objects.all()
-
+        
         if request_user.role == 'ADMIN' or request_user.is_superuser:
             self.fields['assigned_to'].queryset = User.objects.filter(
                 is_active=True)
@@ -49,8 +47,7 @@ class ProjectForm(forms.ModelForm):
         #self.fields['total_amount'].required = True
         self.fields['due_date'].required = True
         self.fields['companies'].required = False
-        self.fields['function_items'].required=True
-
+        
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
 
@@ -73,7 +70,7 @@ class ProjectForm(forms.ModelForm):
                   'from_address', 'to_address', 'name',
                   'email', 'phone', 'status', 'assigned_to',
                   'quantity', 'rate',
-                  'details', 'due_date', 'companies','function_items','sub_function_items'
+                  'details', 'due_date', 'companies'
                   )
 
 

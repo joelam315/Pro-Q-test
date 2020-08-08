@@ -74,7 +74,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls', namespace="accounts")),
     path('companies/', include('companies.urls', namespace="companies")),
     path('leads/', include('leads.urls', namespace="leads")),
-    #path('contacts/', include('contacts.urls', namespace="contacts")),
+    path('contacts/', include('contacts.urls', namespace="contacts")),
     path('opportunities/',
          include('opportunity.urls', namespace="opportunities")),
     path('cases/', include('cases.urls', namespace="cases")),

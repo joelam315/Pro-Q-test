@@ -49,8 +49,6 @@ class Quotation(models.Model):
     due_date = models.DateField(blank=True, null=True)
     companies = models.ManyToManyField(Company, related_name='companies_quotations')
     teams = models.ManyToManyField(Teams, related_name='quotations_teams')
-    function_items=models.ManyToManyField(FunctionItem, related_name='quotations_function_items')
-    sub_function_items=models.ManyToManyField(SubFunctionItem,related_name="quotations_sub_function_items")
     approved_by = models.ForeignKey(User, related_name='quotation_approved_by',on_delete=models.SET_NULL, null=True)
     approved_on = models.DateTimeField(null=True)
     last_updated_by = models.ForeignKey(User, related_name='quotation_last_updated_by',on_delete=models.SET_NULL, null=True)
@@ -71,19 +69,11 @@ class Quotation(models.Model):
 
     def total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
         return total
         #return self.currency + ' ' + str(self.total_amount)
 
     def formatted_total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
         return 'HK$ ' + str(total)
         #return self.currency + ' ' + str(self.total_amount)
 
@@ -125,17 +115,11 @@ class Quotation(models.Model):
 
         )
     def as_json(self):
-        fis=[]
-        for fi in self.function_items.all():
-            fis.append(fi.as_json())
-            sfis=self.sub_function_items.filter(related_function_item=fi)
-            fis[-1]["sub_function_items"]=[sfi.as_json() for sfi in sfis]
         return dict(
             id=self.id,
             quotation_number=self.quotation_number,
             quotation_title=self.quotation_title,
             status=self.status,
-            function_items=fis,#[fi.as_json() for fi in self.function_items.all()],
             details=self.details,
             name=self.name,
             due_date=str(self.due_date),
@@ -194,9 +178,7 @@ class QuotationHistory(models.Model):
     # details or description here stores the fields changed in the original quotation object
     details = models.TextField(_('Details'), null=True, blank=True)
     due_date = models.DateField(blank=True, null=True)
-    function_items=models.ManyToManyField(FunctionItemHistory, related_name='quotations_history_function_items')
-    sub_function_items=models.ManyToManyField(SubFunctionItemHistory,related_name="quotations_history_sub_function_items")
-
+    
 
     def __str__(self):
         """Unicode representation of Quotation."""
@@ -204,19 +186,11 @@ class QuotationHistory(models.Model):
 
     def total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
         return total
         #return self.currency + ' ' + str(self.total_amount)
 
     def formatted_total_amount(self):
         total=0
-        for function_item in self.function_items.all():
-            total+=function_item.price
-        for sub_function_item in self.sub_function_items.all():
-            total+=sub_function_item.price
         return 'HK$ ' + str(total)
         #return self.currency + ' ' + str(self.total_amount)
 
