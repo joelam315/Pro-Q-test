@@ -13,7 +13,8 @@ from common.views import (
     api_settings, add_api_settings, view_api_settings,
     update_api_settings, delete_api_settings,
     change_passsword_by_admin, google_login, create_lead_from_site,
-    activate_user, resend_activation_link
+    activate_user, resend_activation_link,
+    AdminsListView
 )
 from django.conf.urls.static import static
 from django.conf import settings
@@ -32,6 +33,14 @@ urlpatterns = [
     path('change-password/',
          ChangePasswordView.as_view(), name='change_password'),
     path('profile/', ProfileView.as_view(), name='profile'),
+
+    # Admin views
+    path('admins/list/',AdminsListView.as_view(),name='admins_list'),
+    path('admins/create/', CreateAdminView.as_view(), name='create_admin'),
+    path('admins/<int:pk>/edit/', UpdateAdminView.as_view(), name="edit_admin"),
+    path('admins/<int:pk>/view/', AdminDetailView.as_view(), name='view_admin'),
+    path('admins/<int:pk>/delete/',
+         AdminDeleteView.as_view(), name='remove_admin'),
 
     # User views
     path('users/list/', UsersListView.as_view(), name='users_list'),

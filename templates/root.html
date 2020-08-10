@@ -9,7 +9,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Django CRM</title>
+  <title>ProQ Control Panel</title>
   <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
@@ -42,29 +42,29 @@
     {% block header %}
     <header>
       <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <!-- <a class="navbar-brand" href="{% url 'common:home' %}">Django CRM</a> -->
+        <!-- <a class="navbar-brand" href="{% url 'common:home' %}">ProQ Control Panel</a> -->
         <div class="dropdown">
 
             {% if request.user.is_superuser or request.user.role == 'ADMIN' %}
             <a class="dropdown-toggle navbar-brand" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
             aria-haspopup="true" aria-expanded="false" style="color:#44535c">
-            Django CRM
+            ProQ Control Panel
             </a>
             {% else %}
             {% if request.user.has_sales_access and request.user.has_marketing_access %}
             <a class="dropdown-toggle navbar-brand" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
             aria-haspopup="true" aria-expanded="false" style="color:#44535c">
-            Django CRM
+            ProQ Control Panel
             </a>
             {% elif request.user.has_sales_access and not request.user.has_marketing_access %}
             <a class="navbar-brand" href="{% url 'common:home' %}" role="button" id="dropdownMenuLink" data-toggle=""
             aria-haspopup="true" aria-expanded="false" style="color:#44535c">
-            Django CRM
+            ProQ Control Panel
             </a>
             {% elif not request.user.has_sales_access and request.user.has_marketing_access %}
             <a class="navbar-brand" href="{% url 'marketing:dashboard' %}" role="button" id="dropdownMenuLink" data-toggle=""
             aria-haspopup="true" aria-expanded="false" style="color:#44535c">
-            Django CRM
+            ProQ Control Panel
             </a>
             {% else %}
             {{''}}
@@ -73,7 +73,7 @@
 
           <!-- <a class="dropdown-toggle navbar-brand" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
             aria-haspopup="true" aria-expanded="false" style="color:#44535c">
-            Django CRM
+            ProQ Control Panel
           </a> -->
 
           <div class="dropdown-menu mt-2" aria-labelledby="dropdownMenuLink">
@@ -119,7 +119,7 @@
               </a>
               <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
                 {% if request.user.role == "ADMIN"  or request.user.is_superuser %}
-                <a class="dropdown-item" href="{% url 'common:users_list' %}">Users</a>
+                <a class="dropdown-item" href="{% url 'common:admins_list' %}">Admins</a>
                 <a class="dropdown-item" href="{% url 'common:api_settings' %}">Settings</a>
                 {% endif %}
                 {% if request.user.email != "admin@micropyramid.com" %}

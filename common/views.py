@@ -228,6 +228,193 @@ class LogoutView(LoginRequiredMixin, View):
         request.session.flush()
         return redirect("common:login")
 
+class AdminsListView(AdminRequiredMixin, TemplateView):
+    model = User
+    context_object_name = "users"
+    template_name = "list.html"
+
+    def get_queryset(self):
+        queryset = self.model.objects.filter(role="ADMIN")
+
+        request_post = self.request.POST
+        if request_post:
+            if request_post.get('username'):
+                queryset = queryset.filter(
+                    username__icontains=request_post.get('username'))
+            if request_post.get('email'):
+                queryset = queryset.filter(
+                    email__icontains=request_post.get('email'))
+            if request_post.get('role'):
+                queryset = queryset.filter(
+                    role=request_post.get('role'))
+            if request_post.get('status'):
+                queryset = queryset.filter(
+                    is_active=request_post.get('status'))
+
+        return queryset.order_by('username')
+
+    def get_context_data(self, **kwargs):
+        context = super(AdminsListView, self).get_context_data(**kwargs)
+        active_users = self.get_queryset().filter(is_active=True)
+        inactive_users = self.get_queryset().filter(is_active=False)
+        context["active_users"] = active_users
+        context["inactive_users"] = inactive_users
+        context["per_page"] = self.request.POST.get('per_page')
+        context['admin_email'] = settings.ADMIN_EMAIL
+        context['roles'] = ROLES
+        context['status'] = [('True', 'Active'), ('False', 'In Active')]
+        return context
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+class CreateAdminView(AdminRequiredMixin, CreateView):
+    model = User
+    form_class = UserForm
+    template_name = "create.html"
+    # success_url = '/users/list/'
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        if form.cleaned_data.get("password"):
+            user.set_password(form.cleaned_data.get("password"))
+        user.save()
+
+        if self.request.POST.getlist('teams'):
+            for team in self.request.POST.getlist('teams'):
+                Teams.objects.filter(id=team).first().users.add(user)
+
+        current_site = self.request.get_host()
+        protocol = self.request.scheme
+        send_email_to_new_user.delay(user.email, self.request.user.email,
+                                     domain=current_site, protocol=protocol)
+        # mail_subject = 'Created account in CRM'
+        # message = render_to_string('new_user.html', {
+        #     'user': user,
+        #     'created_by': self.request.user
+
+        # })
+        # email = EmailMessage(mail_subject, message, to=[user.email])
+        # email.content_subtype = "html"
+        # email.send()
+
+        if self.request.is_ajax():
+            data = {'success_url': reverse_lazy(
+                'common:admins_list'), 'error': False}
+            return JsonResponse(data)
+        return super(CreateAdminView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        response = super(CreateAdminView, self).form_invalid(form)
+        if self.request.is_ajax():
+            return JsonResponse({'error': True, 'errors': form.errors})
+        return response
+
+    def get_form_kwargs(self):
+        kwargs = super(CreateAdminView, self).get_form_kwargs()
+        kwargs.update({"request_user": self.request.user})
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateAdminView, self).get_context_data(**kwargs)
+        context["user_form"] = context["form"]
+        context["teams"] = Teams.objects.all()
+        if "errors" in kwargs:
+            context["errors"] = kwargs["errors"]
+        return context
+
+class AdminDetailView(AdminRequiredMixin, DetailView):
+    model = User
+    context_object_name = "users"
+    template_name = "user_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(AdminDetailView, self).get_context_data(**kwargs)
+        user_obj = self.object
+        users_data = []
+        for each in User.objects.all():
+            assigned_dict = {}
+            assigned_dict['id'] = each.id
+            assigned_dict['name'] = each.username
+            users_data.append(assigned_dict)
+        context.update({
+            "user_obj": user_obj,
+            "opportunity_list":
+            Opportunity.objects.filter(assigned_to=user_obj.id),
+            "contacts": Contact.objects.filter(assigned_to=user_obj.id),
+            "cases": Case.objects.filter(assigned_to=user_obj.id),
+            # "companies": Company.objects.filter(assigned_to=user_obj.id),
+            "assigned_data": json.dumps(users_data),
+            "comments": user_obj.user_comments.all(),
+        })
+        return context
+
+class UpdateAdminView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = UserForm
+    template_name = "create.html"
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        if self.request.is_ajax():
+            if (self.request.user.role != "ADMIN" and not
+                    self.request.user.is_superuser):
+                if self.request.user.id != self.object.id:
+                    data = {'error_403': True, 'error': True}
+                    return JsonResponse(data)
+        if user.role == "USER":
+            user.is_superuser = False
+        user.save()
+
+        if self.request.POST.getlist('teams'):
+            user_teams = user.user_teams.all()
+            # this is for removing the user from previous team
+            for user_team in user_teams:
+                user_team.users.remove(user)
+            # this is for assigning the user to new team
+            for team in self.request.POST.getlist('teams'):
+                team_obj = Teams.objects.filter(id=team).first()
+                team_obj.users.add(user)
+
+        if (self.request.user.role == "ADMIN" and
+                self.request.user.is_superuser):
+            if self.request.is_ajax():
+                data = {'success_url': reverse_lazy(
+                    'common:admins_list'), 'error': False}
+                if self.request.user.id == user.id:
+                    data = {'success_url': reverse_lazy(
+                        'common:profile'), 'error': False}
+                    return JsonResponse(data)
+                return JsonResponse(data)
+        if self.request.is_ajax():
+            data = {'success_url': reverse_lazy(
+                'common:profile'), 'error': False}
+            return JsonResponse(data)
+        return super(UpdateAdminView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        response = super(UpdateAdminView, self).form_invalid(form)
+        if self.request.is_ajax():
+            return JsonResponse({'error': True, 'errors': form.errors})
+        return response
+
+    def get_form_kwargs(self):
+        kwargs = super(UpdateAdminView, self).get_form_kwargs()
+        kwargs.update({"request_user": self.request.user})
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateAdminView, self).get_context_data(**kwargs)
+        context["user_obj"] = self.object
+        user_profile_name = str(context["user_obj"].profile_pic).split("/")
+        user_profile_name = user_profile_name[-1]
+        context["user_profile_name"] = user_profile_name
+        context["user_form"] = context["form"]
+        context["teams"] = Teams.objects.all()
+        if "errors" in kwargs:
+            context["errors"] = kwargs["errors"]
+        return context
 
 class UsersListView(AdminRequiredMixin, TemplateView):
     model = User
@@ -235,7 +422,7 @@ class UsersListView(AdminRequiredMixin, TemplateView):
     template_name = "list.html"
 
     def get_queryset(self):
-        queryset = self.model.objects.all()
+        queryset = self.model.objects.filter(role="USER")
 
         request_post = self.request.POST
         if request_post:
@@ -270,6 +457,17 @@ class UsersListView(AdminRequiredMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
+class AdminDeleteView(AdminRequiredMixin, DeleteView):
+    model = User
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        current_site = request.get_host()
+        deleted_by = self.request.user.email
+        send_email_user_delete.delay(
+            self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
+        self.object.delete()
+        return redirect("common:admins_list")
 
 class CreateUserView(AdminRequiredMixin, CreateView):
     model = User
