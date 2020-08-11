@@ -234,7 +234,7 @@ class AdminsListView(AdminRequiredMixin, TemplateView):
     template_name = "list.html"
 
     def get_queryset(self):
-        queryset = self.model.objects.filter(role="ADMIN")
+        queryset = self.model.objects.filter(Q(role="ADMIN")|Q(is_superuser=True))
 
         request_post = self.request.POST
         if request_post:
@@ -422,7 +422,7 @@ class UsersListView(AdminRequiredMixin, TemplateView):
     template_name = "list.html"
 
     def get_queryset(self):
-        queryset = self.model.objects.filter(role="USER")
+        queryset = self.model.objects.filter(role="USER",is_superuser=False)
 
         request_post = self.request.POST
         if request_post:

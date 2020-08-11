@@ -14,7 +14,8 @@ from common.views import (
     update_api_settings, delete_api_settings,
     change_passsword_by_admin, google_login, create_lead_from_site,
     activate_user, resend_activation_link,
-    AdminsListView
+    AdminsListView, CreateAdminView, AdminDetailView,UpdateAdminView,
+    AdminDeleteView
 )
 from django.conf.urls.static import static
 from django.conf import settings
