@@ -84,6 +84,7 @@ urlpatterns = [
     path('events/', include('events.urls', namespace="events")),
     path('teams/', include('teams.urls', namespace="teams")),
     path('emails/', include('emails.urls', namespace="emails")),
+    path('project_items/',include('project_items.urls',namespace="project_items")),
     #path('function_items/',include('function_items.urls',namespace="function_items")),
     # path('planner/', include('planner.urls', namespace="planner")),
     path('logout/', views.LogoutView, {'next_page': '/login/'}, name="logout"),

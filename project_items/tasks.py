@@ -4,9 +4,9 @@ from django.shortcuts import reverse
 from django.template.loader import render_to_string
 
 from common.models import User
-from project_items.models import ProjectItem, ProjectItemHistory, SubProjectItem, SubProjectItemHistory
+#from project_items.models import ProjectItem, ProjectItemHistory, SubProjectItem, SubProjectItemHistory
 
-@task
+'''@task
 def create_project_item_history(original_project_item_id, updated_by_user_id, changed_fields):
     """original_project_item_id, updated_by_user_id, changed_fields"""
     original_project_item = ProjectItem.objects.filter(id=original_project_item_id).first()
@@ -62,3 +62,4 @@ def create_sub_project_item_history(original_sub_project_item_id, updated_by_use
         sub_project_item_history.updated_by = updated_by_user
 
         sub_project_item_history.save()
+'''
