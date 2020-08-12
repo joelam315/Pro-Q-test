@@ -18,38 +18,20 @@
   <div class="col-md-9">
     <!-- count_blocks_row starts here -->
     <div class="row count_blocks_row" style="justify-content: center">
+      <div class="col-md-3">
+        <div class="item yellow">
+          <a href="{% url 'common:users_list'%}">
+            <div class="title">Users</div>
+            <div class="count">{{users|length}}</div>
+            <!-- <div class="more"><a href="#">Go Live</a></div> -->
+          </a>
+        </div>
+      </div>
      <div class="col-md-3">
         <div class="item sky_blue">
           <a href="{% url 'companies:list'%}">
             <div class="title">Companies</div>
             <div class="count">{{companies|length}}</div>
-            <!-- <div class="more"><a href="#">Go Live</a></div> -->
-          </a>
-        </div>
-      </div>
-      <!--<div class="col-md-3">
-        <div class="item green">
-          <a href="{% url 'contacts:list' %}">
-            <div class="title">Contacts</div>
-            <div class="count">{{contacts_count}}</div>
-          </a>-->
-          <!-- <div class="more"><a href="#">Go Live</a></div> -->
-        <!--</div>
-      </div>-->
-      <div class="col-md-3">
-        <div class="item red">
-          <a href="{% url 'leads:list' %}">
-            <div class="title">Leads</div>
-            <div class="count">{{leads_count|length}}</div>
-            <!-- <div class="more"><a href="#">Go Live</a></div> -->
-          </a>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="item yellow">
-          <a href="{% url 'opportunity:list' %}">
-            <div class="title">Opportunities</div>
-            <div class="count">{{opportunities|length}}</div>
             <!-- <div class="more"><a href="#">Go Live</a></div> -->
           </a>
         </div>

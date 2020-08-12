@@ -1,0 +1,226 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% load paginate %}
+{% load thumbnail %}
+{% block breadcrumb %}
+{% block extralinks %}
+<link rel="stylesheet" href="{% static 'css/bootstrap-suggest.css' %}">
+<style>
+  .opacity_block {
+    opacity: 0.2;
+  }
+  #map {
+    height: 400px;  /* The height is 400 pixels */
+    width: 100%;  /* The width is the width of the web page */
+  }
+</style>
+{% endblock extralinks %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"> <a href="{% url 'contacts:list' %}">Contacts</a></li>
+    <li class="breadcrumb-item active">{{contact_record.first_name}} {{contact_record.last_name}}</li>
+  </ol>
+</nav>
+{% endblock %}
+{% block content %}
+<!-- CONTACTS VIEW STARTS -->
+<div class="main_container" id="maincontainer">
+  <div class="overview_form_block row marl justify-content-center">
+    <div class="col-md-8" id="opacity_block">
+      <div class="card">
+
+        <div class="card-body" id="datashow">
+
+          <div class="card-title text-right">
+            <h5>
+              <span class="float-left title">Overview</span>
+              <span class="" style="margin-top: 0px">
+                <div class="dropdown buttons_row" style="width:auto; display:inline-block; left:0">
+                  <button class="btn primary_btn dropdown-toggle" type="button" data-toggle="dropdown">Actions
+                    <span class="caret"></span></button>
+                  <ul class="dropdown-menu" style="width:fit-content; min-width:-webkit-fill-available; margin-top: 0;">
+                    <li><a href="{% url 'function_items:edit_function_item' function_item_record.id %}"
+                        style="background:#17a2b8; color: white; font-weight: 600;">Edit</a></li>
+                  </ul>
+                </div>
+              </span>
+            </h5>
+          </div>
+
+          <div class="row marl">
+            <div class="col-md-4">
+              <div class="filter_col col-md-12" id="iname">
+                <div class="form-group">
+                  <label class="function_item_field_label" for="id_name" data-name="name">Name</label>
+                  <div class="function_item_field" id="function_item_name" data-name="name">{{ function_item_record.name }}</div>
+                </div>
+              </div>
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="function_item_field_label" for="id_type" data-name="name">Type</label>
+                  <div class="function_item_field" id="function_item_type" data-name="name">{{ function_item_record.type }}</div>
+                </div>
+              </div>
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="function_item_field_label" for="id_status" data-name="name">Status</label>
+                  <div class="function_item_field" id="function_item_status" data-name="name">{{ function_item_record.status }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  {% if function_item_record.description %}
+                  <label class="function_item_field_label" for="id_description" data-name="name">Description</label>
+                  <div class="function_item_field" id="function_item_description" data-name="name">{{ function_item_record.description }}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="function_item_field_label" for="id_price" data-name="name">Price</label>
+                  <div class="function_item_field" id="function_item_price" data-name="name">{{ function_item_record.price }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="created_information">
+                Created by <b>{{ function_item_record.created_by }}</b> created on
+                <b title="{{ function_item_record.created_on }}">{{ function_item_record.created_on_arrow }}</b>
+              </div>
+            </div>
+            {% if function_item_record.approved_by %}
+            <div class="col-md-12">
+              <div class="created_information">
+                Approved by <b>{{ function_item_record.approved_by }}</b> approved on
+                <b title="{{ function_item_record.created_on }}">{{ function_item_record.approved_on_arrow }}</b>
+              </div>
+            </div>
+            {% endif %}
+            <div class="col-md-12">
+              <div class="created_information">
+                Last Updated by <b>{{ function_item_record.last_updated_by }}</b> last updated on
+                <b title="{{ function_item_record.created_on }}">{{ function_item_record.last_updated_on_arrow }}</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr>
+      <div class="table_container_row row marl no-gutters">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="panel-heading-list card-title view-pad">
+                Function Item History
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped table-condensed">
+                  {% if function_item_history|length > 0 %}
+                  <thead>
+                    <tr>
+                      <th width="5%" style="text-align:center;">S.No</th>
+                      <th width="20%" style="text-align:center;">Date</th>
+                      <th width="20%" style="text-align:center;">Function Name</th>
+                      <th width="20%" style="text-align:center;">User</th>
+                      <th width="10%" style="text-align:center;">Status </th>
+                      <th width="20%" style="text-align:center;">Description </th>
+                      <th width="35%" style="text-align:center;">Changed Data </th>
+                      <th width="10%" style="text-align:center;">Price </th>
+                    </tr>
+                  </thead>
+                  {% endif %}
+                  <tbody>
+                    {% if per_page %}
+                    {% paginate per_page function_item_history %}
+                    {% else%}
+                    {% paginate 10 function_item_history %}
+                    {% endif %}
+                    {% for function_item in function_item_history %}
+                    <tr id="opp_details{{opportunity.id}}" class="text-center">
+                      <td scope="row" class="text-center">{{ forloop.counter }}</td>
+                      <td scope="row" class="text-center" title="{{function_item.created_on}}">
+                        {{ function_item.created_on_arrow }}</td>
+                      <td scope="row" class="text-center">{{ function_item.name }}</td>
+                      <td scope="row" class="text-center">
+                        {% if function_item.updated_by %}
+                        {% if function_item.updated_by.profile_pic %}
+                        {% thumbnail function_item.updated_by.profile_pic "40x40" crop="center" as im %}
+                        <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}"
+                          title="{{ function_item.updated_by }}" style="border-radius: 50%" />
+                        {% endthumbnail %}
+                        {% else %}
+                        <img src="{% static 'images/user.png' %}" alt="Micro profile pic"
+                          style="width: 40px;height: 40px;border-radius: 50%;" title="{{ function_item.updated_by }}" />
+                        {% endif %}
+                        {% else %}
+                        <img src="{% static 'images/user.png' %}" alt="Micro profile pic"
+                          style="width: 40px;height: 40px;border-radius: 50%;" title="{{ function_item.updated_by }}" />
+                        {% endif %}
+                      </td>
+                      <td scope="row" class="text-center">{{ function_item.status }}</td>
+                      <td scope="row" class="text-center">{{ function_item.description }}</td>
+                      <td scope="row" class="text-center">{{ function_item.changed_data }}</td>
+                      <td scope="row" class="text-center">{{ function_item.price }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                <div class="text-center row marl
+                {% if function_item_history|length > 0 %}
+                mt-5
+                {% endif %}
+                ">
+                  {% show_pages %}
+                </div>
+              </div>
+              {% ifequal function_item_history|length 0 %}
+              <h6 class="text-center">No Function Item History Records Found</h6>
+              
+              {% endifequal %}
+            </div>
+          </div>
+          <br clear="all">
+        </div>
+      </div>
+
+      
+    </div>
+    <div class="overview_form_block row marl justify-content-center" id="loading_spinner"
+      style="z-index: 10; left: 0; right: 0; vertical-align: middle; position: absolute; margin-top: 15%;">
+
+      <div class="spinner-border text-primary" style="width: 5em; height: 5em;" role="status">
+        <span class="sr-only">Processing File...</span>
+      </div>
+    </div>
+  </div>
+  <!-- CONTACTS VIEW ENDS -->
+  {% endblock%}
+  {% block js_block %}
+  <script type="text/javascript">
+    $('#loading_spinner').hide()
+
+    var assigned_to_list = "{{ assigned_data }}";
+    assigned_to_list = JSON.parse(assigned_to_list.replace(/&(l|g|quo)t;/g, function (a, b) {
+      return {
+        l: '<',
+        g: '>',
+        quo: '"'
+      }[b];
+    }));
+
+
+
+    function HideError(e) {
+    }
+    function HideError(e) {
+      $("#CommentError").hide()
+      $("#AttachmentError").hide()
+    }
+
+
+  </script>
+  <script src="{% static 'js/bootstrap-suggest.js' %}"></script>
+  {% endblock js_block %}
