@@ -10,7 +10,9 @@ from django.urls import reverse
 from django.views.generic import (
 	CreateView, UpdateView, DetailView, TemplateView, View)
 from common.models import User
-from project_items.models import ProjectItem,SubProjectItem
+from project_items.models import (
+	ItemType,ItemProperty,ItemTypeMaterial,Item,ItemFormula
+)
 from project_items.forms import ProjectItemForm,SubProjectItemForm
 from project_items.utils import PROJECT_TYPE, PROJECT_STATUS
 from django.core.exceptions import PermissionDenied
@@ -31,37 +33,10 @@ from django.core.files.base import ContentFile
 from project_items.tasks import  create_project_item_history, create_sub_project_item_history
 from project_items.serializers import ProjectItemSerializer, RequestProjectItemSerializer
 
-class ProjectItemsListAPIView(APIView):
-	authentication_classes = [authentication.JWTAuthentication]
-	permission_classes = [IsAuthenticated]
+class ItemTypesListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 	model = ProjectItem
-
-	@swagger_auto_schema(
-		operation_description="Return approved Function Item", 
-
-		responses={
-		200: ProjectItemSerializer(),
-		401: "{\"detail\":\"Authentication credentials were not provided.\"}"})
-	def post(self, request):
-		ret={}
-		ret["result"]=True
-		data = json.loads(request.body)
-		#return Response(data)
-		
-		try:
-			project_item=ProjectItem.objects.filter(status="Approved")
-		except IntegrityError as e:
-			ret["result"]=False
-			ret["reason"]=str(e).split("DETAIL:  ")[1]
-			return Response(ret,status=403)
-		results = [ob.as_json() for ob in project_item]
-		return Response(json.dumps(results))
-
-
-class ProjectItemsListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
-	model = ProjectItem
-	context_object_name = "project_item_list"
-	template_name = "project_items.html"
+	context_object_name = "item_type_list"
+	template_name = "item_types.html"
 
 	def get_queryset(self):
 		queryset = self.model.objects.all()
@@ -75,22 +50,21 @@ class ProjectItemsListView(SalesAccessRequiredMixin, LoginRequiredMixin, Templat
 			if request_post.get('name'):
 				queryset = queryset.filter(
 					name__icontains=request_post.get('name'))
-			if request_post.get('type'):
+			if request_post.get('is_active'):
 				queryset = queryset.filter(
-					type__icontains=request_post.get('type'))
+					type__icontains=request_post.get('is_active'))
 
 		return queryset.distinct()
 
 	def get_context_data(self, **kwargs):
 		context = super(ProjectItemsListView, self).get_context_data(**kwargs)
-		context["project_item_list"] = self.get_queryset()
+		context["item_type_list"] = self.get_queryset()
 		context["per_page"] = self.request.POST.get('per_page')
-		context["users"] = User.objects.filter(
-			is_active=True).order_by('email')
+		#context["users"] = User.objects.filter(is_active=True).order_by('email')
 		search = False
 		if (
 			self.request.POST.get('name') or
-			self.request.POST.get('type')
+			self.request.POST.get('is_active')
 		):
 			search = True
 		context["search"] = search
@@ -100,47 +74,17 @@ class ProjectItemsListView(SalesAccessRequiredMixin, LoginRequiredMixin, Templat
 		context = self.get_context_data(**kwargs)
 		return self.render_to_response(context)
 
-class GetAllProjectItemsTypeAPIView(APIView):
-	authentication_classes = [authentication.JWTAuthentication]
-	permission_classes = [IsAuthenticated]
-	model = ProjectItem
-
-	@swagger_auto_schema(
-		operation_description="Return All Function Item Type", 
-
-		responses={
-		200: "[string]",
-		401: "{\"detail\":\"Authentication credentials were not provided.\"}"})
-	def post(self, request):
-		ret={}
-		ret["result"]=True
-		#return Response(data)
-		
-		try:
-			project_item_type=PROJECT_TYPE
-		except IntegrityError as e:
-			ret["result"]=False
-			ret["reason"]=str(e).split("DETAIL:  ")[1]
-			return Response(ret,status=403)
-		return Response(json.dumps([type[0] for type in project_item_type]))
-
-class CreateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
-	model = ProjectItem
-	form_class = ProjectItemForm
-	template_name = "create_project_item.html"
+class CreateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
+	model = ItemType
+	form_class = ItemTypeForm
+	template_name = "create_item_type.html"
 
 	def dispatch(self, request, *args, **kwargs):
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-		else:
-			self.users = User.objects.filter(role='ADMIN').order_by('email')
-		return super(CreateProjectItemView, self).dispatch(
+		return super(CreateItemTypeView, self).dispatch(
 			request, *args, **kwargs)
 
 	def get_form_kwargs(self):
-		kwargs = super(CreateProjectItemView, self).get_form_kwargs()
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
+		kwargs = super(CreateItemTypeView, self).get_form_kwargs()
 		return kwargs
 
 	def post(self, request, *args, **kwargs):
@@ -152,54 +96,31 @@ class CreateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, Create
 		if form.is_valid():
 			#address_obj = address_form.save()
 
-			project_item_obj = form.save(commit=False)
+			item_type_obj = form.save(commit=False)
 
 			#project_item_obj.address = address_obj
-			project_item_obj.created_by = self.request.user
-			project_item_obj.last_updated_by=self.request.user
-			project_item_obj.save()
+			#item_type_obj.created_by = self.request.user
+			#project_item_obj.last_updated_by=self.request.user
+			item_type_obj.save()
 
 			return self.form_valid(form)
 
 		return self.form_invalid(form)
 
 	def form_valid(self, form):
-		project_item_obj = form.save(commit=False)
-		if self.request.POST.getlist('assigned_to', []):
-			pass
-			# for assigned_to_user in assigned_to_list:
-			#	 user = get_object_or_404(User, pk=assigned_to_user)
-			#	 mail_subject = 'Assigned to project_item.'
-			#	 message = render_to_string(
-			#		 'assigned_to/project_item_assigned.html', {
-			#			 'user': user,
-			#			 'domain': current_site.domain,
-			#			 'protocol': self.request.scheme,
-			#			 'project_item': project_item_obj
-			#		 })
-			#	 email = EmailMessage(mail_subject, message, to=[user.email])
-			#	 email.content_subtype = "html"
-			#	 email.send()
-
-		#assigned_to_list = list(project_item_obj.assigned_to.all().values_list('id', flat=True))
-		#current_site=get_current_site(self.request)
-		#recipients = assigned_to_list
-		#send_email_to_assigned_user.delay(recipients, project_item_obj.id, domain=current_site.domain,
-		#	protocol=self.request.scheme)
-
-		create_project_item_history(project_item_obj.id, self.request.user.id, [])
+		item_type_obj = form.save(commit=False)
+		
 		if self.request.is_ajax():
 			return JsonResponse({'error': False})
 		if self.request.POST.get("savenewform"):
-			return redirect("project_items:add_project_item")
+			return redirect("item_types:add_item_type")
 
-		return redirect('project_items:list')
+		return redirect('item_types:list')
 
 	def form_invalid(self, form):
-		#address_form = BillingAddressForm(self.request.POST)
-		sub_project_item_form=SubProjectItemForm(self.request.POST)
+		
 		if self.request.is_ajax():
-			return JsonResponse({'error': True, 'project_item_errors': form.errors})
+			return JsonResponse({'error': True, 'item_type_errors': form.errors})
 			#return JsonResponse({'error': True, 'project_item_errors': form.errors,
 			#					 'address_errors': address_form.errors})
 		return self.render_to_response(
@@ -207,235 +128,40 @@ class CreateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, Create
 			#self.get_context_data(form=form, address_form=address_form))
 
 	def get_context_data(self, **kwargs):
-		context = super(CreateProjectItemView, self).get_context_data(**kwargs)
-		context["project_item_form"] = context["form"]
-		context["users"] = self.users
-
-		#context["countries"] = COUNTRIES
-		#context["assignedto_list"] = [
-		#	int(i) for i in self.request.POST.getlist('assigned_to', []) if i]
-		#if "address_form" in kwargs:
-		#	context["address_form"] = kwargs["address_form"]
-		#else:
-		#	if self.request.POST:
-		#		context["address_form"] = BillingAddressForm(self.request.POST)
-		#	else:
-		#		context["address_form"] = BillingAddressForm()
-		#context["types"] = PROJECT_TYPE
-		#context["status"]=PROJECT_STATUS
-		return context
-
-class CreateSubProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
-	model = SubProjectItem
-	form_class = SubProjectItemForm
-	#template_name = "create_project_item.html"
-
-	def dispatch(self, request, *args, **kwargs):
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-		else:
-			self.users = User.objects.filter(role='ADMIN').order_by('email')
-		return super(CreateSubProjectItemView, self).dispatch(
-			request, *args, **kwargs)
-
-	def get_form_kwargs(self):
-		kwargs = super(CreateSubProjectItemView, self).get_form_kwargs()
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-		return kwargs
-
-	def post(self, request, *args, **kwargs):
-		self.object = None
-		form = self.get_form()
-
-		if form.is_valid():
-
-			#sub_project_item_obj=sub_project_item_form.save()
-			#project_item_obj=form.cleaned_data.get("related_project_item")
-			sub_project_item_obj = form.save(commit=False)
-			#sub_project_item_obj.related_project_item=project_item_obj
-			#project_item_obj.address = address_obj
-			sub_project_item_obj.created_by = self.request.user
-			sub_project_item_obj.last_updated_by=self.request.user
-			sub_project_item_obj.save()
-			create_sub_project_item_history(sub_project_item_obj.id, self.request.user.id, [])
-
-			return self.form_valid(form)
-
-		return self.form_invalid(form)
-
-	def form_valid(self, form):
-		sub_project_item_obj = form.save(commit=False)
-
-		if self.request.is_ajax():
-			return JsonResponse({'error': False,'id':sub_project_item_obj.id})
-
-		return JsonResponse({'error': False,'id':sub_project_item_obj.id})
-
-	def form_invalid(self, form):
-		#address_form = BillingAddressForm(self.request.POST)
-		sub_project_item_form=SubProjectItemForm(self.request.POST)
-		if self.request.is_ajax():
-			return JsonResponse({'error': True, 'sub_project_item_errors':sub_project_item_form.errors})
-			#return JsonResponse({'error': True, 'project_item_errors': form.errors,
-			#					 'address_errors': address_form.errors})
-		return self.render_to_response(
-			self.get_context_data(form=form))
-			#self.get_context_data(form=form, address_form=address_form))
-
-	def get_context_data(self, **kwargs):
-		context = super(CreateSubProjectItemView, self).get_context_data(**kwargs)
-		context["sub_project_item_form"] = context["form"]
-		context["users"] = self.users
+		context = super(CreateItemTypeView, self).get_context_data(**kwargs)
+		context["item_type_form"] = context["form"]
 
 		return context
 
-class RequestProjectItemAPIView(APIView):
-	authentication_classes = [authentication.JWTAuthentication]
-	permission_classes = [IsAuthenticated]
+class ItemTypeDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
 	model = ProjectItem
-	@swagger_auto_schema(
-		operation_description="Create a Contact via API call", 
-		request_body=RequestProjectItemSerializer,
-
-		responses={
-		200: "{\"result\":true}",
-		400: "{\"result\":false,\"reason\":\"Missing name\"}"+
-			"\n{\"result\":false,\"reason\":\"Missing type\"}",
-		401: "{\"detail\":\"Authentication credentials were not provided.\"}",
-		403: "{\"result\":false,\"reason\":\"{Key ([feild])=([field_value]) already exists.\"}"})
-
-	def post(self, request):
-		ret={}
-		ret["result"]=True
-		data = json.loads(request.body)
-		img = None
-		#return Response(data)
-		if data.get("name")==None:
-			ret["result"]=False
-			ret["reason"]="Missing name"
-			return Response(ret,status=400)
-		if  data.get("type")==None:
-			ret["result"]=False
-			ret["reason"]="Missing type"
-			return Response(ret,status=400)
-
-		try:
-			project_item=ProjectItem.objects.create(
-				name=data.get("name"),
-				type=data.get("type"),
-				price=data.get("price") if data.get("price") else 0,
-				description=data.get("description"),
-				created_by=request.user,
-				last_updated_by=request.user)
-		except IntegrityError as e:
-			ret["result"]=False
-			ret["reason"]=str(e)
-			return Response(ret,status=403)
-
-		return Response(ret)
-
-class RequestProjectItemView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView):
-	model = ProjectItem
-	form_class = ProjectItemForm
-	template_name = "create_project_item.html"
-
-	def dispatch(self, request, *args, **kwargs):
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-		else:
-			self.users = User.objects.filter(role='ADMIN').order_by('email')
-		return super(RequestProjectItemView, self).dispatch(
-			request, *args, **kwargs)
-
-	def get_form_kwargs(self):
-		kwargs = super(RequestProjectItemView, self).get_form_kwargs()
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-		return kwargs
-
-	def post(self, request, *args, **kwargs):
-		self.object = None
-		form = self.get_form()
-
-		if form.is_valid():
-			#address_obj = address_form.save()
-			project_item_obj = form.save(commit=False)
-			#project_item_obj.address = address_obj
-			project_item_obj.created_by = self.request.user
-			project_item_obj.last_updated_by=self.request.user
-			project_item_obj.save()
-
-			return self.form_valid(form)
-
-		return self.form_invalid(form)
-
-	def form_valid(self, form):
-		project_item_obj = form.save(commit=False)
-		if self.request.POST.getlist('assigned_to', []):
-			pass
-
-		if self.request.POST.get("status")!="Requested":
-			form.errors="Status must be \"Requested\""
-			return self.form_invalid(form)
-
-		if self.request.is_ajax():
-			return JsonResponse({'error': False})
-		if self.request.POST.get("savenewform"):
-			return redirect("project_items:request_project_item")
-
-		return redirect('project_items:list')
-
-	def form_invalid(self, form):
-		if self.request.is_ajax():
-			return JsonResponse({'error': True, 'project_item_errors': form.errors})
-
-		return self.render_to_response(
-			self.get_context_data(form=form))
-
-	def get_context_data(self, **kwargs):
-		context = super(RequestProjectItemView, self).get_context_data(**kwargs)
-		context["project_item_form"] = context["form"]
-		context["users"] = self.users
-		return context
-
-class ProjectItemDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
-	model = ProjectItem
-	context_object_name = "project_item_record"
-	template_name = "view_project_item.html"
+	context_object_name = "item_type_record"
+	template_name = "view_item_type.html"
 
 	def get_queryset(self):
-		queryset = super(ProjectItemDetailView, self).get_queryset()
+		queryset = super(ItemTypeDetailView, self).get_queryset()
 		return queryset
 
 	def get_context_data(self, **kwargs):
-		context = super(ProjectItemDetailView, self).get_context_data(**kwargs)
-		context['project_item_history'] = self.object.project_item_history.all()
+		context = super(ItemTypeDetailView, self).get_context_data(**kwargs)
 		return context
 
-class UpdateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
-	model = ProjectItem
-	form_class = ProjectItemForm
-	template_name = "create_project_item.html"
+class UpdateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
+	model = ItemType
+	form_class = ItemTypeForm
+	template_name = "create_item_type.html"
 
 	def dispatch(self, request, *args, **kwargs):
-		if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-		else:
-			self.users = User.objects.filter(role='ADMIN').order_by('email')
-		return super(UpdateProjectItemView, self).dispatch(
+		return super(UpdateItemTypeView, self).dispatch(
 			request, *args, **kwargs)
 
 	def get_form_kwargs(self):
-		kwargs = super(UpdateProjectItemView, self).get_form_kwargs()
-		'''if self.request.user.role == 'ADMIN' or self.request.user.is_superuser:
-			self.users = User.objects.filter(is_active=True).order_by('email')
-			kwargs.update({"assigned_to": self.users})'''
+		kwargs = super(UpdateItemTypeView, self).get_form_kwargs()
 		return kwargs
 
 	def post(self, request, *args, **kwargs):
 		self.object = self.get_object()
-		project_item_obj=self.object
+		item_type_obj=self.object
 		#address_obj = self.object.address
 		form = self.get_form()
 
@@ -444,29 +170,19 @@ class UpdateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, Update
 		if form.is_valid():
 			#addres_obj = address_form.save()
 			
-			origin_status=self.object.status
-			project_item_obj = form.save(commit=False)
-
-			if 'status' in form.changed_data and form.cleaned_data["status"]=="Approved":
-				project_item_obj.approved_by=self.request.user
-				project_item_obj.approved_on=datetime.now()
-			project_item_obj.status=form.cleaned_data["status"]
-			#project_item_obj.address = addres_obj
-			project_item_obj.last_updated_by=self.request.user
-			project_item_obj.last_updated_on=datetime.now()
-			project_item_obj.save()
-			if form.changed_data:
-				create_project_item_history(project_item_obj.id, self.request.user.id, form.changed_data)
+			#origin_status=self.object.status
+			item_type_obj = form.save(commit=False)
+			item_type_obj.save()
 			return self.form_valid(form)
 		return self.form_invalid(form)
 
 	def form_valid(self, form):
 
-		project_item_obj = form.save(commit=False)
+		item_type_obj = form.save(commit=False)
 
 		if self.request.is_ajax():
 			return JsonResponse({'error': False})
-		return redirect("project_items:list")
+		return redirect("item_types:list")
 
 	def form_invalid(self, form):
 		'''address_obj = self.object.address
@@ -474,7 +190,7 @@ class UpdateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, Update
 			self.request.POST, instance=address_obj)'''
 
 		if self.request.is_ajax():
-			return JsonResponse({'error': True, 'project_item_errors': form.errors})
+			return JsonResponse({'error': True, 'item_type_errors': form.errors})
 			#return JsonResponse({'error': True, 'project_item_errors': form.errors,
 			#					 'address_errors': address_form.errors})
 		return self.render_to_response(
@@ -483,7 +199,7 @@ class UpdateProjectItemView(AdminAccessRequiredMixin, LoginRequiredMixin, Update
 
 	def get_context_data(self, **kwargs):
 		context = super(UpdateProjectItemView, self).get_context_data(**kwargs)
-		context["project_item_obj"] = self.object
+		context["item_type_obj"] = self.object
 		context["sub_project_item_objs"] = self.object.sub_project_items.all()
 		'''user_assgn_list = [
 			assigned_to.id for assigned_to in context["project_item_obj"].assigned_to.all()]

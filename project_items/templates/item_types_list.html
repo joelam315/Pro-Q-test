@@ -1,0 +1,38 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th width="50%">
+        <a href='#'>
+        Name
+        </a>
+        <span class="caret"></span>
+      </th>
+      <th>
+        <a href="#">
+        Active
+        </a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% ifequal item_types|length  0 %}
+    <tr>
+      <td class="cell">
+        NO ITEM TYPES FOUND!!
+      </td>
+    </tr>
+    {% endifequal %}
+    {% for item_type in item_types %}
+    <tr>
+      <td class="cell">
+        <a class="cell parentname" id="{{ item_type.id }}">
+        {{ item_type.name }}
+        </a>
+      </td>
+      <td class="cell parentemail">
+        {{ item_type.is_active }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

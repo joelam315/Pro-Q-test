@@ -75,9 +75,6 @@ class HomeView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
         context = super(HomeView, self).get_context_data(**kwargs)
         companies = Company.objects.filter(status="open")
         #contacts = Contact.objects.all()
-        leads = Lead.objects.exclude(
-            status='converted').exclude(status='closed')
-        opportunities = Opportunity.objects.all()
         if self.request.user.role == "ADMIN" or self.request.user.is_superuser:
             pass
         else:
@@ -87,17 +84,11 @@ class HomeView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
             '''contacts = contacts.filter(
                 Q(assigned_to__id__in=[self.request.user.id]) |
                 Q(created_by=self.request.user.id))'''
-            leads = leads.filter(
-                Q(assigned_to__id__in=[self.request.user.id]) |
-                Q(created_by=self.request.user.id)).exclude(status='closed')
-            opportunities = opportunities.filter(
-                Q(assigned_to__id__in=[self.request.user.id]) |
-                Q(created_by=self.request.user.id))
-
+            
         context["companies"] = companies
+        context["users"]=User.objects.filter(role="USER",is_superuser=False)
+        
         #context["contacts_count"] = contacts.count()
-        context["leads_count"] = leads
-        context["opportunities"] = opportunities
         return context
 
 
@@ -234,7 +225,7 @@ class AdminsListView(AdminRequiredMixin, TemplateView):
     template_name = "list.html"
 
     def get_queryset(self):
-        queryset = self.model.objects.filter(role="ADMIN")
+        queryset = self.model.objects.filter(Q(role="ADMIN")|Q(is_superuser=True))
 
         request_post = self.request.POST
         if request_post:
@@ -422,7 +413,7 @@ class UsersListView(AdminRequiredMixin, TemplateView):
     template_name = "list.html"
 
     def get_queryset(self):
-        queryset = self.model.objects.filter(role="USER")
+        queryset = self.model.objects.filter(role="USER",is_superuser=False)
 
         request_post = self.request.POST
         if request_post:
