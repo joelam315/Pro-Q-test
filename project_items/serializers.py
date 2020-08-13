@@ -11,7 +11,7 @@ class GetItemMaterialsRequestSerializer(serializers.ModelSerializer):
 
 	def create(self,validation_data):
 		if validation_data.get("item_type"):
-			return [itm.as_json() for itm in ItemTypeMaterial.objects.filter(item_type=validation_data.get("item_type"))]
+			return [itm.as_json() for itm in ItemTypeMaterial.objects.filter(item_type=validation_data.get("item_type"),is_active=True)]
 		else:
 			raise ValidationError("Missing item_type.")
 

@@ -31,4 +31,24 @@ class ItemTypeForm(forms.ModelForm):
             'is_active'
         )
 
+class ItemTypeMaterialForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ItemTypeMaterialForm,self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs={"class": "form-control"}
+        
+        self.fields['is_active'].widget.attrs['style']="width:auto;"
+
+        for key, value in self.fields.items():
+            value.widget.attrs['placeholder'] = value.label
+
+    class Meta:
+        model=ItemTypeMaterial
+        fields=(
+            'name',
+            'item_type',
+            'value_based_price',
+            'is_active'
+        )
 

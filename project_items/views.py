@@ -13,7 +13,7 @@ from common.models import User
 from project_items.models import (
 	ItemType,ItemProperty,ItemTypeMaterial,Item,ItemFormula
 )
-from project_items.forms import ItemTypeForm
+from project_items.forms import ItemTypeForm, ItemTypeMaterialForm
 from project_items.utils import PROJECT_TYPE, PROJECT_STATUS
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
@@ -39,10 +39,6 @@ class ItemTypesListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateVi
 
 	def get_queryset(self):
 		queryset = self.model.objects.all()
-		'''if (self.request.user.role != "ADMIN" and not
-				self.request.user.is_superuser):
-			queryset = queryset.filter(
-				Q(created_by=self.request.user))'''
 
 		request_post = self.request.POST
 		if request_post:
@@ -89,17 +85,10 @@ class CreateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateVie
 	def post(self, request, *args, **kwargs):
 		self.object = None
 		form = self.get_form()
-		#address_form = BillingAddressForm(request.POST)
-
-		#if form.is_valid() and address_form.is_valid():
 		if form.is_valid():
-			#address_obj = address_form.save()
 
 			item_type_obj = form.save(commit=False)
 
-			#project_item_obj.address = address_obj
-			#item_type_obj.created_by = self.request.user
-			#project_item_obj.last_updated_by=self.request.user
 			item_type_obj.save()
 
 			return self.form_valid(form)
@@ -117,7 +106,7 @@ class CreateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateVie
 		return redirect('project_items:list_item_types')
 
 	def form_invalid(self, form):
-		
+		item_type_material_form=ItemTypeMaterialForm(self.request.POST)
 		if self.request.is_ajax():
 			return JsonResponse({'error': True, 'item_type_errors': form.errors})
 			#return JsonResponse({'error': True, 'project_item_errors': form.errors,
@@ -143,6 +132,7 @@ class ItemTypeDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailVie
 
 	def get_context_data(self, **kwargs):
 		context = super(ItemTypeDetailView, self).get_context_data(**kwargs)
+		context['item_type_material']=self.object.item_type_materials.all()
 		return context
 
 class UpdateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
@@ -199,14 +189,19 @@ class UpdateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateVie
 	def get_context_data(self, **kwargs):
 		context = super(UpdateItemTypeView, self).get_context_data(**kwargs)
 		context["item_type_obj"] = self.object
-
-		if (self.request.user.role != "ADMIN" and not
-				self.request.user.is_superuser):
-
+		context["item_type_material_objs"]=self.object.item_type_materials.all()
+		if (self.request.user.role != "ADMIN" and not self.request.user.is_superuser):
 			raise PermissionDenied
 
 		#context["address_obj"] = self.object.address
 		context["item_type_form"] = context["form"]
+		if "item_type_material_form" in kwargs:
+			context["item_type_material_form"] = kwargs["item_type_material_form"]
+		else:
+			if self.request.POST:
+				context["item_type_material_form"] = ItemTypeMaterialForm(self.request.POST)
+			else:
+				context["item_type_material_form"] = ItemTypeMaterialForm()
 
 		return context
 
@@ -221,13 +216,135 @@ class RemoveItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 		item_type_id = kwargs.get("pk")
 		self.object = get_object_or_404(ItemType, id=item_type_id)
 		if (self.request.user.role != "ADMIN" and not
-			self.request.user.is_superuser and
-				self.request.user != self.object.created_by):
+			self.request.user.is_superuser):
 			raise PermissionDenied
 		else:
-			#if self.object.address_id:
-			#	self.object.address.delete()
 			self.object.delete()
 			if self.request.is_ajax():
 				return JsonResponse({'error': False})
 			return redirect("project_items:list_item_types")
+
+class CreateItemTypeMaterialView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
+	model = ItemTypeMaterial
+	form_class = ItemTypeMaterialForm
+
+	def dispatch(self, request, *args, **kwargs):
+		return super(CreateItemTypeMaterialView, self).dispatch(
+			request, *args, **kwargs)
+
+	def get_form_kwargs(self):
+		kwargs = super(CreateItemTypeMaterialView, self).get_form_kwargs()
+		return kwargs
+
+	def post(self, request, *args, **kwargs):
+		self.object = None
+		form = self.get_form()
+
+		if form.is_valid():
+			item_type_material_obj = form.save(commit=False)
+			item_type_material_obj.save()
+			return self.form_valid(form)
+
+		return self.form_invalid(form)
+
+	def form_valid(self, form):
+		item_type_material_obj = form.save(commit=False)
+
+		if self.request.is_ajax():
+			return JsonResponse({'error': False,'id':item_type_material_obj.id})
+
+		return JsonResponse({'error': False,'id':item_type_material_obj.id})
+
+	def form_invalid(self, form):
+		#address_form = BillingAddressForm(self.request.POST)
+		item_type_material_form=ItemTypeMaterialForm(self.request.POST)
+		if self.request.is_ajax():
+			return JsonResponse({'error': True, 'item_type_material_errors':item_type_material_form.errors})
+			#return JsonResponse({'error': True, 'function_item_errors': form.errors,
+			#					 'address_errors': address_form.errors})
+		return self.render_to_response(
+			self.get_context_data(form=form))
+			#self.get_context_data(form=form, address_form=address_form))
+
+	def get_context_data(self, **kwargs):
+		context = super(CreateItemTypeMaterialView, self).get_context_data(**kwargs)
+		context["item_type_material_form"] = context["form"]
+
+		return context
+
+class UpdateItemTypeMaterialView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
+	model = ItemTypeMaterial
+	form_class = ItemTypeMaterialForm
+
+	def dispatch(self, request, *args, **kwargs):
+		return super(UpdateItemTypeMaterialView, self).dispatch(
+			request, *args, **kwargs)
+
+	def get_form_kwargs(self):
+		kwargs = super(UpdateItemTypeMaterialView, self).get_form_kwargs()
+
+		return kwargs
+
+	def post(self, request, *args, **kwargs):
+		
+		self.object = self.get_object()
+		item_type_material_obj=self.object
+		form = self.get_form()
+		
+
+		if form.is_valid():
+			
+			item_type_material_obj = form.save(commit=False)
+			
+			item_type_material_obj.save()
+			return self.form_valid(form)
+		return self.form_invalid(form)
+
+	def form_valid(self, form):
+		
+		item_type_material_obj = form.save(commit=False)
+
+		if self.request.is_ajax():
+			return JsonResponse({'error': False,'id':item_type_material_obj.id})
+		return JsonResponse({'error': False,'id':item_type_material_obj.id})
+
+	def form_invalid(self, form):
+
+		if self.request.is_ajax():
+			return JsonResponse({'error': True, 'item_type_material_errors': form.errors})
+
+		return self.render_to_response(
+			self.get_context_data(form=form))
+
+	def get_context_data(self, **kwargs):
+		context = super(UpdateItemTypeMaterialView, self).get_context_data(**kwargs)
+		context["item_type_material_obj"] = self.object
+
+		if (self.request.user.role != "ADMIN" and not
+				self.request.user.is_superuser):
+			#if self.request.user.id not in user_assgn_list:
+			#	raise PermissionDenied
+			raise PermissionDenied
+
+		context["item_type_material_form"] = context["form"]
+		context["users"] = self.users
+
+		return context
+
+class RemoveItemTypeMaterialView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
+
+	def get(self, request, *args, **kwargs):
+		return self.post(request, *args, **kwargs)
+
+	def post(self, request, *args, **kwargs):
+		item_type_material_id = request.POST.get('pk')
+		self.object = get_object_or_404(ItemTypeMaterial, id=item_type_material_id)
+		if (self.request.user.role != "ADMIN" and not
+			self.request.user.is_superuser):
+			raise PermissionDenied
+		else:
+
+			self.object.delete()
+			if self.request.is_ajax():
+				return JsonResponse({'error': False})
+			return JsonResponse({'error': False})

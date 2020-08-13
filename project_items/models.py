@@ -43,6 +43,7 @@ class ItemTypeMaterial(models.Model):
 	item_type=models.ForeignKey(ItemType,related_name="item_type_materials",on_delete=models.PROTECT)
 	value_based_price=models.DecimalField(
         max_digits=12, decimal_places=2)
+	is_active=models.BooleanField(default=True)
 
 	def  __str__(self):
 		return str(self.item_type)+": "+self.name
