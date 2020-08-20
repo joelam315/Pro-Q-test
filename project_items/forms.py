@@ -52,3 +52,62 @@ class ItemTypeMaterialForm(forms.ModelForm):
             'is_active'
         )
 
+class ItemForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ItemForm,self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs={"class": "form-control"}
+        
+        self.fields['is_active'].widget.attrs['style']="width:auto;"
+
+        for key, value in self.fields.items():
+            value.widget.attrs['placeholder'] = value.label
+
+    class Meta:
+        model=Item
+        fields=(
+            'name',
+            'item_properties',
+            'item_type',
+            'value_based_price',
+            'is_active'
+        )
+
+class ItemPropertyForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ItemPropertyForm,self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs={"class": "form-control"}
+
+        for key, value in self.fields.items():
+            value.widget.attrs['placeholder'] = value.label
+
+    class Meta:
+        model=ItemProperty
+        fields=(
+            'name',
+            'symbol'
+        )
+
+class ItemFormulaForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ItemFormulaForm,self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs={"class": "form-control"}
+        
+        self.fields['is_active'].widget.attrs['style']="width:auto;"
+
+        for key, value in self.fields.items():
+            value.widget.attrs['placeholder'] = value.label
+
+    class Meta:
+        model=ItemFormula
+        fields=(
+            'name',
+            'item',
+            'formula',
+            'is_active'
+        )

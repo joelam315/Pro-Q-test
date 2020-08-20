@@ -98,6 +98,7 @@ class ItemFormula(models.Model):
 	name=models.CharField(max_length=50)
 	item=models.ForeignKey(Item,related_name="item_formulas",on_delete=models.PROTECT)
 	formula=models.TextField()
+	is_active=models.BooleanField(default=True)
 
 	def cal(self,value,rfps,vbp):
 		cal_formula=self.formula

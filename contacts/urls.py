@@ -10,10 +10,6 @@ app_name = 'contacts'
 
 
 urlpatterns = [
-    url(r'^api/list/',ContactsListAPIView.as_view()),
-    url(r'^api/create/',CreateContactAPIView.as_view()),
-    url(r'^api/update/',UpdateContactAPIView.as_view()),
-    url(r'^api/remove/',RemoveContactAPIView.as_view()),
     path('', ContactsListView.as_view(), name='list'),
     path('create/', CreateContactView.as_view(), name='add_contact'),
     path('<int:pk>/view/', ContactDetailView.as_view(), name="view_contact"),

@@ -1,0 +1,463 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% block breadcrumb %}
+{% block extralinks %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css"
+  href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/start/jquery-ui.css" />
+{% endblock %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'project_items:list_items' %}">Items</a></li>
+    <li class="breadcrumb-item active">{% if item_obj %}Edit{% else %}Create{% endif %}</li>
+  </ol>
+</nav>
+{% endblock %}
+{% block content %}
+<form id="add_form" method="POST" action='' novalidate enctype="multipart/form-data">
+  <div class="overview_form_block row marl justify-content-center">
+    <div class="col-md-9">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title text-center">
+            {% if item_obj %}EDIT{% else %}CREATE{% endif %} Item
+          </div>
+          <div class="row marl no-gutters justify-content-center">
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Name{% if item_form.name.field.required %}<span
+                          class="error">*</span>{% endif %}</label>
+                      {{ item_form.name }}
+                      <span class="error">{{ item_form.name.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Is Active{% if item_form.is_active.field.required %}<span
+                                class="error">*</span>{% endif %}</label>
+                      {{ item_form.is_active }}
+                      <span class="error">{{ item_form.is_active.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Item Type{% if item_form.item_type.field.required %}<span
+                          class="error">*</span>{% endif %}</label>
+                      {{ item_form.item_type }}
+                      <span class="error">{{ item_form.item_type.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Value Based Price{% if item_form.value_based_price.field.required %}<span
+                                class="error">*</span>{% endif %}</label>
+                      {{ item_form.value_based_price }}
+                      <span class="error">{{ item_form.value_based_price.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 mt-5">
+              <div class="form-group">
+                <label for="staticEmail" class="col-sm-4 col-form-label">Item Properties</label>
+              </div>
+              <div class="form-group" style="display: flex">
+                <div class="col-sm-10">
+                  <!-- <input type="text" class="form-control" id="staticEmail" placeholder="santhrao N"> -->
+                  <select id="select_item_properties" class="assigned_users form-control" multiple>
+                    {% for item_property in item_properties %}
+                    <option value="{{item_property.id}}">
+                      {{item_property.symbol}} ({{item_property.name}})</option>
+                    {% endfor %}
+                  </select>
+                  <select name="item_properties" id="id_item_properties" class="assigned_users form-control" style="display:none" multiple>
+                    {% for item_property in item_properties %}
+                    <option value="{{item_property.id}}"></option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-sm-2 pl-0">
+                  <div class="row marl buttons_row form_btn_row text-center">
+                    <button type="button" class="btn btn-default save" id="add_item_property" onclick="addItemPropertyToItem()">Add</button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group row" id="div_item_properties" style="display: none;">
+                <label>Item Properties</label>
+                <table class="table table-hover" id="table_item_properties">
+                  <thead>
+                    <tr>
+                      <th scope="col" width="15%">#</th>
+                      <th scope="col" width="40%">Name</th>
+                      <th scope="col" width="30%">Symbol</th>
+                      <th scope="col" width="15%">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>  
+              </div>
+              
+
+            </div>
+            {% if item_obj %}
+            <div class="col-md-12">
+              <div class="row marl buttons_row text-center form_btn_row">
+                <div class="filter_col col-md-12">
+                  <div class="form-group">
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <table class="table table-hover" id="table_item_formula" {% if item_formula_objs|length <= 0 %}style="display:none"{% endif %}>
+                          <thead>
+                            <tr>
+                              <th scope="col" width="15%">#</th>
+                              <th scope="col" width="40%">Name</th>
+                              <th scope="col" width="30%">Formula</th>
+                              <th scope="col" width="10%">Active</th>
+                              <th scope="col" width="15%">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for item_formula_obj in item_formula_objs %}
+                            <tr id="row_{{ item_formula_obj.id }}">
+                              <th scope='row'>{{forloop.counter}}</th>
+                              <td>{{item_formula_obj.name}}</td>
+                              <td>{{item_formula_obj.value_based_price}}</td>
+                              <td>{{item_formula_obj.is_active}}</td>
+                              <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ item_formula_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{item_formula_obj.id}}" data-editname="{{item_formula_obj.name}}" data-editvaluebasedprice="{{item_formula_obj.value_based_price}}" data-editisactive="{{item_formula_obj.is_active}}"><i
+                        class="fas fa-pencil-alt"></i></button> <button type="button" class="btn btn-danger" style="font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;" id="removeId_{{ item_formula_obj.id }}" data-toggle="modal" data-target="#removeModalCenter" data-removeid="{{item_formula_obj.id}}"><i class="fas fa-trash-alt"></i></button></td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addModal">
+                          Add Item Formula
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            <input type="hidden" id="save_new_form" name="savenewform">
+            <div class="col-md-12">
+              <div class="row marl buttons_row text-center form_btn_row">
+                <button class="btn btn-default save" type="submit">Save</button>
+                {% if not item_obj %}
+                <button class="btn btn-success save savenew" type="submit">Save & New</button>
+                {% endif %}
+                <a  href="{% url 'project_items:list_items' %}"  class="btn btn-default clear"
+                  id="create_item_cancel">Cancel</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>
+{% if item_obj %}
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">Add Item Formula</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="item_formula_form" method="POST" action='{% url 'project_items:add_item_formula' %}'>
+        <div class="modal-body">
+            <div class="col-md-12">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Name{% if item_formula_form.name.field.required %}<span
+                              class="error">*</span>{% endif %}</label>
+                          {{ item_formula_form.name }}
+                          <span class="error">{{ item_formula_form.name.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Value Based Price{% if item_formula_form.value_based_price.field.required %}<span
+                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                    {{ item_formula_form.value_based_price }}
+                    <span class="error" id="id__price">{{ item_formula_form.value_based_price.errors }}</span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Is Active{% if item_formula_form.is_active.field.required %}<span
+                                    class="error">*</span>{% endif %}</label>
+                          {{ item_formula_form.is_active }}
+                          <input type="hidden" value={{ item_obj.id }} name="item">
+                          <span class="error">{{ item_formula_form.is_active.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="create_item_formula" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Edit Item Formula</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="edit_item_formula_form" method="POST" action="/project_items/item_formula/edit/">
+        <div class="modal-body">
+            <div class="col-md-12">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Name{% if item_formula_form.name.field.required %}<span
+                              class="error">*</span>{% endif %}</label>
+                          {{ item_formula_form.name }}
+                          <span class="error">{{ item_formula_form.name.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Value Based Price{% if item_formula_form.value_based_price.field.required %}<span
+                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                    {{ item_formula_form.value_based_price }}
+                    <span class="error" id="id__price">{{ item_formula_form.value_based_price.errors }}</span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Is Active{% if item_formula_form.is_active.field.required %}<span
+                                    class="error">*</span>{% endif %}</label>
+                          {{ item_formula_form.is_active }}
+                          <input type="hidden" value={{ item_obj.id }} name="item">
+                          <span class="error">{{ item_formula_form.is_active.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="edit_item_formula" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Modal -->
+<div class="modal fade" id="removeModalCenter" tabindex="-1" role="dialog" aria-labelledby="removeModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeModalLongTitle">Alert</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        It will actually remove the item formula. Do you confirm to do this?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" style="background-color: #dc3545;border-color: #dc3545;">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block js_block %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js'></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.js"></script>
+<script src="https://malsup.github.io/jquery.form.js"></script>
+<script type="text/javascript">
+  var curId=-1;
+  $(".savenew").on('click', function (e) {
+    e.preventDefault()
+    $("#save_new_form").val('true')
+    $('#add_form').submit()
+  });
+  $(document).ready(function () {
+    $('#select_item_properties').select2();
+  });
+
+    $('#item_formula_form').submit(function() { // catch the form's submit event
+      $.ajax({ // create an AJAX call...
+          data: $(this).serialize(), // get the form data
+          type: $(this).attr('method'), // GET or POST
+          url: $(this).attr('action'), // the file to call
+          success: function(response) { // on success..
+            console.log(response);
+            addItemFormula(response.id);
+          }
+      });
+      return false;
+  });
+
+  $('#edit_item_formula_form').submit(function() { // catch the form's submit event
+      $.ajax({ // create an AJAX call...
+          data: $(this).serialize(), // get the form data
+          type: $(this).attr('method'), // GET or POST
+          url: $(this).attr('action')+curId, // the file to call
+          success: function(response) { // on success..
+            console.log(response);
+            updateItemFormula(response.id);
+          }
+      });
+      return false;
+  });
+
+  function addItemFormula(id){
+
+    document.getElementById("table_item_formula").removeAttribute("style");
+    document.getElementById("table_item_formula").getElementsByTagName("tbody")[0].innerHTML+=
+    "<tr id='row_"+id+"'>"+
+      "<th scope='row'>"+$('#table_item_formula tr').length+"</th>"+
+      "<td>"+$('#item_formula_form #id_name').val()+"</td>"+
+      "<td>"+parseFloat($('#item_formula_form #id_value_based_price').val())+"</td>"+
+      "<td>"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
+      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#item_formula_form #id_name').val()+"' data-editvaluebasedprice='"+$('#item_formula_form #id_value_based_price').val()+"' data-editisactive='"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
+    "</tr>";
+    clearItemFormula();
+    $('#addModal').modal('hide');
+  }
+
+  $('#editModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var id = button.data('editid') // Extract info from data-* attributes
+    var name=button.data('editname')
+    var value_based_price=button.data('editvaluebasedprice')
+    var is_active=button.data('editisactive')
+    var price=button.data('editprice')
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    curId=id
+    modal.find('#id_name').val(name)
+    modal.find('#id_value_based_price').val(value_based_price)
+    modal.find('#id_is_active').prop('checked', is_active=="True"?true:false);
+    modal.find('.btn-primary').attr('onclick','updateItemFormula('+id+')')
+  })
+
+
+  function updateItemFormula(id){
+    console.log($('#table_item_formula #row_'+id).html(
+      "<th scope='row'>"+$('#table_item_formula #row_'+id+' th').html()+"</th>"+
+      "<td>"+$('#edit_item_formula_form #id_name').val()+"</td>"+
+      "<td>"+parseFloat($('#edit_item_formula_form #id_value_based_price').val())+"</td>"+
+      "<td>"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
+      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_item_formula_form #id_name').val()+"' data-editvaluebasedprice='"+$('#edit_item_formula_form #id_value_based_price').val()+"' data-editisactive='"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
+    ));
+    $('#editModal').modal('hide');
+  }
+
+  function clearItemFormula(){
+    $('#item_formula_form #id_name').val('');
+    $('#item_formula_form #id_value_based_price').val('');
+    $('#item_formula_form #id_is_active').prop('checked', true);
+  }
+
+  $('#removeModalCenter').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var id = button.data('removeid') // Extract info from data-* attributes
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    modal.find('.btn-danger').attr('onclick','removeItemFormula('+id+')')
+  })
+
+  function removeItemFormula(id){
+      console.log(id);
+      $.ajax({ // create an AJAX call...
+          data: {"pk":id}, // get the form data
+          type: "POST", // GET or POST
+          url: "{% url 'project_items:remove_item_formula' %}", // the file to call
+          success: function(response) { // on success..
+            console.log(response);
+            var tbody=$("#row_"+id).parent();
+            $("#row_"+id).remove();
+            console.log(tbody.children().length);
+            if(tbody.children().length<=0){
+
+              tbody.parent().attr("style","display:none");
+            }
+            $('#removeModalCenter').modal('hide');
+          }
+      });
+    }
+
+</script>
+{% endblock js_block %}
