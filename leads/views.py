@@ -19,7 +19,8 @@ from common import status
 from common.access_decorators_mixins import (MarketingAccessRequiredMixin,
                                              SalesAccessRequiredMixin,
                                              marketing_access_required,
-                                             sales_access_required)
+                                             sales_access_required,
+                                             AdminAccessRequiredMixin)
 from common.models import APISettings, Attachments, Comment, User
 from common.tasks import send_email_user_mentions
 from common.utils import COUNTRIES, LEAD_SOURCE, LEAD_STATUS
@@ -34,7 +35,7 @@ from planner.models import Event, Reminder
 from teams.models import Teams
 
 
-class LeadListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class LeadListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Lead
     context_object_name = "lead_obj"
     template_name = "leads.html"
@@ -254,7 +255,7 @@ def create_lead(request):
     return render(request, template_name, context)
 
 
-class LeadDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class LeadDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Lead
     context_object_name = "lead_record"
     template_name = "view_leads.html"
@@ -495,7 +496,7 @@ def update_lead(request, pk):
     return render(request, template_name, context)
 
 
-class DeleteLeadView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
+class DeleteLeadView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)

@@ -19,7 +19,8 @@ from cases.models import Case
 from common.access_decorators_mixins import (MarketingAccessRequiredMixin,
                                              SalesAccessRequiredMixin,
                                              marketing_access_required,
-                                             sales_access_required)
+                                             sales_access_required,
+                                             AdminAccessRequiredMixin)
 from common.models import Attachments, Comment, User
 from common.tasks import send_email_user_mentions
 from common.utils import (CASE_TYPE, COUNTRIES, CURRENCY_CODES, INDCHOICES,
@@ -30,7 +31,7 @@ from opportunity.models import SOURCES, STAGES, Opportunity
 from teams.models import Teams
 
 
-class AccountsListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class AccountsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Account
     context_object_name = "accounts_list"
     template_name = "accounts.html"
@@ -108,7 +109,7 @@ class AccountsListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateVie
         return self.render_to_response(context)
 
 
-class CreateAccountView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView):
+class CreateAccountView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
     model = Account
     form_class = AccountForm
     template_name = "create_account.html"
@@ -226,7 +227,7 @@ class CreateAccountView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView
         return context
 
 
-class AccountDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class AccountDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Account
     context_object_name = "account_record"
     template_name = "view_account.html"
@@ -278,7 +279,7 @@ class AccountDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView
         return context
 
 
-class AccountUpdateView(SalesAccessRequiredMixin, LoginRequiredMixin, UpdateView):
+class AccountUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
     model = Account
     form_class = AccountForm
     template_name = "create_account.html"
@@ -405,7 +406,7 @@ class AccountUpdateView(SalesAccessRequiredMixin, LoginRequiredMixin, UpdateView
         return context
 
 
-class AccountDeleteView(SalesAccessRequiredMixin, LoginRequiredMixin, DeleteView):
+class AccountDeleteView(AdminAccessRequiredMixin, LoginRequiredMixin, DeleteView):
     model = Account
     template_name = 'view_account.html'
 

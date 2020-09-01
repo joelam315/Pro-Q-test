@@ -3,6 +3,7 @@ import json
 import os
 import pdfkit
 
+
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.template.loader import render_to_string
 from django.http.response import HttpResponse, JsonResponse
@@ -11,30 +12,34 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, Validat
 
 from common.models import User
 from common.serializers import (
-	CreateUserSerializer,
+	CreateOrGetUserSerializer,
 	LoginSerializer, 
 	PhoneVerifySerializer,
 	CommonTrueResponseSerializer,
 	CommonFalseResponseSerializer,
 	ListDistrictResponseSerializer,
 	LoginResponseSerializer,
-	RegisterResponseSerializer
+	RegisterResponseSerializer,
+	PhoneVerifySuccessResponseSerializer,
 )
 from common.utils import HK_DISTRICT
-from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
+from companies.models import Company,DocumentFormat,DocumentHeaderInformation,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from companies.serializers import (
 	SetCompanySerializer, 
 	CompanySerializer, 
 	SetDocumentFormatSerializer,
+	SetDocumentHeaderInformationSerializer,
 	SetChargingStagesSerializer,
 	SetQuotationGeneralRemarkSerializer,
 	SetInvoiceGeneralRemarkSerializer,
 	SetReceiptGeneralRemarkSerializer,
 	DocumentFormatSerializer,
+	DocumentHeaderInformationSerializer,
 	ChargingStagesSerializer,
 	QuotationGeneralRemarkSerializer,
 	InvoiceGeneralRemarkSerializer,
 	ReceiptGeneralRemarkSerializer,
+	GetDocumentHeaderInformationResponseSerializer,
 	GetChargingStagesResponseSerializer,
 	GetCompanyResponseSerializer,
 	GetDocumentFormatResponseSerializer,
@@ -135,9 +140,43 @@ token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,descrip
 
 default_param = openapi.Response(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
 
+
 #User
 
-class UserRegisterView(APIView):
+class UserRegisterOrLoginView(APIView):
+	model = User
+	permission_classes = [AllowAny]
+	serializer_class = CreateOrGetUserSerializer
+
+	@swagger_auto_schema(
+		operation_description="Register a new user or login", 
+		security=None,
+		request_body=CreateOrGetUserSerializer,
+		responses={
+			status.HTTP_200_OK: LoginResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		#return Response(request.data, status=status.HTTP_201_CREATED)
+		data = request.data
+		check_user=User.objects.filter(username=data["phone"])
+		if check_user.exists():
+			serialized = CreateOrGetUserSerializer(instance=check_user.first(),data=data)
+		else:
+			serialized = CreateOrGetUserSerializer(data=data)
+		serialized.is_valid(raise_exception=True)
+		user=serialized.save()
+		ret["login_token"]=user.login_token
+		#token = RefreshToken.for_user(user)
+		#ret["refresh"]=str(token)
+		#ret["access"]=str(token.access_token)
+		#user=User.objects.create_user(phone="request")
+		return Response(ret, status=status.HTTP_200_OK)
+
+'''class UserRegisterView(APIView):
 	model = User
 	permission_classes = [AllowAny]
 	serializer_class = CreateUserSerializer
@@ -165,10 +204,10 @@ class UserRegisterView(APIView):
 		ret["refresh"]=str(token)
 		ret["access"]=str(token.access_token)
 		#user=User.objects.create_user(phone="request")
-		return Response(ret, status=status.HTTP_201_CREATED)
+		return Response(ret, status=status.HTTP_201_CREATED)'''
 
 
-class UserLoginView(APIView):
+'''class UserLoginView(APIView):
 	permission_classes = [AllowAny]
 
 	@swagger_auto_schema(
@@ -186,33 +225,36 @@ class UserLoginView(APIView):
 		data = request.data
 
 		user=User.objects.filter(phone=data.get("phone")).first()
-		matchcheck= check_password(data.get("password"), user.password)
+		matchcheck=(data.get("otp")==user.verify_code)
+		#matchcheck= check_password(data.get("password"), user.password)
 		if matchcheck:
-			'''cur_tokens=OutstandingToken.objects.filter(user=user)
+'''			
+
+'''			cur_tokens=OutstandingToken.objects.filter(user=user)
 			for cur_token in cur_tokens.all():
 				cur_token.expires_at=datetime.datetime.now()
 				#cur_token.blacklist()
-				cur_token.save()'''
-			token = RefreshToken.for_user(user)
+				cur_token.save()
+'''
+'''			token = RefreshToken.for_user(user)
 			ret["refresh"]=str(token)
 			ret["access"]=str(token.access_token)
 			if not user.phone_verify:
 				ret["result"]=False
 				ret["reason"]="Need verify phone first."
 				raise serializers.ValidationError(ret)
-			return Response(ret, status=status.HTTP_200_OK)
+			return Response(ret, status=status.HTTP_200_OK)'''
 
 class UserPhoneVerifyView(APIView):
-	authentication_classes = [authentication.JWTAuthentication]
-	permission_classes = [IsAuthenticated]
+	#authentication_classes = [authentication.JWTAuthentication]
+	permission_classes = [AllowAny]
+	#permission_classes = [IsAuthenticated]
 
 	@swagger_auto_schema(
 		operation_description="Verify phone number for new user", 
-		security=[{'Bearer': []}],
-		manual_parameters=[token_param],
 		request_body=PhoneVerifySerializer,
 		responses={
-			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_200_OK: PhoneVerifySuccessResponseSerializer(),
 			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
 		}
 	)
@@ -220,18 +262,30 @@ class UserPhoneVerifyView(APIView):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		user=request.user
-		if user.phone_verify:
+		user=User.objects.get(username=data["phone"])
+		if not user.need_login_verify:
 			ret["result"]=False
-			ret["reason"]="Already Verified"
+			ret["reason"]="Please login first"
 			return Response(ret, status=status.HTTP_406_NOT_ACCEPTABLE)
-		if user.verify_code==data.get("verify_code") and user.verify_code.replace(" ", "")!="" and user.verify_code!=None:
+		if user.login_token!=data["login_token"]:
+			ret["result"]=False
+			ret["reason"]="Invalid login token"
+			return Response(ret, status=status.HTTP_406_NOT_ACCEPTABLE)
+		if user.verify_code==data.get("otp") and user.verify_code.replace(" ", "")!="" and user.verify_code!=None:
 			user.phone_verify=True
+			user.need_login_verify=False
 			user.save()
+			if Company.objects.filter(owner=user).exists():
+				ret["need_company_setup"]=False
+			else:
+				ret["need_company_setup"]=True
+			token = RefreshToken.for_user(user)
+			ret["refresh"]=str(token)
+			ret["access"]=str(token.access_token)
 			return Response(ret, status=status.HTTP_200_OK)
 		else:
 			ret["result"]=False
-			ret["reason"]="Wrong Verifiy Code"
+			ret["reason"]="Wrong OTP"
 			return Response(ret, status=status.HTTP_400_BAD_REQUEST)
 
 #company
@@ -305,6 +359,63 @@ class SetCompanyView(APIView):
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
 		return Response(ret, status=status.HTTP_200_OK)
+
+class CheckReadyToCreateProjectView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	@swagger_auto_schema(
+		operation_description="Check if all company settings are done to make ready for creating a project.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		user = request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="You must create a company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			if company.company_charging_stages is None:
+				ret["result"]=False
+				ret["reason"]="You must create company's charging stages first."
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except ChargingStages.DoesNotExist:
+			ret["result"]=False
+			ret["reason"]="You must create company's charging stages first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			if company.company_doc_format is None:
+				ret["result"]=False
+				ret["reason"]="You must create company's document format first."
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except DocumentFormat.DoesNotExist:
+			ret["result"]=False
+			ret["reason"]="You must create company's document format first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			if company.company_doc_header is None:
+				ret["result"]=False
+				ret["reason"]="You must create company's document header first."
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except DocumentHeaderInformation.DoesNotExist:
+			ret["result"]=False
+			ret["reason"]="You must create company's document header first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		if not company.br_approved:
+			ret["result"]=False
+			ret["reason"]="The BR is not yet approved."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		return Response(ret,status=status.HTTP_200_OK)
 
 #docuemnt format
 class GetDocumentFormatChoicesView(APIView):
@@ -437,6 +548,62 @@ class GetChargingStagesView(APIView):
 			ret["reason"]="Please create company first."
 			return Response(ret, status=status.HTTP_404_NOT_FOUND)
 		ret["charging_stages"]=company.get_charging_stages_json()
+		return Response(ret, status=status.HTTP_200_OK)
+
+#doc_header
+class SetDocHeaderView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=DocumentHeaderInformation
+
+	@swagger_auto_schema(
+		operation_description="Create/update user's company document header.", 
+		security=[{'Bearer': []}],
+		request_body=SetDocumentHeaderInformationSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		serialized = SetDocumentHeaderInformationSerializer(data=data,context={'request': request})
+		serialized.is_valid(raise_exception=True)
+		try:
+			doc_header=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		doc_header.save()
+
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetDocHeaderView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=DocumentHeaderInformation
+
+	@swagger_auto_schema(
+		operation_description="Get user's company docuemnt header.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetDocumentHeaderInformationResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		company=Company.objects.get(owner=request.user)
+		doc_header=DocumentHeaderInformation.objects.get(company=company)
+		ret["doc_header"]=doc_header.as_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 #general remarks

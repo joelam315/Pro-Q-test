@@ -98,6 +98,7 @@
                     <option value="{{item_property.id}}"></option>
                     {% endfor %}
                   </select>
+                  <span class="error" id="id__item_properties">{{ form.item_properties.errors }}</span>
                 </div>
                 <div class="col-sm-2 pl-0">
                   <div class="row marl buttons_row form_btn_row text-center">
@@ -105,8 +106,8 @@
                   </div>
                 </div>
               </div>
-              <div class="form-group row" id="div_item_properties" style="display: none;">
-                <label>Item Properties</label>
+              <div class="form-group" id="div_item_properties" style="display: none;">
+                <label class="col-sm-4 col-form-label">Item Properties</label>
                 <table class="table table-hover" id="table_item_properties">
                   <thead>
                     <tr>
@@ -145,7 +146,7 @@
                             <tr id="row_{{ item_formula_obj.id }}">
                               <th scope='row'>{{forloop.counter}}</th>
                               <td>{{item_formula_obj.name}}</td>
-                              <td>{{item_formula_obj.value_based_price}}</td>
+                              <td>{{item_formula_obj.formula}}</td>
                               <td>{{item_formula_obj.is_active}}</td>
                               <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ item_formula_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{item_formula_obj.id}}" data-editname="{{item_formula_obj.name}}" data-editvaluebasedprice="{{item_formula_obj.value_based_price}}" data-editisactive="{{item_formula_obj.is_active}}"><i
                         class="fas fa-pencil-alt"></i></button> <button type="button" class="btn btn-danger" style="font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;" id="removeId_{{ item_formula_obj.id }}" data-toggle="modal" data-target="#removeModalCenter" data-removeid="{{item_formula_obj.id}}"><i class="fas fa-trash-alt"></i></button></td>
@@ -186,7 +187,7 @@
   </div>
 </form>
 {% if item_obj %}
-<!-- Add Modal -->
+<!-- Add Formula Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -199,7 +200,7 @@
       <form id="item_formula_form" method="POST" action='{% url 'project_items:add_item_formula' %}'>
         <div class="modal-body">
             <div class="col-md-12">
-              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-4">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
@@ -213,15 +214,6 @@
                       </div>
                     </div>
                   </div>
-                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
-                  <div class="form-group col-md-12">
-                    <label for="inputZip">Value Based Price{% if item_formula_form.value_based_price.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ item_formula_form.value_based_price }}
-                    <span class="error" id="id__price">{{ item_formula_form.value_based_price.errors }}</span>
-                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
-                  </div>
-                  {% endif %}
                 </div>
                 <div class="col-md-4">
                   <div class="filter_col col-md-12">
@@ -237,6 +229,19 @@
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-12">
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Formula{% if item_formula_form.formula.field.required %}<span
+                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                    {{ item_formula_form.formula }}
+                    <span class="error" id="id__price">{{ item_formula_form.formula.errors }}</span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -264,7 +269,7 @@
       <form id="edit_item_formula_form" method="POST" action="/project_items/item_formula/edit/">
         <div class="modal-body">
             <div class="col-md-12">
-              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-4">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
@@ -278,15 +283,6 @@
                       </div>
                     </div>
                   </div>
-                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
-                  <div class="form-group col-md-12">
-                    <label for="inputZip">Value Based Price{% if item_formula_form.value_based_price.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ item_formula_form.value_based_price }}
-                    <span class="error" id="id__price">{{ item_formula_form.value_based_price.errors }}</span>
-                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
-                  </div>
-                  {% endif %}
                 </div>
                 <div class="col-md-4">
                   <div class="filter_col col-md-12">
@@ -302,6 +298,19 @@
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-12">
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Formula{% if item_formula_form.formula.field.required %}<span
+                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
+                    {{ item_formula_form.formula }}
+                    <span class="error" id="id__price">{{ item_formula_form.formula.errors }}</span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -345,14 +354,160 @@
 <script src="https://malsup.github.io/jquery.form.js"></script>
 <script type="text/javascript">
   var curId=-1;
+
+  var ip_data={}; //item properties data of this item
+
+  var ip_all=[]; // all item properties
+
+  var ipSet=new Set(); //check item properties duplication
+
+  //init
+
+  /*$('form#add_form').ajaxForm({
+      type: 'POST',
+      dataType: 'json',
+      url: ".",
+      data: $('#add_form').serialize(),
+      success: function (data) {
+        if (data.error) {
+          console.log($('#add_form').serialize());
+          console.log(data)
+          $('.error').html('')
+          for (var key in data.errors) {
+            $('#id__' + key).html("<p>" + data.errors[key][0] + "</p>");
+          };
+          for (var key in data.from_address_errors) {
+            $('#id__' + key).html("<p>" + data.from_address_errors[key][0] + "</p>");
+          };
+          for (var key in data.to_address_errors) {
+            $('#id__' + key + '_').html("<p>" + data.to_address_errors[key][0] + "</p>");
+            console.log($('#id__' + key + '_'))
+          };
+          $('#submit_btn').removeAttr('disabled')
+        }
+        else {
+          console.log($('#add_form').serialize());
+          //window.location = data.success_url;
+        }
+      }
+    });*/
+
+
+
   $(".savenew").on('click', function (e) {
     e.preventDefault()
     $("#save_new_form").val('true')
     $('#add_form').submit()
   });
+
+
   $(document).ready(function () {
     $('#select_item_properties').select2();
+    initIPChoice();
+    initIPTable();
   });
+
+  function initIPChoice(){
+    //item properties loop
+    {% for ip in item_properties %}
+      ip_all["{{ip.id}}"]={"id":"{{ip.id}}","name":"{{ip.name}}","symbol":"{{ip.symbol}}"};
+    {% endfor %}
+
+    console.log(ip_all);
+  }
+
+  function initIPTable(){
+
+      {% for ip in item_obj.item_properties.all %}
+        ip_data["{{ip.id}}"]={"id":"{{ip.id}}","name":"{{ip.name}}","symbol":"{{ip.symbol}}"};
+      {% endfor %}
+
+      console.log(ip_data);
+
+      var tbody=document.getElementById("table_item_properties").getElementsByTagName("tbody")[0];
+      if(Object.keys(ip_data).length>0)
+        document.getElementById("div_item_properties").removeAttribute("style");
+      
+      keys=Object.keys(ip_data);
+      for(var i=0;i<keys.length;i++){
+        ipSet.add(ip_data[keys[i]]["id"]);
+        tbody.innerHTML+=
+          "<tr id='row_"+ip_data[keys[i]]["id"]+"'>"+
+            "<th scope='row'>"+(i+1)+"</th>"+
+            "<td>"+ip_data[keys[i]]["name"]+"</td>"+
+            "<td>"+ip_data[keys[i]]["symbol"]+"</td>"+
+            "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+ip_data[keys[i]]["id"]+"' onclick='removeItemPropertyFromItem("+ip_data[keys[i]]["id"]+")'>X</button></td>"+
+          "</tr>";
+      }
+
+        
+      
+      updateItemPropertiesValue();
+    }
+
+//Item Properties Function Start
+
+function addItemPropertyToItem(){
+  var selectItemProperties = $("#select_item_properties");
+  var propertiesId=selectItemProperties.val();
+  console.log(propertiesId);
+  for(var i=0;i<propertiesId.length;i++){
+    var cur=ip_all[propertiesId[i]];
+    console.log(cur);
+    if(!ipSet.has(cur["id"])){
+      ipSet.add(cur["id"]);
+      ip_data[cur["id"]]={"id":cur["id"],"name":cur["name"],"symbol":cur["symbol"]};
+      document.getElementById("div_item_properties").removeAttribute("style");
+
+      var tbody=document.getElementById("table_item_properties").getElementsByTagName("tbody")[0];
+      tbody.innerHTML+=
+      "<tr id='row_"+cur["id"]+"'>"+
+          "<th scope='row'>"+(Object.keys(ip_data).length)+"</th>"+
+          "<td>"+cur["name"]+"</td>"+
+          "<td>"+cur["symbol"]+"</td>"+
+          "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+cur["id"]+"' onclick='removeItemPropertyFromItem("+cur["id"]+")'>X</button></td>"+
+        "</tr>";
+    }
+    
+  }
+  $('#select_item_properties').val('').change();
+  console.log(ip_all);
+  updateItemPropertiesValue();
+}
+
+    function removeItemPropertyFromItem(id){
+      console.log(id);
+
+      ipSet.delete(id.toString());
+      delete ip_data[id];
+
+      console.log(ip_data);
+      //
+      var tbody=$("#table_item_properties tbody");
+      $("#table_item_properties tbody #row_"+id).remove();
+
+      
+      console.log(tbody.children().length);
+      if(tbody.children().length<=0){
+        console.log(tbody.parent().parent());
+        tbody.parent().parent().attr("style","display:none");
+      }
+      updateItemPropertiesValue();
+    }
+
+function updateItemPropertiesValue(){
+  console.log(ipSet);
+  if(ipSet.size>0){
+    $("#id__item_properties").html("");
+  }
+  $("#id_item_properties").val([...ipSet]);
+  console.log("item_properties_value: "+$("#id_item_properties").val());
+  console.log([...ipSet]);
+}
+
+
+//Item Properties Function End
+
 
     $('#item_formula_form').submit(function() { // catch the form's submit event
       $.ajax({ // create an AJAX call...
@@ -380,6 +535,8 @@
       return false;
   });
 
+  //Item Formula Start
+
   function addItemFormula(id){
 
     document.getElementById("table_item_formula").removeAttribute("style");
@@ -387,9 +544,9 @@
     "<tr id='row_"+id+"'>"+
       "<th scope='row'>"+$('#table_item_formula tr').length+"</th>"+
       "<td>"+$('#item_formula_form #id_name').val()+"</td>"+
-      "<td>"+parseFloat($('#item_formula_form #id_value_based_price').val())+"</td>"+
+      "<td>"+$('#item_formula_form #id_formula').val()+"</td>"+
       "<td>"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#item_formula_form #id_name').val()+"' data-editvaluebasedprice='"+$('#item_formula_form #id_value_based_price').val()+"' data-editisactive='"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
+      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#item_formula_form #id_name').val()+"' data-editformula='"+$('#item_formula_form #id_formula').val()+"' data-editisactive='"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
     "</tr>";
     clearItemFormula();
     $('#addModal').modal('hide');
@@ -399,7 +556,7 @@
     var button = $(event.relatedTarget) // Button that triggered the modal
     var id = button.data('editid') // Extract info from data-* attributes
     var name=button.data('editname')
-    var value_based_price=button.data('editvaluebasedprice')
+    var formula=button.data('editformula')
     var is_active=button.data('editisactive')
     var price=button.data('editprice')
     // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
@@ -407,7 +564,7 @@
     var modal = $(this)
     curId=id
     modal.find('#id_name').val(name)
-    modal.find('#id_value_based_price').val(value_based_price)
+    modal.find('#id_formula').val(formula)
     modal.find('#id_is_active').prop('checked', is_active=="True"?true:false);
     modal.find('.btn-primary').attr('onclick','updateItemFormula('+id+')')
   })
@@ -417,16 +574,16 @@
     console.log($('#table_item_formula #row_'+id).html(
       "<th scope='row'>"+$('#table_item_formula #row_'+id+' th').html()+"</th>"+
       "<td>"+$('#edit_item_formula_form #id_name').val()+"</td>"+
-      "<td>"+parseFloat($('#edit_item_formula_form #id_value_based_price').val())+"</td>"+
+      "<td>"+$('#edit_item_formula_form #id_formula').val()+"</td>"+
       "<td>"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_item_formula_form #id_name').val()+"' data-editvaluebasedprice='"+$('#edit_item_formula_form #id_value_based_price').val()+"' data-editisactive='"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
+      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_item_formula_form #id_name').val()+"' data-editformula='"+$('#edit_item_formula_form #id_formula').val()+"' data-editisactive='"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
     ));
     $('#editModal').modal('hide');
   }
 
   function clearItemFormula(){
     $('#item_formula_form #id_name').val('');
-    $('#item_formula_form #id_value_based_price').val('');
+    $('#item_formula_form #id_formula').val('');
     $('#item_formula_form #id_is_active').prop('checked', true);
   }
 
@@ -447,8 +604,8 @@
           url: "{% url 'project_items:remove_item_formula' %}", // the file to call
           success: function(response) { // on success..
             console.log(response);
-            var tbody=$("#row_"+id).parent();
-            $("#row_"+id).remove();
+            var tbody=$("#table_item_formula tbody #row_"+id).parent();
+            $("#table_item_formula tbody #row_"+id).remove();
             console.log(tbody.children().length);
             if(tbody.children().length<=0){
 
@@ -459,5 +616,6 @@
       });
     }
 
+//Item Formula End
 </script>
 {% endblock js_block %}

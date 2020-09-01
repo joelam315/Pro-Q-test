@@ -19,7 +19,8 @@ from cases.models import Case
 from common.access_decorators_mixins import (MarketingAccessRequiredMixin,
                                              SalesAccessRequiredMixin,
                                              marketing_access_required,
-                                             sales_access_required)
+                                             sales_access_required,
+                                             AdminAccessRequiredMixin)
 from common.models import Attachments, Comment, User
 from common.tasks import send_email_user_mentions
 from common.utils import (CASE_TYPE, COUNTRIES, CURRENCY_CODES, INDCHOICES,
@@ -30,7 +31,7 @@ from opportunity.models import SOURCES, STAGES, Opportunity
 from teams.models import Teams
 
 
-class CompaniesListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Company
     context_object_name = "companies_list"
     template_name = "companies.html"
@@ -108,7 +109,7 @@ class CompaniesListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateVi
         return self.render_to_response(context)
 
 
-class CreateCompanyView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView):
+class CreateCompanyView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
     model = Company
     form_class = CompanyForm
     template_name = "create_company.html"
@@ -226,7 +227,7 @@ class CreateCompanyView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView
         return context
 
 
-class CompanyDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class CompanyDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Company
     context_object_name = "company_record"
     template_name = "view_company.html"
@@ -257,11 +258,11 @@ class CompanyDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView
         context.update({
             "comments": company_record.companies_comments.all(),
             "attachments": company_record.company_attachment.all(),
-            "opportunity_list": Opportunity.objects.filter(
-                company=company_record),
+            #"opportunity_list": Opportunity.objects.filter(
+            #    company=company_record),
             #"contacts": company_record.contacts.all(),
             "users": User.objects.filter(is_active=True).order_by('email'),
-            "cases": Case.objects.filter(company=company_record),
+            #"cases": Case.objects.filter(company=company_record),
             "stages": STAGES,
             "sources": SOURCES,
             "countries": COUNTRIES,
@@ -270,15 +271,15 @@ class CompanyDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView
             "case_priority": PRIORITY_CHOICE,
             "case_status": STATUS_CHOICE,
             'comment_permission': comment_permission,
-            'tasks':company_record.companies_tasks.all(),
-            'quotations':company_record.companies_quotations.all(),
+            #'tasks':company_record.companies_tasks.all(),
+            #'quotations':company_record.companies_quotations.all(),
             #'emails':company_record.sent_email.all(),
             'users_mention': users_mention,
         })
         return context
 
 
-class CompanyUpdateView(SalesAccessRequiredMixin, LoginRequiredMixin, UpdateView):
+class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
     model = Company
     form_class = CompanyForm
     template_name = "create_company.html"
@@ -405,7 +406,7 @@ class CompanyUpdateView(SalesAccessRequiredMixin, LoginRequiredMixin, UpdateView
         return context
 
 
-class CompanyDeleteView(SalesAccessRequiredMixin, LoginRequiredMixin, DeleteView):
+class CompanyDeleteView(AdminAccessRequiredMixin, LoginRequiredMixin, DeleteView):
     model = Company
     template_name = 'view_company.html'
 

@@ -57,7 +57,7 @@ class ItemTypeMaterial(models.Model):
 class Item(models.Model):
 
 	name=models.CharField(_("Name"),max_length=255)
-	item_properties=models.ManyToManyField(ItemProperty,blank=True)
+	item_properties=models.ManyToManyField(ItemProperty,related_name="property_related_items",blank=True)
 	item_type=models.ForeignKey(ItemType,related_name="related_items",on_delete=models.PROTECT)
 	is_active=models.BooleanField(default=True)
 	value_based_price=models.DecimalField(

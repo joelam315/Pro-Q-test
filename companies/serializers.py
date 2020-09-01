@@ -1,6 +1,6 @@
 import PIL
 
-from companies.models import Company,DocumentFormat,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
+from companies.models import Company,DocumentFormat,DocumentHeaderInformation,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
 
@@ -56,6 +56,7 @@ class Base64ImageField(serializers.ImageField):
 
 class CompanySerializer(serializers.ModelSerializer):
 	logo=serializers.CharField()
+	
 	class Meta:
 		model=Company
 		fields =(
@@ -71,17 +72,23 @@ class SetCompanySerializer(serializers.ModelSerializer):
 	br_pic=Base64ImageField(
 		max_length=None, use_url=True,
 	)
+	sign=Base64ImageField(
+		max_length=None, use_url=True,
+	)
+	owner_name=serializers.CharField()
 
 	class Meta:
 		model=Company
-		fields=("name","logo_pic","br_pic")
+		fields=("name","logo_pic","br_pic","owner_name","sign")
 
 	def create(self, validated_data):
 		user = None
 		request = self.context.get("request")
 		if request and hasattr(request, "user"):
 			user = request.user
-		comapny = Company.objects.update_or_create(owner=user,defaults={"name":validated_data["name"],"logo_pic":validated_data["logo_pic"],"br_pic":validated_data["br_pic"]})[0]
+		comapny = Company.objects.update_or_create(owner=user,defaults={"name":validated_data["name"],"logo_pic":validated_data["logo_pic"],"br_pic":validated_data["br_pic"],"sign":validated_data["sign"],"created_by":user})[0]
+		user.display_name=validated_data["owner_name"]
+		user.save()
 		return comapny
 
 class CompanyJsonSerializer(serializers.Serializer):
@@ -144,6 +151,51 @@ class GetDocumentFormatChoiceResponseSerializer(serializers.Serializer):
 	upper_choices=serializers.ListField(child=serializers.CharField())
 	middle_choices=serializers.ListField(child=serializers.CharField())
 	lower_choices=serializers.ListField(child=serializers.CharField())
+
+class DocumentHeaderInformationSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=DocumentHeaderInformation
+		fields=(
+			"tel",
+			"email",
+			"fax",
+			"address"
+		)
+
+class SetDocumentHeaderInformationSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model=DocumentHeaderInformation
+		fields=("tel",
+			"fax",
+			"address",
+			"email"
+		)
+
+	def create(self, validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			raise ValidationError("You must create a company first.")
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		doc_header=DocumentHeaderInformation.objects.update_or_create (company=company,defaults=validated_data)
+		return doc_header[0]
+
+class DocumentHeaderInformationJsonSerializer(serializers.Serializer):
+	tel=serializers.CharField()
+	email=serializers.CharField()
+	fax=serializers.CharField()
+	address=serializers.CharField()
+
+class GetDocumentHeaderInformationResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	doc_header=DocumentHeaderInformationJsonSerializer()
 
 class ChargingStagesSerializer(serializers.ModelSerializer):
 	class Meta:

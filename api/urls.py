@@ -14,14 +14,17 @@ from rest_framework_simplejwt.views import (
 )
 
 from api.views import (
-	UserRegisterView,
-	UserLoginView,
+	#UserRegisterView,
+	#UserLoginView,
+	UserRegisterOrLoginView,
 	UserPhoneVerifyView,
 	SetCompanyView,
 	GetCompanyView,
 	GetDocumentFormatChoicesView,
 	SetDocumentFormatView,
 	GetDocumentFormatView,
+	SetDocHeaderView,
+	GetDocHeaderView,
 	SetChargingStagesView,
 	GetChargingStagesView,
 	SetQuotationGeneralRemarksView,
@@ -66,16 +69,19 @@ from api.views import (
 	GetExpenseTypeListView,
 	CreateProjectExpenseView,
 	UpdateProjectExpenseView,
-	GetProjectProfitAnalysisView
+	GetProjectProfitAnalysisView,
+	CheckReadyToCreateProjectView
 )
 
 
 app_name = 'api'
 
 urlpatterns = [
-	path('register/',UserRegisterView.as_view(),name='user_register'),
-	path('login/',UserLoginView.as_view(),name='user_login'),
+	#path('register/',UserRegisterView.as_view(),name='user_register'),
+	#path('login/',UserLoginView.as_view(),name='user_login'),
+	path('login/',UserRegisterOrLoginView.as_view(),name="user_login"),
 	path('check/', TokenVerifyView.as_view(), name='token_check'),
+	path('check/ready_to_create/project/',CheckReadyToCreateProjectView.as_view(),name="ready_create_project_check"),
 	path('refresh/',TokenRefreshView.as_view(),name='token_refresh'),
 	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify'),
 	path('company/set/',SetCompanyView.as_view(),name="set_company"),
@@ -83,6 +89,8 @@ urlpatterns = [
 	path('doc_format/get/choices/',GetDocumentFormatChoicesView.as_view(),name="get_doc_format_choices"),
 	path('doc_format/set/',SetDocumentFormatView.as_view(),name="set_doc_format"),
 	path('doc_format/get/',GetDocumentFormatView.as_view(),name="get_doc_format"),
+	path('doc_header/set/',SetDocHeaderView.as_view(),name="set_doc_header"),
+	path('doc_header/get/',GetDocHeaderView.as_view(),name="get_doc_header"),
 	path('charging_stages/set/',SetChargingStagesView.as_view(),name="set_charging_stages"),
 	path('charging_stages/get/',GetChargingStagesView.as_view(),name="get_charging_stages"),
 	path('quotation_general_remarks/set/',SetQuotationGeneralRemarksView.as_view(),name="set_quotation_general_remarks"),

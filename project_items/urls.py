@@ -17,6 +17,8 @@ from project_items.views import (
     CreateItemFormulaView,
     UpdateItemFormulaView,
     RemoveItemFormulaView,
+    ItemPropertiesListView,
+    ItemPropertyDetailView,
     CreateItemPropertyView,
     UpdateItemPropertyView,
     RemoveItemPropertyView
@@ -26,7 +28,7 @@ app_name = 'project_items'
 
 
 urlpatterns = [
-
+    
     path('item_type/', ItemTypesListView.as_view(), name='list_item_types'),
     path('item_type/create/',CreateItemTypeView.as_view(),name="add_item_type"),
     path('item_type/<int:pk>/view/', ItemTypeDetailView.as_view(), name="view_item_type"),
@@ -43,7 +45,9 @@ urlpatterns = [
     path('item_formula/create/',CreateItemFormulaView.as_view(),name="add_item_formula"),
     path('item_formula/edit/<int:pk>',UpdateItemFormulaView.as_view(),name="edit_item_formula"),
     path('item_formula/delete/',RemoveItemFormulaView.as_view(),name="remove_item_formula"),
+    path('item_property/',ItemPropertiesListView.as_view(),name='list_item_properties'),
     path('item_property/create/',CreateItemPropertyView.as_view(),name="add_item_property"),
-    path('item_property/edit/<int:pk>',UpdateItemPropertyView.as_view(),name="edit_item_property"),
-    path('item_property/delete/',RemoveItemPropertyView.as_view(),name="remove_item_property")
+    path('item_property/<int:pk>/view/', ItemPropertyDetailView.as_view(), name="view_item_property"),
+    path('item_property/<int:pk>/edit/',UpdateItemPropertyView.as_view(),name="edit_item_property"),
+    path('item_property/<int:pk>/delete/',RemoveItemPropertyView.as_view(),name="remove_item_property")
 ]

@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.db import IntegrityError
 from common.access_decorators_mixins import (
-	sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin, AdminAccessRequiredMixin)
+	sales_access_required, marketing_access_required, SalesAccessRequiredMixin, AdminAccessRequiredMixin,MarketingAccessRequiredMixin, AdminAccessRequiredMixin)
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -58,7 +58,7 @@ class FunctionItemsListAPIView(APIView):
 		return Response(json.dumps(results))
 
 
-class FunctionItemsListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class FunctionItemsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 	model = FunctionItem
 	context_object_name = "function_item_list"
 	template_name = "function_items.html"
@@ -335,7 +335,7 @@ class RequestFunctionItemAPIView(APIView):
 
 		return Response(ret)
 
-class RequestFunctionItemView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView):
+class RequestFunctionItemView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
 	model = FunctionItem
 	form_class = FunctionItemForm
 	template_name = "create_function_item.html"
@@ -399,7 +399,7 @@ class RequestFunctionItemView(SalesAccessRequiredMixin, LoginRequiredMixin, Crea
 		context["users"] = self.users
 		return context
 
-class FunctionItemDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class FunctionItemDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
 	model = FunctionItem
 	context_object_name = "function_item_record"
 	template_name = "view_function_item.html"

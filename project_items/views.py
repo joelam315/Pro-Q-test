@@ -412,7 +412,7 @@ class CreateItemView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
 			item_obj = form.save(commit=False)
 
 			item_obj.save()
-
+			form.save_m2m()
 			return self.form_valid(form)
 
 		return self.form_invalid(form)
@@ -484,6 +484,7 @@ class UpdateItemView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
 			#origin_status=self.object.status
 			item_obj = form.save(commit=False)
 			item_obj.save()
+			form.save_m2m()
 			return self.form_valid(form)
 		return self.form_invalid(form)
 
@@ -667,7 +668,7 @@ class RemoveItemFormulaView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 		return self.post(request, *args, **kwargs)
 
 	def post(self, request, *args, **kwargs):
-		item_type_material_id = request.POST.get('pk')
+		item_formula_id = request.POST.get('pk')
 		self.object = get_object_or_404(ItemFormula, id=item_formula_id)
 		if (self.request.user.role != "ADMIN" and not
 			self.request.user.is_superuser):
@@ -679,9 +680,60 @@ class RemoveItemFormulaView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 				return JsonResponse({'error': False})
 			return JsonResponse({'error': False})
 
+class ItemPropertiesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+	model = ItemProperty
+	context_object_name = "item_property_list"
+	template_name = "item_properties.html"
+
+	def get_queryset(self):
+		queryset = self.model.objects.all()
+
+		request_post = self.request.POST
+		if request_post:
+			if request_post.get('name'):
+				queryset = queryset.filter(
+					name__icontains=request_post.get('name'))
+			if request_post.get('symbol'):
+				queryset = queryset.filter(
+					symbol__icontains=request_post.get('symbol'))
+
+		return queryset.distinct()
+
+	def get_context_data(self, **kwargs):
+		context = super(ItemPropertiesListView, self).get_context_data(**kwargs)
+		context["item_property_list"] = self.get_queryset()
+		context["per_page"] = self.request.POST.get('per_page')
+		#context["users"] = User.objects.filter(is_active=True).order_by('email')
+		search = False
+		if (
+			self.request.POST.get('name') or
+			self.request.POST.get('symbol')
+		):
+			search = True
+		context["search"] = search
+		return context
+
+	def post(self, request, *args, **kwargs):
+		context = self.get_context_data(**kwargs)
+		return self.render_to_response(context)
+
+class ItemPropertyDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
+	model = ItemProperty
+	context_object_name = "item_property_record"
+	template_name = "view_item_property.html"
+
+	def get_queryset(self):
+		queryset = super(ItemPropertyDetailView, self).get_queryset()
+		return queryset
+
+	def get_context_data(self, **kwargs):
+		context = super(ItemPropertyDetailView, self).get_context_data(**kwargs)
+		return context
+
 class CreateItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
 	model = ItemProperty
 	form_class = ItemPropertyForm
+	template_name = "create_item_property.html"
 
 	def dispatch(self, request, *args, **kwargs):
 		return super(CreateItemPropertyView, self).dispatch(
@@ -707,8 +759,10 @@ class CreateItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, Creat
 
 		if self.request.is_ajax():
 			return JsonResponse({'error': False,'id':item_property_obj.id})
+		if self.request.POST.get("savenewform"):
+			return redirect("project_items:add_item_property")
 
-		return JsonResponse({'error': False,'id':item_property_obj.id})
+		return redirect("project_items:list_item_properties")
 
 	def form_invalid(self, form):
 		#address_form = BillingAddressForm(self.request.POST)
@@ -730,6 +784,7 @@ class CreateItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, Creat
 class UpdateItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
 	model = ItemProperty
 	form_class = ItemPropertyForm
+	template_name = "create_item_property.html"
 
 	def dispatch(self, request, *args, **kwargs):
 		return super(UpdateItemPropertyView, self).dispatch(
@@ -761,7 +816,7 @@ class UpdateItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, Updat
 
 		if self.request.is_ajax():
 			return JsonResponse({'error': False,'id':item_property_obj.id})
-		return JsonResponse({'error': False,'id':item_property_obj.id})
+		return redirect("project_items:list_item_properties")
 
 	def form_invalid(self, form):
 
@@ -791,7 +846,7 @@ class RemoveItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, View)
 		return self.post(request, *args, **kwargs)
 
 	def post(self, request, *args, **kwargs):
-		item_type_material_id = request.POST.get('pk')
+		item_property_id = kwargs.get("pk")
 		self.object = get_object_or_404(ItemProperty, id=item_property_id)
 		if (self.request.user.role != "ADMIN" and not
 			self.request.user.is_superuser):
@@ -801,4 +856,4 @@ class RemoveItemPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, View)
 			self.object.delete()
 			if self.request.is_ajax():
 				return JsonResponse({'error': False})
-			return JsonResponse({'error': False})
+			return redirect("project_items:list_item_properties")

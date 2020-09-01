@@ -21,11 +21,11 @@ from django.core.exceptions import PermissionDenied
 from common.tasks import send_email_user_mentions
 from cases.tasks import send_email_to_assigned_user
 from common.access_decorators_mixins import (
-    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin)
+    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin,AdminAccessRequiredMixin)
 from teams.models import Teams
 
 
-class CasesListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class CasesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Case
     context_object_name = "cases"
     template_name = "cases.html"
@@ -183,7 +183,7 @@ def create_case(request):
     return render(request, template_name, context)
 
 
-class CaseDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class CaseDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Case
     context_object_name = "case_record"
     template_name = "view_case.html"
@@ -363,7 +363,7 @@ def update_case(request, pk):
     return render(request, "create_cases.html", context)
 
 
-class RemoveCaseView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
+class RemoveCaseView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         case_id = kwargs.get("case_id")
@@ -396,7 +396,7 @@ class RemoveCaseView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
         raise PermissionDenied
 
 
-class CloseCaseView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
+class CloseCaseView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         case_id = request.POST.get("case_id")

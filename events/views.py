@@ -16,7 +16,7 @@ from events.forms import EventAttachmentForm, EventCommentForm, EventForm
 from events.models import Event
 from events.tasks import send_email
 from common.access_decorators_mixins import (
-    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin)
+    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin,AdminAccessRequiredMixin)
 from teams.models import Teams
 
 

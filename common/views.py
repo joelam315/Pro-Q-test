@@ -31,7 +31,7 @@ from companies.models import Company, Tags
 from cases.models import Case
 from common.access_decorators_mixins import (MarketingAccessRequiredMixin,
     SalesAccessRequiredMixin, marketing_access_required, sales_access_required,
-    admin_login_required)
+    admin_login_required,AdminAccessRequiredMixin)
 from common.forms import (APISettingsForm, ChangePasswordForm, DocumentForm,
     LoginForm, PasswordResetEmailForm, UserCommentForm, UserForm)
 from common.models import (APISettings, Attachments, Comment, Document, Google,
@@ -39,7 +39,7 @@ from common.models import (APISettings, Attachments, Comment, Document, Google,
 from common.tasks import (resend_activation_link_to_user,
     send_email_to_new_user, send_email_user_delete, send_email_user_status)
 from common.token_generator import account_activation_token
-from common.utils import ROLES
+from common.utils import ROLES,ADMIN_ROLES,USER_ROLES
 from contacts.models import Contact
 from leads.models import Lead
 from opportunity.models import Opportunity
@@ -68,7 +68,7 @@ class AdminRequiredMixin(AccessMixin):
             request, *args, **kwargs)
 
 
-class HomeView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class HomeView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     template_name = "sales/index.html"
 
     def get_context_data(self, **kwargs):
@@ -221,8 +221,8 @@ class LogoutView(LoginRequiredMixin, View):
 
 class AdminsListView(AdminRequiredMixin, TemplateView):
     model = User
-    context_object_name = "users"
-    template_name = "list.html"
+    context_object_name = "admins"
+    template_name = "admin_list.html"
 
     def get_queryset(self):
         queryset = self.model.objects.filter(Q(role="ADMIN")|Q(is_superuser=True))
@@ -252,7 +252,7 @@ class AdminsListView(AdminRequiredMixin, TemplateView):
         context["inactive_users"] = inactive_users
         context["per_page"] = self.request.POST.get('per_page')
         context['admin_email'] = settings.ADMIN_EMAIL
-        context['roles'] = ROLES
+        context['roles'] = ADMIN_ROLES
         context['status'] = [('True', 'Active'), ('False', 'In Active')]
         return context
 
@@ -263,7 +263,7 @@ class AdminsListView(AdminRequiredMixin, TemplateView):
 class CreateAdminView(AdminRequiredMixin, CreateView):
     model = User
     form_class = UserForm
-    template_name = "create.html"
+    template_name = "admin_create.html"
     # success_url = '/users/list/'
 
     def form_valid(self, form):
@@ -317,8 +317,8 @@ class CreateAdminView(AdminRequiredMixin, CreateView):
 
 class AdminDetailView(AdminRequiredMixin, DetailView):
     model = User
-    context_object_name = "users"
-    template_name = "user_detail.html"
+    context_object_name = "admins"
+    template_name = "admin_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super(AdminDetailView, self).get_context_data(**kwargs)
@@ -344,7 +344,7 @@ class AdminDetailView(AdminRequiredMixin, DetailView):
 class UpdateAdminView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UserForm
-    template_name = "create.html"
+    template_name = "admin_create.html"
 
     def form_valid(self, form):
         user = form.save(commit=False)
@@ -407,10 +407,22 @@ class UpdateAdminView(LoginRequiredMixin, UpdateView):
             context["errors"] = kwargs["errors"]
         return context
 
+class AdminDeleteView(AdminRequiredMixin, DeleteView):
+    model = User
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        current_site = request.get_host()
+        deleted_by = self.request.user.email
+        send_email_user_delete.delay(
+            self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
+        self.object.delete()
+        return redirect("common:admins_list")
+
 class UsersListView(AdminRequiredMixin, TemplateView):
     model = User
     context_object_name = "users"
-    template_name = "list.html"
+    template_name = "user_list.html"
 
     def get_queryset(self):
         queryset = self.model.objects.filter(role="USER",is_superuser=False)
@@ -440,7 +452,7 @@ class UsersListView(AdminRequiredMixin, TemplateView):
         context["inactive_users"] = inactive_users
         context["per_page"] = self.request.POST.get('per_page')
         context['admin_email'] = settings.ADMIN_EMAIL
-        context['roles'] = ROLES
+        context['roles'] = USER_ROLES
         context['status'] = [('True', 'Active'), ('False', 'In Active')]
         return context
 
@@ -448,22 +460,10 @@ class UsersListView(AdminRequiredMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
-class AdminDeleteView(AdminRequiredMixin, DeleteView):
-    model = User
-
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        current_site = request.get_host()
-        deleted_by = self.request.user.email
-        send_email_user_delete.delay(
-            self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
-        self.object.delete()
-        return redirect("common:admins_list")
-
 class CreateUserView(AdminRequiredMixin, CreateView):
     model = User
     form_class = UserForm
-    template_name = "create.html"
+    template_name = "user_create.html"
     # success_url = '/users/list/'
 
     def form_valid(self, form):
@@ -536,7 +536,7 @@ class UserDetailView(AdminRequiredMixin, DetailView):
             Opportunity.objects.filter(assigned_to=user_obj.id),
             "contacts": Contact.objects.filter(assigned_to=user_obj.id),
             "cases": Case.objects.filter(assigned_to=user_obj.id),
-            # "companies": Company.objects.filter(assigned_to=user_obj.id),
+            "companies": Company.objects.filter(owner=user_obj.id),
             "assigned_data": json.dumps(users_data),
             "comments": user_obj.user_comments.all(),
         })
@@ -674,7 +674,7 @@ def document_create(request):
     return render(request, template_name, context)
 
 
-class DocumentListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class DocumentListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Document
     context_object_name = "documents"
     template_name = "doc_list_1.html"
@@ -802,7 +802,7 @@ def document_update(request, pk):
     return render(request, template_name, context)
 
 
-class DocumentDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class DocumentDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Document
     template_name = "doc_detail.html"
 
@@ -925,6 +925,19 @@ def change_user_status(request, pk):
         pk, status_changed_user=status_changed_user, domain=current_site , protocol=request.scheme)
     return HttpResponseRedirect('/users/list/')
 
+def change_admin_status(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if user.is_active:
+        user.is_active = False
+    else:
+        user.is_active = True
+    user.save()
+    current_site = request.get_host()
+    status_changed_user = request.user.email
+    send_email_user_status.delay(
+        pk, status_changed_user=status_changed_user, domain=current_site , protocol=request.scheme)
+    return HttpResponseRedirect('/admins/list/')
+
 
 def add_comment(request):
     if request.method == "POST":
@@ -974,7 +987,7 @@ def remove_comment(request):
 @login_required
 @admin_login_required
 def api_settings(request):
-    # api_settings = APISettings.objects.all()
+    api_settings = APISettings.objects.all()
     blocked_domains = BlockedDomain.objects.all()
     blocked_emails = BlockedEmail.objects.all()
     contacts = ContactEmailCampaign.objects.all()
@@ -982,7 +995,7 @@ def api_settings(request):
     assigned_users = User.objects.all()
 
     context = {
-        # 'settings': api_settings,
+        'settings': api_settings,
         'contacts': contacts,
         'created_by_users': created_by_users,
         'assigned_users': assigned_users,
@@ -991,43 +1004,43 @@ def api_settings(request):
     }
 
     if request.method == 'POST':
-        # settings = api_settings
-        # if request.POST.get('api_settings', None):
-        #     if request.POST.get('title', None):
-        #         settings = settings.filter(title__icontains=request.POST.get('title', None))
-        #     if request.POST.get('created_by', None):
-        #         settings = settings.filter(created_by_id=request.POST.get('created_by', None))
-        #     if request.POST.get('assigned_to', None):
-        #         settings = settings.filter(lead_assigned_to__id__in=request.POST.getlist('assigned_to', None))
+        settings = api_settings
+        if request.POST.get('api_settings', None):
+            if request.POST.get('title', None):
+                settings = settings.filter(title__icontains=request.POST.get('title', None))
+            if request.POST.get('created_by', None):
+                settings = settings.filter(created_by_id=request.POST.get('created_by', None))
+            if request.POST.get('assigned_to', None):
+                settings = settings.filter(lead_assigned_to__id__in=request.POST.getlist('assigned_to', None))
 
-        #     context['settings']= settings.distinct()
+        context['settings']= settings.distinct()
 
-        if request.POST.get('filter_contacts', None):
-            contacts_filter = contacts
-            if request.POST.get('contact_name', None):
-                contacts_filter = contacts_filter.filter(name__icontains=request.POST.get('contact_name', None))
-            if request.POST.get('contact_created_by', None):
-                contacts_filter = contacts_filter.filter(created_by_id=request.POST.get('contact_created_by', None))
-            if request.POST.get('contact_email', None):
-                contacts_filter = contacts_filter.filter(email__icontains=request.POST.get('contact_email', None))
+    if request.POST.get('filter_contacts', None):
+        contacts_filter = contacts
+        if request.POST.get('contact_name', None):
+            contacts_filter = contacts_filter.filter(name__icontains=request.POST.get('contact_name', None))
+        if request.POST.get('contact_created_by', None):
+            contacts_filter = contacts_filter.filter(created_by_id=request.POST.get('contact_created_by', None))
+        if request.POST.get('contact_email', None):
+            contacts_filter = contacts_filter.filter(email__icontains=request.POST.get('contact_email', None))
 
-            context['contacts']= contacts_filter.distinct()
+        context['contacts']= contacts_filter.distinct()
 
-        if request.POST.get('filter_blocked_domains', None):
-            if request.POST.get('domain', ''):
-                blocked_domains = blocked_domains.filter(domain__icontains=request.POST.get('domain', ''))
-            if request.POST.get('created_by', ''):
-                blocked_domains = blocked_domains.filter(created_by_id=request.POST.get('created_by', ''))
+    if request.POST.get('filter_blocked_domains', None):
+        if request.POST.get('domain', ''):
+            blocked_domains = blocked_domains.filter(domain__icontains=request.POST.get('domain', ''))
+        if request.POST.get('created_by', ''):
+            blocked_domains = blocked_domains.filter(created_by_id=request.POST.get('created_by', ''))
 
-            context['blocked_domains']= blocked_domains
+        context['blocked_domains']= blocked_domains
 
-        if request.POST.get('filter_blocked_emails', None):
-            if request.POST.get('email', ''):
-                blocked_emails = blocked_emails.filter(email__icontains=request.POST.get('email', ''))
-            if request.POST.get('created_by', ''):
-                blocked_emails = blocked_emails.filter(created_by_id=request.POST.get('created_by', ''))
+    if request.POST.get('filter_blocked_emails', None):
+        if request.POST.get('email', ''):
+            blocked_emails = blocked_emails.filter(email__icontains=request.POST.get('email', ''))
+        if request.POST.get('created_by', ''):
+            blocked_emails = blocked_emails.filter(created_by_id=request.POST.get('created_by', ''))
 
-            context['blocked_emails'] = blocked_emails
+        context['blocked_emails'] = blocked_emails
 
     return render(request, 'settings/list.html', context)
 

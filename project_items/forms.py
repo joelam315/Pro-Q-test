@@ -64,6 +64,8 @@ class ItemForm(forms.ModelForm):
         for key, value in self.fields.items():
             value.widget.attrs['placeholder'] = value.label
 
+        self.fields['item_properties'].required=True
+
     class Meta:
         model=Item
         fields=(

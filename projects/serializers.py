@@ -28,6 +28,8 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 			raise ValidationError("You must create company's charging stages first.")
 		if not company.company_doc_format:
 			raise ValidationError("You must create company's document format first.")
+		if not company.company_doc_header:
+			raise ValidationError("You must create company's document header first.")
 		ccss=company.company_charging_stages
 		cs=[]
 		for i in range(ccss.quantity):

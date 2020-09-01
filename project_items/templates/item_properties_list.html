@@ -1,0 +1,38 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th width="50%">
+        <a href='#'>
+        Name
+        </a>
+        <span class="caret"></span>
+      </th>
+      <th>
+        <a href="#">
+        Symbol
+        </a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% ifequal item_properties|length  0 %}
+    <tr>
+      <td class="cell">
+        NO ITEM PROPERTIES FOUND!!
+      </td>
+    </tr>
+    {% endifequal %}
+    {% for item_property in item_properties %}
+    <tr>
+      <td class="cell">
+        <a class="cell parentname" id="{{ item_property.id }}">
+        {{ item_property.name }}
+        </a>
+      </td>
+      <td class="cell parentemail">
+        {{ item_property.symbol }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -25,7 +25,7 @@ from django.db import IntegrityError
 from common.tasks import send_email_user_mentions
 from customers.tasks import send_email_to_assigned_user
 from common.access_decorators_mixins import (
-    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin)
+    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin,AdminAccessRequiredMixin)
 from teams.models import Teams
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
@@ -69,7 +69,7 @@ class CustomersListAPIView(APIView):
         results = [ob.as_json() for ob in customer]
         return Response(json.dumps(results))
 
-class CustomersListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class CustomersListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Customer
     context_object_name = "customer_obj_list"
     template_name = "customers.html"
@@ -217,7 +217,7 @@ class CreateCustomerAPIView(APIView):
             company.save()
         return Response(ret)
 
-class CreateCustomerView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView):
+class CreateCustomerView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
     model = Customer
     form_class = CustomerForm
     template_name = "create_customer.html"
@@ -344,7 +344,7 @@ class CreateCustomerView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateVie
         return context
 
 
-class CustomerDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class CustomerDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Customer
     context_object_name = "customer_record"
     template_name = "view_customer.html"
@@ -470,7 +470,7 @@ class UpdateCustomerAPIView(APIView):
             company.save()
         return Response(ret)
 
-class UpdateCustomerView(SalesAccessRequiredMixin, LoginRequiredMixin, UpdateView):
+class UpdateCustomerView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
     model = Customer
     form_class = CustomerForm
     template_name = "create_customer.html"
@@ -658,7 +658,7 @@ class RemoveCustomerAPIView(APIView):
         customer.assigned_to.remove(request.user)
         return Response(ret)
 
-class RemoveCustomerView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
+class RemoveCustomerView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)

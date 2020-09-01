@@ -7,16 +7,25 @@
   <li class="nav-item"><a class="nav-link" id="users" href="{% url 'common:users_list' %}">Users</a></li>
   <li class="nav-item dropdown">
     <a href="#" class="dropdown-toggle abcd nav-link" id="items" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+      Room
+    </a>
+    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+      <a class="dropdown-item" href="{% url 'project_items:list_item_properties' %}">Room Properties</a>
+      <a class="dropdown-item" href="{% url 'project_items:list_item_types' %}">Room Types</a>
+    </div>
+  </li>
+  <li class="nav-item dropdown">
+    <a href="#" class="dropdown-toggle abcd nav-link" id="items" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
       Project Items
     </a>
     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+      <a class="dropdown-item" href="{% url 'project_items:list_item_properties' %}">Item Properties</a>
       <a class="dropdown-item" href="{% url 'project_items:list_item_types' %}">Item Types</a>
       <a class="dropdown-item" href="{% url 'project_items:list_items' %}">Items</a>
       <a class="dropdown-item" href="{% url 'project_items:list_item_types' %}">Misc</a>
     </div>
   </li>
   <li class="nav-item"><a class="nav-link" id="companies" href="{% url 'companies:list' %}">Companies</a></li>
-  <li class="nav-item"><a class="nav-link" id="documents" href="{% url 'common:doc_list' %}">Documents</a></li>
   {% endif %}
 
 </ul>

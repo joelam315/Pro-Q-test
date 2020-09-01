@@ -25,11 +25,15 @@ class Tags(models.Model):
 
 def br_url(self, filename):
     hash_ = int(time.time())
-    return "%s/%s/%s/%s" % ("companies",self.id, self.br_prepend,filename)
+    return "%s/%s/%s/%s" % ("companies",str(self.id), self.br_prepend,filename)
 
 def logo_url(self, filename):
     hash_ = int(time.time())
-    return "%s/%s/%s/%s" % ("companies",self.id, self.logo_prepend,filename)
+    return "%s/%s/%s/%s" % ("companies",str(self.id), self.logo_prepend,filename)
+
+def sign_url(self, filename):
+    hash_ = int(time.time())
+    return "%s/%s/%s/%s" % ("companies",str(self.id), self.sign_prepend,filename)
 
 class Company(models.Model):
 
@@ -39,8 +43,9 @@ class Company(models.Model):
     )
     logo_prepend = "logos"
     br_prepend = "brs"
+    sign_prepend = "signs"
     name = models.CharField(pgettext_lazy(
-        "Name of Company", "Name"), max_length=64,unique=True)
+        "Name of Company", "Name"), max_length=64)
     email = models.EmailField(blank=True, null=True)
     phone = PhoneNumberField(blank=True, null=True)
     industry = models.CharField(
@@ -72,6 +77,7 @@ class Company(models.Model):
     created_on = models.DateTimeField(_("Created on"), auto_now_add=True)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tags, blank=True)
+    br_approved=models.BooleanField(default=False)
     status = models.CharField(
         choices=COMPANY_STATUS_CHOICE, max_length=64, default='open')
     '''lead = models.ForeignKey(
@@ -82,6 +88,8 @@ class Company(models.Model):
         max_length=1000, upload_to=logo_url, null=True, blank=True)
     br_pic = models.FileField(
         max_length=1000, upload_to=br_url, null=True, blank=True)
+    sign = models.FileField(
+        max_length=1000, upload_to=sign_url, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -211,6 +219,27 @@ class DocumentFormat(models.Model):
             receipt_middle_format=self.receipt_middle_format,
             receipt_lower_format=self.receipt_lower_format
         )
+
+class DocumentHeaderInformation(models.Model):
+    company =models.OneToOneField(Company,related_name='company_doc_header',on_delete=models.CASCADE)
+
+    tel=models.CharField(max_length=20,blank=True, null=True)
+    email=models.EmailField(blank=True, null=True)
+    fax=models.CharField(max_length=20,blank=True, null=True)
+    address= models.CharField(max_length=512, blank=True, null=True)
+
+    def __str__(self):
+        return str(self.company)+" Document Header"
+
+    def as_json(self):
+        return dict(
+            tel=self.tel,
+            email=self.email,
+            fax=self.fax,
+            address=self.address
+        )
+
+
 
 class ChargingStages(models.Model):
     company =models.OneToOneField(Company,related_name='company_charging_stages',on_delete=models.CASCADE)

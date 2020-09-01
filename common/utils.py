@@ -47,6 +47,14 @@ ROLES = (
     ('USER', 'USER'),
 )
 
+ADMIN_ROLES=(
+    ('ADMIN','ADMIN'),
+)
+
+USER_ROLES=(
+    ('USER','USER'),
+)
+
 LEAD_STATUS = (
     ('assigned', 'Assigned'),
     ('in process', 'In Process'),

@@ -8,7 +8,7 @@ from common.views import (
     UserDeleteView, PasswordResetView,
     DocumentListView, document_create, document_update,
     DocumentDetailView, DocumentDeleteView,
-    download_document, change_user_status, download_attachment,
+    download_document, change_user_status, change_admin_status,download_attachment,
     add_comment, edit_comment, remove_comment,
     api_settings, add_api_settings, view_api_settings,
     update_api_settings, delete_api_settings,
@@ -78,6 +78,9 @@ urlpatterns = [
     # download_attachment
     path('attachments/<int:pk>/download/',
          download_attachment, name='download_attachment'),
+
+    path('admin/status/<int:pk>/',
+         change_admin_status, name='change_admin_status'),
 
     path('user/status/<int:pk>/',
          change_user_status, name='change_user_status'),

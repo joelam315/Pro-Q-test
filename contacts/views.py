@@ -25,7 +25,7 @@ from django.db import IntegrityError
 from common.tasks import send_email_user_mentions
 from contacts.tasks import send_email_to_assigned_user
 from common.access_decorators_mixins import (
-    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin)
+    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin,AdminAccessRequiredMixin)
 from teams.models import Teams
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
@@ -69,7 +69,7 @@ class ContactsListAPIView(APIView):
         results = [ob.as_json() for ob in contact]
         return Response(json.dumps(results))
 
-class ContactsListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class ContactsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Contact
     context_object_name = "contact_obj_list"
     template_name = "contacts.html"
@@ -217,7 +217,7 @@ class CreateContactAPIView(APIView):
             company.save()
         return Response(ret)
 
-class CreateContactView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView):
+class CreateContactView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
     model = Contact
     form_class = ContactForm
     template_name = "create_contact.html"
@@ -344,7 +344,7 @@ class CreateContactView(SalesAccessRequiredMixin, LoginRequiredMixin, CreateView
         return context
 
 
-class ContactDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class ContactDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Contact
     context_object_name = "contact_record"
     template_name = "view_contact.html"
@@ -470,7 +470,7 @@ class UpdateContactAPIView(APIView):
             company.save()
         return Response(ret)
 
-class UpdateContactView(SalesAccessRequiredMixin, LoginRequiredMixin, UpdateView):
+class UpdateContactView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
     model = Contact
     form_class = ContactForm
     template_name = "create_contact.html"
@@ -658,7 +658,7 @@ class RemoveContactAPIView(APIView):
         contact.assigned_to.remove(request.user)
         return Response(ret)
 
-class RemoveContactView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
+class RemoveContactView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)

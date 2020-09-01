@@ -21,10 +21,10 @@ from django.core.exceptions import PermissionDenied
 from common.tasks import send_email_user_mentions
 from opportunity.tasks import send_email_to_assigned_user
 from common.access_decorators_mixins import (
-    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin)
+    sales_access_required, marketing_access_required, SalesAccessRequiredMixin, AdminAccessRequiredMixin,MarketingAccessRequiredMixin)
 from teams.models import Teams
 
-class OpportunityListView(SalesAccessRequiredMixin, LoginRequiredMixin, TemplateView):
+class OpportunityListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Opportunity
     context_object_name = "opportunity_list"
     template_name = "opportunity.html"
@@ -212,7 +212,7 @@ def create_opportunity(request):
     return render(request, "create_opportunity.html", context)
 
 
-class OpportunityDetailView(SalesAccessRequiredMixin, LoginRequiredMixin, DetailView):
+class OpportunityDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
     model = Opportunity
     context_object_name = "opportunity_record"
     template_name = "view_opportunity.html"
@@ -413,7 +413,7 @@ def update_opportunity(request, pk):
     return render(request, "create_opportunity.html", context)
 
 
-class DeleteOpportunityView(SalesAccessRequiredMixin, LoginRequiredMixin, View):
+class DeleteOpportunityView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
