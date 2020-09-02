@@ -70,7 +70,14 @@ from api.views import (
 	CreateProjectExpenseView,
 	UpdateProjectExpenseView,
 	GetProjectProfitAnalysisView,
-	CheckReadyToCreateProjectView
+	CheckReadyToCreateProjectView,
+	RemoveProjectView,
+	RemoveProjectWorkView,
+	RemoveProjectMilestoneView,
+	RemoveProjectMiscView,
+	RemoveProjectExpenseView,
+	RemoveProjectRoomItemView,
+	GetMiscListView
 )
 
 
@@ -103,6 +110,7 @@ urlpatterns = [
 	path('project/update/',UpdateProjectView.as_view(),name="update_project"),
 	path('project/get/',GetProjectView.as_view(),name="get_project"),
 	path('project/list/',GetProjectListView.as_view(),name="list_project"),
+	path('project/remove/',RemoveProjectView.as_view(),name="remove_project"),
 	path('project/customer/set/',SetProjectCustomerView.as_view(),name="set_project_customer"),
 	path('project/room/create/',CreateProjectRoomView.as_view(),name="create_project_room"),
 	path('project/room/update/',UpdateProjectRoomView.as_view(),name="update_project_room"),
@@ -110,10 +118,12 @@ urlpatterns = [
 	path('project/room/list/',GetProjectRoomListView.as_view(),name="list_project_rooms"),
 	path('project/room/get/',GetProjectRoomDetailsView.as_view(),name="get_project_room_details"),
 	path('project/room/item/set/',SetProjectRoomItemView.as_view(),name="set_project_room_item"),
+	path('project/room/item/remove/',RemoveProjectRoomItemView.as_view(),name="remove_project_room_item"),
 	path('project/room/item/precal/',PreCalProjectRoomItemFormulaView.as_view(),name="pre_cal_project_room_item_forumla"),
 	path('project/item/get/all/byroom/',GetProjectAllRoomItemView.as_view(),name="get_project_all_room_items"),
 	path('project/item/get/all/',GetProjectAllItemView.as_view(),name="get_project_all_items"),
 	path('project/misc/set/',SetProjectMiscView.as_view(),name="set_project_misc"),
+	path('project/misc/remove/',RemoveProjectMiscView.as_view(),name="remove_project_misc"),
 	path('project/misc/get/all/',GetAllProjectMiscView.as_view(),name="get_all_project_misc"),
 	path('project/quot/preview/',PreviewProjectQuotation.as_view(),name="preview_project_quotation"),
 	path('project/quot/remarks/update/',UpdateProjectQuotationRemarks.as_view(),name="update_project_quotation_remarks"),
@@ -126,14 +136,18 @@ urlpatterns = [
 	path('project/receipt/generate/',GenerateProjectReceipt.as_view(),name="generate_project_receipt"),
 	path('project/work/create/',CreateProjectWorkView.as_view(),name="create_project_work"),
 	path('project/work/update/',UpdateProjectWorkView.as_view(),name="update_project_work"),
+	path('project/work/remove/',RemoveProjectWorkView.as_view(),name="remove_project_work"),
 	path('project/milestone/create/',CreateProjectMilestoneView.as_view(),name="create_project_milestone"),
 	path('project/milestone/update/',UpdateProjectMilestoneView.as_view(),name="update_project_milestone"),
+	path('project/milestone/remove/',RemoveProjectMilestoneView.as_view(),name="remove_project_milestone"),
 	path('project/expense/create/',CreateProjectExpenseView.as_view(),name="create_project_expense"),
 	path('project/expense/update/',UpdateProjectExpenseView.as_view(),name="update_project_expense"),
+	path('project/expense/remove/',RemoveProjectExpenseView.as_view(),name="remove_project_expense"),
 	path('project/profit/analysis/get/',GetProjectProfitAnalysisView.as_view(),name="get_project_profit_analysis"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
 	path('item/materials/get/',GetItemMaterials.as_view(),name="get_item_materials"),
-	path('expense_types/get/',GetExpenseTypeListView.as_view(),name="get_expense_types")
+	path('expense_types/get/',GetExpenseTypeListView.as_view(),name="get_expense_types"),
+	path('misc/list/',GetMiscListView.as_view(),name="get_misc_list")
 ]

@@ -118,6 +118,11 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 		else:
 			raise PermissionDenied
 
+class GetRoomItemRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=RoomItem
+		fields=("id",)
+
 class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 	value=serializers.JSONField(required=True)
 

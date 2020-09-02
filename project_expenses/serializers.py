@@ -36,6 +36,10 @@ class CreateProjectExpenseSerializer(serializers.ModelSerializer):
 		else:
 			raise PermissionDenied
 
+class GetProjectExpenseRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ProjectExpense
+		fields=("id",)
 
 class CreateProjectExpenseResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()

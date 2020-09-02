@@ -4,6 +4,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
 
+class GetProjectWorkRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ProjectWork
+		fields=("id",)
+
 class CreateProjectWorkSerializer(serializers.ModelSerializer):
 
 	class Meta:
@@ -59,6 +64,11 @@ class UpdateProjectWorkSerializer(serializers.ModelSerializer):
 			project_work.save()
 		else:
 			raise PermissionDenied
+
+class GetProjectMilestoneRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ProjectMilestone
+		fields=("id",)
 
 class CreateProjectMilestoneSerializer(serializers.ModelSerializer):
 

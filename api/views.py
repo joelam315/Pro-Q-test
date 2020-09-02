@@ -77,7 +77,8 @@ from rooms.serializers import (
 	PreCalProjectRoomItemFormulaResponseSerializer,
 	SetProjectRoomItemResponseSerializer,
 	GetRoomTypeListResponseSerializer,
-	GetRoomRelatedItemResponseSerializer
+	GetRoomRelatedItemResponseSerializer,
+	GetRoomItemRequestSerializer
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
@@ -86,11 +87,13 @@ from project_items.serializers import (
 	GetItemMaterialsRequestSerializer,
 	GetItemMaterialsResponseSerializer
 )
-from project_misc.models import ProjectMisc
+from project_misc.models import ProjectMisc,Misc
 from project_misc.serializers import (
 	SetProjectMiscSerializer,
 	SetProjectMiscResponseSerializer,
-	GetAllProjectMiscResponseSerializer
+	GetAllProjectMiscResponseSerializer,
+	GetProjectMiscRequestSerializer,
+	GetMiscListResponseSerializer
 )
 
 from project_timetable.models import ProjectWork, ProjectMilestone
@@ -100,7 +103,9 @@ from project_timetable.serializers import (
 	CreateProjectMilestoneSerializer,
 	UpdateProjectMilestoneSerializer,
 	CreateProjectWorkResponseSerializer,
-	CreateProjectMilestoneResponseSerializer
+	CreateProjectMilestoneResponseSerializer,
+	GetProjectWorkRequestSerializer,
+	GetProjectMilestoneRequestSerializer
 
 )
 
@@ -111,8 +116,11 @@ from project_expenses.models import (
 from project_expenses.serializers import (
 	GetExpenseTypeListResponseSerializer,
 	CreateProjectExpenseSerializer,
-	UpdateProjectExpenseSerializer
+	UpdateProjectExpenseSerializer,
+	GetProjectExpenseRequestSerializer
 )
+
+from api.renderers import APIRenderer
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
@@ -141,12 +149,16 @@ token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,descrip
 default_param = openapi.Response(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
 
 
+
+
+
 #User
 
 class UserRegisterOrLoginView(APIView):
 	model = User
 	permission_classes = [AllowAny]
 	serializer_class = CreateOrGetUserSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Register a new user or login", 
@@ -180,6 +192,7 @@ class UserRegisterOrLoginView(APIView):
 	model = User
 	permission_classes = [AllowAny]
 	serializer_class = CreateUserSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Register a new user", 
@@ -209,6 +222,7 @@ class UserRegisterOrLoginView(APIView):
 
 '''class UserLoginView(APIView):
 	permission_classes = [AllowAny]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="User login", 
@@ -249,6 +263,7 @@ class UserPhoneVerifyView(APIView):
 	#authentication_classes = [authentication.JWTAuthentication]
 	permission_classes = [AllowAny]
 	#permission_classes = [IsAuthenticated]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Verify phone number for new user", 
@@ -293,6 +308,7 @@ class GetCompanyView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company \n<b>* the returned value 'logo' is a path to the image resource</b>", 
@@ -320,6 +336,7 @@ class GetCompanyLogoView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
+	renderer_classes=[APIRenderer]
 
 	def post(self,request, *args, **kwargs):
 
@@ -332,6 +349,7 @@ class SetCompanyView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Company
 	serializer_class = SetCompanySerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company info.", 
@@ -363,6 +381,7 @@ class SetCompanyView(APIView):
 class CheckReadyToCreateProjectView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 	@swagger_auto_schema(
 		operation_description="Check if all company settings are done to make ready for creating a project.", 
 		security=[{'Bearer': []}],
@@ -421,6 +440,7 @@ class CheckReadyToCreateProjectView(APIView):
 class GetDocumentFormatChoicesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 	@swagger_auto_schema(
 		operation_description="Get all docuemnt format choices.", 
 		security=[{'Bearer': []}],
@@ -444,6 +464,7 @@ class SetDocumentFormatView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentFormat
 	serializer_class = SetDocumentFormatSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company docuemnt format.", 
@@ -470,6 +491,7 @@ class GetDocumentFormatView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentFormat
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company docuemnt format.", 
@@ -493,6 +515,7 @@ class SetChargingStagesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetChargingStagesSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company charging stage(s).", 
@@ -528,6 +551,7 @@ class GetChargingStagesView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ChargingStages
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company charging stages.", 
@@ -555,6 +579,7 @@ class SetDocHeaderView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentHeaderInformation
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company document header.", 
@@ -588,6 +613,7 @@ class GetDocHeaderView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=DocumentHeaderInformation
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company docuemnt header.", 
@@ -611,6 +637,7 @@ class SetQuotationGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetQuotationGeneralRemarkSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company quotation general remark.", 
@@ -643,6 +670,7 @@ class GetQuotationGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=QuotationGeneralRemark
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company quotation general remarks.", 
@@ -664,6 +692,7 @@ class SetInvoiceGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetInvoiceGeneralRemarkSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company invoice general remark.", 
@@ -696,6 +725,7 @@ class GetInvoiceGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=InvoiceGeneralRemark
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company invoice general remarks.", 
@@ -717,6 +747,7 @@ class SetReceiptGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class = SetReceiptGeneralRemarkSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update user's company receipt general remark.", 
@@ -749,6 +780,7 @@ class GetReceiptGeneralRemarksView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ReceiptGeneralRemark
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get user's company receipt general remarks.", 
@@ -772,6 +804,7 @@ class GetProjectListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Project
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="List all projects", 
@@ -795,6 +828,7 @@ class CreateProjectView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Project
 	serializer_class=CreateProjectSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create a project", 
@@ -827,6 +861,7 @@ class UpdateProjectView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Project
 	serializer_class=UpdateProjectSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a project", 
@@ -868,6 +903,7 @@ class GetProjectView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Project
 	serializer_class=GetProjectRequestSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get specify project information", 
@@ -892,9 +928,51 @@ class GetProjectView(APIView):
 		else:
 			raise ValidationError("Missing id")
 
+class RemoveProjectView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=Project
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			project=Project.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+			project.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
 class PreviewProjectQuotation(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Preview a project quotation", 
@@ -936,6 +1014,7 @@ class PreviewProjectQuotation(APIView):
 class UpdateProjectQuotationRemarks(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a project quotation remarks to comany latest quotation remarks", 
@@ -979,6 +1058,7 @@ class UpdateProjectQuotationRemarks(APIView):
 class GenerateProjectQuotation(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Generate a project quotation", 
@@ -1060,6 +1140,7 @@ class PreviewProjectInvoice(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class=GetProjectWithChargingStageRequestSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Preview a project invoice", 
@@ -1103,6 +1184,7 @@ class PreviewProjectInvoice(APIView):
 class UpdateProjectInvoiceRemarks(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a project invoice remarks to comany latest invoice remarks", 
@@ -1145,6 +1227,7 @@ class UpdateProjectInvoiceRemarks(APIView):
 class GenerateProjectInvoice(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Generate a project invoice", 
@@ -1225,6 +1308,7 @@ class PreviewProjectReceipt(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	serializer_class=GetProjectWithChargingStageRequestSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Preview a project receipt", 
@@ -1268,6 +1352,7 @@ class PreviewProjectReceipt(APIView):
 class UpdateProjectReceiptRemarks(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a project receipt remarks to comany latest receipt remarks", 
@@ -1310,6 +1395,7 @@ class UpdateProjectReceiptRemarks(APIView):
 class GenerateProjectReceipt(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Generate a project receipt", 
@@ -1396,6 +1482,7 @@ class SetProjectCustomerView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Customer
 	serializer_class=SetProjectCustomerSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update a customer to a project", 
@@ -1439,6 +1526,7 @@ class CreateProjectRoomView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Room
 	serializer_class=CreateRoomSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create a room to a project", 
@@ -1481,6 +1569,7 @@ class UpdateProjectRoomView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Room
 	serializer_class=UpdateRoomSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a room in a project", 
@@ -1522,6 +1611,7 @@ class RemoveProjectRoomView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=Room
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Remove a room in a project", 
@@ -1562,6 +1652,7 @@ class GetProjectRoomListView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=Room
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get all rooms in a project", 
@@ -1598,6 +1689,7 @@ class GetProjectRoomDetailsView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=Room
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get a specific room in a project", 
@@ -1639,6 +1731,7 @@ class GetProjectAllItemView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get all items by type in a project", 
@@ -1687,6 +1780,7 @@ class GetProjectAllRoomItemView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get all items by room in a project", 
@@ -1736,6 +1830,7 @@ class SetProjectRoomItemView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
 	serializer_class=SetRoomItemSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update a project room item", 
@@ -1773,11 +1868,53 @@ class SetProjectRoomItemView(APIView):
 		ret["room_item_id"]=room_item.id
 		return Response(ret,status=status.HTTP_200_OK)
 
+class RemoveProjectRoomItemView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=RoomItem
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a item from project's room", 
+		security=[{'Bearer': []}],
+		request_body=GetRoomItemRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			ri=RoomItem.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Room item not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if ri.room.related_project.company.owner==request.user:
+			ri.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
 class PreCalProjectRoomItemFormulaView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=RoomItem
 	serializer_class=PreCalRoomItemFormulaSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Pre-calculate project room item formula", 
@@ -1822,6 +1959,7 @@ class SetProjectMiscView(APIView):
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ProjectMisc
 	serializer_class=SetProjectMiscSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create/update project miscellaneous", 
@@ -1859,10 +1997,52 @@ class SetProjectMiscView(APIView):
 		ret["project_misc_id"]=project_misc.id
 		return Response(ret,status=status.HTTP_200_OK)
 
+class RemoveProjectMiscView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectMisc
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project misc", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectMiscRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			pm=ProjectMisc.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project misc not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if pm.project.company.owner==request.user:
+			pm.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
 class GetAllProjectMiscView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectMisc
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get all miscellaneous in a project", 
@@ -1901,6 +2081,7 @@ class CreateProjectWorkView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectWork
 	serializer_class=CreateProjectWorkSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create a work to project timetable", 
@@ -1943,6 +2124,7 @@ class UpdateProjectWorkView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectWork
 	serializer_class=UpdateProjectWorkSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a work in project timetable", 
@@ -1970,11 +2152,54 @@ class UpdateProjectWorkView(APIView):
 		else:
 			return serializers.ValidationError("project_work is required.")
 
+class RemoveProjectWorkView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectWork
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project work", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectWorkRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			pw=ProjectWork.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project work not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if pw.project.company.owner==request.user:
+			pw.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+
 class CreateProjectMilestoneView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectMilestone
 	serializer_class=CreateProjectMilestoneSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Create a milestone to project timetable", 
@@ -2016,6 +2241,7 @@ class UpdateProjectMilestoneView(APIView):
 	authentication_classes = [authentication.JWTAuthentication]
 	model=ProjectMilestone
 	serializer_class=UpdateProjectMilestoneSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a milestone in project timetable", 
@@ -2044,12 +2270,54 @@ class UpdateProjectMilestoneView(APIView):
 			ret["reason"]="project_milestone is required."
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
+class RemoveProjectMilestoneView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectMilestone
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project milestone", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectMilestoneRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			pm=ProjectMilestone.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project milestone not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if pm.project.company.owner==request.user:
+			pm.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
 
 #district
 
 class GetDistrictListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get district list", 
@@ -2072,6 +2340,7 @@ class GetDistrictListView(APIView):
 class GetRoomTypeListView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get room type list", 
@@ -2094,6 +2363,7 @@ class GetRoomTypeListView(APIView):
 class GetRoomRelatedItemListView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get room related item list by room type id", 
@@ -2133,6 +2403,7 @@ class GetItemMaterials(APIView):
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ItemTypeMaterial
 	serializer_class=GetItemMaterialsRequestSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get Item Material List", 
@@ -2171,12 +2442,36 @@ class GetItemMaterials(APIView):
 			ret['reason']="Please input item type id, not name."
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
+#misc
+class GetMiscListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get misc list", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetMiscListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		misc_list=Misc.objects.filter(is_active=True)
+		ret["misc_list"]=[misc.as_json() for misc in misc_list.all()]
+		return Response(ret,status=status.HTTP_200_OK)
+
 #project-expense
 
 class GetExpenseTypeListView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ExpenseType
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get expense type list", 
@@ -2200,6 +2495,7 @@ class CreateProjectExpenseView(APIView):
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ProjectExpense
 	serializer_class=CreateProjectExpenseSerializer
+	renderer_classes=[APIRenderer]
 
 	def post(self,request,*args,**kwargs):
 		ret={}
@@ -2231,6 +2527,7 @@ class UpdateProjectExpenseView(APIView):
 	authentication_classes=[authentication.JWTAuthentication]
 	model=ProjectExpense
 	serializer_class=UpdateProjectExpenseSerializer
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Update a expense in project", 
@@ -2259,9 +2556,51 @@ class UpdateProjectExpenseView(APIView):
 			ret["reason"]="project_expense is required."
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
+class RemoveProjectExpenseView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectExpense
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project expense", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectExpenseRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			pe=ProjectExpense.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project expense not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if pe.project.company.owner==request.user:
+			pe.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
 class GetProjectProfitAnalysisView(APIView):
 	permission_classes=[IsAuthenticated]
 	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
 
 	@swagger_auto_schema(
 		operation_description="Get specify project profit analysis", 

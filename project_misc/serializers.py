@@ -1,6 +1,6 @@
 from django import forms
 from rest_framework import serializers
-from project_misc.models import ProjectMisc
+from project_misc.models import ProjectMisc, Misc
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
 
 class SetProjectMiscSerializer(serializers.ModelSerializer):
@@ -37,6 +37,20 @@ class ProjectMiscJsonSerializer(serializers.Serializer):
 	quantity=serializers.IntegerField()
 	remark=serializers.CharField()
 
+class GetProjectMiscRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ProjectMisc
+		fields=("id",)
+
 class GetAllProjectMiscResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	project_misc=ProjectMiscJsonSerializer(many=True)
+
+class MiscJsonSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+	name=serializers.CharField()
+	suggested_unit_price=serializers.FloatField()
+
+class GetMiscListResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	misc_list=MiscJsonSerializer(many=True)
