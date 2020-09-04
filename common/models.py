@@ -58,12 +58,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.document_uploaded.all()
 
     def get_full_name(self):
-        full_name = None
+        if self.display_name:
+            return self.display_name
+        return self.username
+        '''full_name = None
         if self.first_name or self.last_name:
             full_name = self.first_name + " " + self.last_name
         elif self.username:
             full_name = self.username
-        return full_name
+        return full_name'''
 
     def __str__(self):
         return self.username

@@ -546,7 +546,7 @@ class UserDetailView(AdminRequiredMixin, DetailView):
 class UpdateUserView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UserForm
-    template_name = "create.html"
+    template_name = "user_create.html"
 
     def form_valid(self, form):
         user = form.save(commit=False)
@@ -577,12 +577,12 @@ class UpdateUserView(LoginRequiredMixin, UpdateView):
                     'common:users_list'), 'error': False}
                 if self.request.user.id == user.id:
                     data = {'success_url': reverse_lazy(
-                        'common:profile'), 'error': False}
+                        'common:users_list'), 'error': False}
                     return JsonResponse(data)
                 return JsonResponse(data)
         if self.request.is_ajax():
             data = {'success_url': reverse_lazy(
-                'common:profile'), 'error': False}
+                'common:users_list'), 'error': False}
             return JsonResponse(data)
         return super(UpdateUserView, self).form_valid(form)
 

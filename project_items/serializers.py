@@ -1,5 +1,5 @@
 from django import forms
-from project_items.models import ItemFormula, ItemTypeMaterial
+from project_items.models import ItemFormula, ItemTypeMaterial, Item
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist,ValidationError
 
@@ -23,6 +23,15 @@ class GetItemMaterialsResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	materials=ItemMaterialJsonSerializer(many=True)
 
+class GetItemRequestSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=Item
+		fields=("id",)
+
+class GetItemFormulaListResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	item_formula_list=serializers.DictField(child=serializers.CharField())
+
 class ProjectItemPropertyJsonSerializer(serializers.Serializer):
 	name=serializers.CharField()
 	symbol=serializers.CharField()
@@ -37,4 +46,8 @@ class ProjectItemJsonSerializer(serializers.Serializer):
 	item_properties=ProjectItemPropertyJsonSerializer(many=True)
 	item_type=ProjectItemTypeJsonSerializer()
 	value_based_price=serializers.FloatField()
+
+class GetItemTypeListResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	item_type_list=ProjectItemTypeJsonSerializer(many=True)
 

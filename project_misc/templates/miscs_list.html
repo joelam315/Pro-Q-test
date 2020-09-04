@@ -1,0 +1,46 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th width="50%">
+        <a href='#'>
+        Name
+        </a>
+        <span class="caret"></span>
+      </th>
+      <th>
+        <a href="#">
+        Suggested Unit Price
+        </a>
+      </th>
+      <th>
+        <a href="#">
+        Active
+        </a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% ifequal miscs|length  0 %}
+    <tr>
+      <td class="cell">
+        NO MISC FOUND!!
+      </td>
+    </tr>
+    {% endifequal %}
+    {% for misc in miscs %}
+    <tr>
+      <td class="cell">
+        <a class="cell parentname" id="{{ misc.id }}">
+        {{ misc.name }}
+        </a>
+      </td>
+      <td class="cell parentemail">
+        {{ misc.suggested_unit_price }}
+      </td>
+      <td class="cell parentemail">
+        {{ misc.is_active }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

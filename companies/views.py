@@ -178,11 +178,11 @@ class CreateCompanyView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView
         if self.request.POST.getlist('teams', []):
             company_object.teams.add(*self.request.POST.getlist('teams'))
 
-        assigned_to_list = list(company_object.assigned_to.all().values_list('id', flat=True))
+        #assigned_to_list = list(company_object.assigned_to.all().values_list('id', flat=True))
         current_site = get_current_site(self.request)
-        recipients = assigned_to_list
-        send_email_to_assigned_user.delay(recipients, company_object.id, domain=current_site.domain,
-            protocol=self.request.scheme)
+        #recipients = assigned_to_list
+        #send_email_to_assigned_user.delay(recipients, company_object.id, domain=current_site.domain,
+        #    protocol=self.request.scheme)
 
         if self.request.POST.get("savenewform"):
             return redirect("companies:new_company")
@@ -314,7 +314,7 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
         # Save Company
         company_object = form.save(commit=False)
         company_object.save()
-        previous_assigned_to_users = list(company_object.assigned_to.all().values_list('id', flat=True))
+        #previous_assigned_to_users = list(company_object.assigned_to.all().values_list('id', flat=True))
         company_object.tags.clear()
         if self.request.POST.get('tags', ''):
             tags = self.request.POST.get("tags")
@@ -360,9 +360,9 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
 
         assigned_to_list = list(company_object.assigned_to.all().values_list('id', flat=True))
         current_site = get_current_site(self.request)
-        recipients = list(set(assigned_to_list) - set(previous_assigned_to_users))
-        send_email_to_assigned_user.delay(recipients, company_object.id, domain=current_site.domain,
-            protocol=self.request.scheme)
+        #recipients = list(set(assigned_to_list) - set(previous_assigned_to_users))
+        #send_email_to_assigned_user.delay(recipients, company_object.id, domain=current_site.domain,
+        #    protocol=self.request.scheme)
 
         if self.request.is_ajax():
             data = {'success_url': reverse_lazy(

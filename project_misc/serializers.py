@@ -1,5 +1,6 @@
 from django import forms
 from rest_framework import serializers
+from companies.models import Company
 from project_misc.models import ProjectMisc, Misc
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
 
@@ -20,9 +21,29 @@ class SetProjectMiscSerializer(serializers.ModelSerializer):
 			data={}
 			data["unit_price"]=validated_data["unit_price"]
 			data["quantity"]=validated_data["quantity"]
-			data["remark"]=validated_data["remark"]
-			project_misc=ProjectMisc.objects.updated_or_create(project=validated_data["project"],misc=validated_data["misc"],defaults=data)
+			if validated_data.get("remark"):
+				data["remark"]=validated_data["remark"]
+			project_misc=ProjectMisc.objects.update_or_create(project=validated_data["project"],misc=validated_data["misc"],defaults=data)
 			return project_misc[0]
+		else:
+			raise PermissionDenied
+
+	def update(self,instance,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+		if validated_data["project"].company.owner==user:
+			project_misc=instance
+			project_misc.unit_price=validated_data["unit_price"]
+			project_misc.quantity=validated_data["quantity"]
+			if validated_data.get("remark"):
+				project_misc.remark=validated_data["remark"]
+			project_misc.save()
+			return project_misc
 		else:
 			raise PermissionDenied
 
@@ -37,10 +58,9 @@ class ProjectMiscJsonSerializer(serializers.Serializer):
 	quantity=serializers.IntegerField()
 	remark=serializers.CharField()
 
-class GetProjectMiscRequestSerializer(serializers.ModelSerializer):
-	class Meta:
-		model=ProjectMisc
-		fields=("id",)
+class GetProjectMiscRequestSerializer(serializers.Serializer):
+	project_id=serializers.IntegerField()
+	misc_id=serializers.IntegerField()
 
 class GetAllProjectMiscResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()

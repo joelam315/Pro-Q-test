@@ -2,7 +2,7 @@ from django import forms
 from projects.models import Project
 from project_items.models import ItemFormula
 from project_items.serializers import ProjectItemJsonSerializer
-from rooms.models import Room,RoomItem,RoomTypeProperties, RoomTypeFormula
+from rooms.models import Room,RoomItem,RoomType, RoomTypeFormula
 from companies.models import Company
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist,ValidationError
@@ -31,13 +31,14 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 		if not project:
 			raise ObjectDoesNotExist
 		_value={}
-		room_properties=RoomTypeProperties.objects.get(room_type=validated_data["room_type"]).room_properties
+		#room_properties=RoomType.objects.get(id=validated_data["room_type"]).room_properties
+		room_properties=validated_data["room_type"].room_properties
 		if validated_data["value"]:
 			for room_property in room_properties.all():
-				if room_property.name in validated_data["value"]:
-					_value[room_property.name]=validated_data["value"][room_property.name]
+				if room_property.symbol in validated_data["value"]:
+					_value[room_property.symbol]=json.loads(validated_data["value"])[room_property.symbol]
 				else:
-					raise ValidationError("Room value missing: "+room_property.name)
+					raise ValidationError("Room value missing: "+room_property.symbol)
 		validated_data["value"]=_value
 		if user==project.company.owner:
 			room=Room.objects.create(**validated_data)
@@ -71,13 +72,13 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 		if user==project.company.owner:
 			room=Room.objects.get(id=validated_data["room_id"])
 			_value={}
-			room_properties=RoomTypeProperties.objects.get(room_type=room.room_type).room_properties
+			room_properties=RoomType.objects.get(id=room.room_type).room_properties
 			if validated_data.get("value"):
 				for room_property in room_properties.all():
-					if room_property.name in validated_data["value"]:
-						_value[room_property.name]=validated_data["value"][room_property.name]
+					if room_property.symbol in validated_data["value"]:
+						_value[room_property.symbol]=validated_data["value"][room_property.symbol]
 					else:
-						raise ValidationError("Room value missing: "+room_property.name)
+						raise ValidationError("Room value missing: "+room_property.symbol)
 			room.value=_value if validated_data.get("value") else room.value
 			room.name=validated_data.get("name",room.name)
 			room.room_type=validated_data.get("room_type",room.room_type)
@@ -90,7 +91,7 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 class SetRoomItemSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=RoomItem
-		fields=("item","room","unit_price","value","quantity")
+		fields=("item","room","unit_price","value","quantity","remark")
 
 	def create(self,validated_data):
 		user = None
@@ -107,14 +108,45 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 			_value={}
 			if validated_data["value"]:
 				for item_property in validated_data["item"].item_properties.all():
-					if item_property.name in validated_data["value"]:
-						_value[item_property.name]=validated_data["value"][item_property.name]
+					if item_property.symbol in validated_data["value"]:
+						_value[item_property.symbol]=json.loads(validated_data["value"])[item_property.symbol]
 					else:
-						raise ValidationError("Item value missing: "+item_property.name)
+						raise ValidationError("Item value missing: "+item_property.symbol)
 			data["value"]=_value
 			data["quantity"]=validated_data["quantity"]
+			if validated_data.get("remark"):
+				data["remark"]=validated_data["remark"]
 			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
 			return room_item[0]
+		else:
+			raise PermissionDenied
+
+	def update(self,instance,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+		#project=Project.objects.get(id=validated_data["related_project"].id)
+		if user==validated_data["room"].related_project.company.owner:
+			room_item=instance
+			room_item.unit_price=validated_data["unit_price"]
+			_value={}
+			if validated_data["value"]:
+				for item_property in validated_data["item"].item_properties.all():
+					if item_property.symbol in validated_data["value"]:
+						_value[item_property.symbol]=validated_data["value"][item_property.symbol]
+					else:
+						raise ValidationError("Item value missing: "+item_property.symbol)
+			room_item.value=_value
+			room_item.quantity=validated_data["quantity"]
+			if validated_data.get("remark"):
+				room_item.remark=validated_data["remark"]
+			#room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
+			room_item.save()
+			return room_item
 		else:
 			raise PermissionDenied
 
@@ -122,6 +154,9 @@ class GetRoomItemRequestSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=RoomItem
 		fields=("id",)
+
+class GetRoomTypeRequestSerializer(serializers.Serializer):
+	room_type=serializers.IntegerField()
 
 class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 	value=serializers.JSONField(required=True)
@@ -165,6 +200,7 @@ class ProjectItemByRoomJsonSerializer(serializers.Serializer):
 class ProjectRoomItemJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
 	name=serializers.CharField()
+	item_type=serializers.CharField()
 	unit_price=serializers.FloatField()
 	room=serializers.CharField()
 	quantity=serializers.IntegerField()
@@ -200,9 +236,18 @@ class PreCalProjectRoomItemFormulaResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	formula=serializers.DictField(child=serializers.FloatField())
 
+class GetRoomTypeFormulaListResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	room_type_formula_list=serializers.DictField(child=serializers.CharField())
+
+class RoomPropertyJsonSerializer(serializers.Serializer):
+	name=serializers.CharField()
+	symbol=serializers.CharField()
+
 class RoomTypeJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
 	name=serializers.CharField()
+	room_properties=RoomPropertyJsonSerializer(many=True)
 
 class GetRoomTypeListResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()

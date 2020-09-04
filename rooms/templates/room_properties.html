@@ -1,0 +1,243 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% load paginate %}
+{% load thumbnail %}
+{% block extralinks %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<style>
+  .form-group label {
+    font-weight: 800;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<!-- main_container starts here -->
+<div class="main_container">
+  <!-- heading_create starts here -->
+  <div class="row marl">
+    <div class="col-lg-12 text-right">
+      {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+      <span class="d-inline"><a class="primary_btn" href="{% url 'rooms:add_room_property'%}"><i class="fa fa-plus"></i>
+          Add New Room Property</a></span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="filter_row list_filter_row row marl">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <form id="room_properties_filter" action="" method="POST">
+            <div class="card-body">
+              <div class="card-title">Filters</div>
+              <div class="row marl">
+                <div class="filter_col col-md-3">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">NAME</label>
+                    <input type="text" class="form-control" placeholder="Name" name="name"
+                      value="{{request.POST.name}}">
+                  </div>
+                </div>
+                <div class="filter_col col-md-3">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Symbol</label>
+                    <input type="text" class="form-control" placeholder="Symbol" name="symbol"
+                      value="{{request.POST.symbol}}">
+                  </div>
+                </div>
+                <div class="filter_col text-center col-3">
+                  <div class="form-group buttons_row">
+                    <button class="btn btn-primary save" type="submit">Search</button>
+                    <a href="{% url 'rooms:list_room_properties' %}" class="btn btn-default clear">Clear</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- heading_create ends here -->
+  <!-- filter_row starts here -->
+  <div class="table_container_row row marl ">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title text-right">
+
+            <span class="float-left">Room Properties - {% if show_pageitems %} {% show_pageitems %}{% else %}
+              {{room_property_list|length}}{% endif %}</span>
+
+            <span class="filter_toggle">
+              <a href="#" class="primary_btn"><i class="fas fa-filter"></i></a>
+            </span>
+
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                {% if room_property_list|length > 0 %}
+                <tr>
+                  <th width="5%">S.no</th>
+                  <th width="40%">Name</th>
+                  <th width="20%">Symbol</th>
+                  <th width="20%">Data Type</th>
+                  <th width="15%">Actions</th>
+                </tr>
+                {% endif %}
+              </thead>
+              <tbody>
+                {% if per_page %}
+                {% paginate per_page room_property_list %}
+                {% else%}
+                {% paginate 10 room_property_list %}
+                {% endif %}
+                {% for room_property in room_property_list %}
+                <tr style="text-align:center;">
+                  <td scope="row">{{ forloop.counter }}</td>
+                  <td><a href="#" data-toggle="modal"
+                      data-target="#exampleModalCenter_room_property{{room_property.id}}">{{room_property.name}}</a></td>
+                  <td>
+                    {{room_property.symbol}}
+                  </td>
+                  <td>
+                    {{room_property.data_type}}
+                  </td>
+                  <td class="actions">
+                    <a href="{% url 'rooms:view_room_property' room_property.id %}" class="btn btn-info view" title="View" ><i
+                        class="fas fa-eye"></i></a>
+                    {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                    <a href="{% url 'rooms:edit_room_property' room_property.id%}" class="btn btn-success edit" title="Edit"><i
+                        class="fas fa-pencil-alt"></i></a>
+                    {% endif %}
+                    {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                    <a href="{% url 'rooms:remove_room_property' room_property.id %}"
+                      class="btn btn-danger delete remove_account" title="Delete" ><i class="fas fa-trash-alt"></i></a>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor%}
+              </tbody>
+            </table>
+          </div>
+          {%ifequal room_property_list|length 0 %}
+          <h6 class="text-center">No Room Property Records Found</h6>
+          {%endifequal%}
+          <div class="marl row text-center">
+            {% show_pages %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <br clear="all">
+  </div>
+  <!-- filter_row ends here -->
+</div>
+<!-- main_container ends here -->
+
+
+{% for room_property_record in room_property_list %}
+
+<div class="modal fade" id="exampleModalCenter_room_property{{room_property_record.id}}" tabindex="-1" role="dialog"
+  aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">{{ room_property_record.name }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="" id="">
+          <div class="">
+            <div class="col-md-12" id="">
+              <div class="card">
+
+                <div class="card-body" id="datashow" style="margin: 0; padding: 0;">
+
+                  <div class="card-title text-right">
+                    <h5>
+                      <!-- <span class="float-left title">Overview</span> -->
+                      <span class="" style="margin-top: 0px">
+                        <!-- <div class="dropdown buttons_row">
+                          <button class="btn primary_btn dropdown-toggle" type="button" data-toggle="dropdown">Actions
+                            <span class="caret"></span></button>
+                          <ul class="dropdown-menu">
+                            <li><a href="{% url 'rooms:edit_room_property' room_property_record.id %}">Edit</a></li>
+                          </ul>
+                        </div> -->
+                      </span>
+                    </h5>
+                  </div>
+
+                  <div class="row marl">
+                    <div class="col-md-4">
+                      <div class="filter_col col-md-12" id="iname">
+                        <div class="form-group">
+                          <label class="room_property_field_label" for="id_name" data-name="name">Name</label>
+                          <div class="room_property_field" id="room_property_name" data-name="name">{{ room_property_record.name }}</div>
+                        </div>
+                      </div>
+                      <div class="filter_col col-md-12">
+                        <div class="form-group">
+                          <label class="room_property_field_label" for="id_symbol" data-name="name">Symbol</label>
+                          <div class="room_property_field" id="room_property_symbol" data-name="name">{{ room_property_record.symbol }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="filter_col col-md-12">
+                        <div class="form-group">
+                          <label class="room_property_field_label" for="id_data_type" data-name="name">Data Type</label>
+                          <div class="room_property_field" id="room_property_data_type" data-name="name">{{ room_property_record.data_type }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endfor %}
+
+
+
+{%endblock%}
+{% block js_block %}
+<script type="text/javascript">
+  $(document).ready(function () {
+    $('.assigned_users').select2();
+    $(".filter_toggle").click(function () {
+      $(".list_filter_row").toggle();
+    });
+  });
+
+  search = "{{search}}"
+
+  if (search == 'True') {
+    $(".list_filter_row").show();
+  }
+  $('.delete').click(function (e) {
+    e.preventDefault()
+    url = $(this).attr('href')
+    if (!confirm('Are you sure you want to delete?'))
+      return;
+    window.location = $(this).attr('href')
+  });
+
+  $("a[rel='page']").click(function (e) {
+    e.preventDefault();
+    $('#room_properties_filter').attr("action", $(this).attr("href"));
+    $('#room_properties_filter').submit();
+  });
+</script>
+{% endblock js_block %}

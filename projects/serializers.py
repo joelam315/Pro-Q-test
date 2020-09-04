@@ -113,7 +113,7 @@ class UpdateProjectSerializer(serializers.ModelSerializer):
 			raise PermissionDenied
 
 class GetProjectRequestSerializer(serializers.Serializer):
-	id=serializers.IntegerField()
+	project_id=serializers.IntegerField()
 
 class GetProjectWithChargingStageRequestSerializer(serializers.Serializer):
 	id=serializers.IntegerField()

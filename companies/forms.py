@@ -8,64 +8,25 @@ from teams.models import Teams
 
 
 class CompanyForm(forms.ModelForm):
-    teams_queryset = []
-    teams = forms.MultipleChoiceField(choices=teams_queryset)
-
+    #teams_queryset = []
+    #teams = forms.MultipleChoiceField(choices=teams_queryset)
+    
     def __init__(self, *args, **kwargs):
         company_view = kwargs.pop('company', False)
         request_user = kwargs.pop('request_user', None)
         super(CompanyForm, self).__init__(*args, **kwargs)
+
         for field in self.fields.values():
             field.widget.attrs = {"class": "form-control"}
-        self.fields['description'].widget.attrs.update({'rows': '8'})
-        self.fields['status'].choices = [
-            (each[0], each[1]) for each in Company.COMPANY_STATUS_CHOICE]
-        self.fields['status'].required = False
         for key, value in self.fields.items():
             if key == 'phone':
                 value.widget.attrs['placeholder'] = "+91-123-456-7890"
             else:
                 value.widget.attrs['placeholder'] = value.label
 
-        self.fields['billing_address_line'].widget.attrs.update({
-            'placeholder': 'Address Line'})
-        self.fields['billing_street'].widget.attrs.update({
-            'placeholder': 'Street'})
-        self.fields['billing_city'].widget.attrs.update({
-            'placeholder': 'City'})
-        self.fields['billing_state'].widget.attrs.update({
-            'placeholder': 'State'})
-        self.fields['billing_postcode'].widget.attrs.update({
-            'placeholder': 'Postcode'})
-        self.fields["billing_country"].choices = [
-            ("", "--Country--"), ] + list(self.fields["billing_country"].choices)[1:]
-        # self.fields["lead"].queryset = Lead.objects.all(
-        # ).exclude(status='closed')
-        if request_user.role == 'ADMIN':
-            pass
-            '''self.fields["lead"].queryset = Lead.objects.filter().exclude(
-                status='closed').order_by('title')'''
-            '''self.fields["contacts"].queryset = Contact.objects.filter()'''
-            '''self.fields["teams"].choices = [(team.get('id'), team.get('name')) for team in Teams.objects.all().values('id', 'name')]
-            self.fields["teams"].required = False'''
-        else:
-            pass
-            '''self.fields["lead"].queryset = Lead.objects.filter(
-                Q(assigned_to__in=[request_user]) | Q(created_by=request_user)).exclude(status='closed').order_by('title')'''
-            '''self.fields["contacts"].queryset = Contact.objects.filter(
-                Q(assigned_to__in=[request_user]) | Q(created_by=request_user))'''
-            '''self.fields["teams"].required = False'''
-
-        '''self.fields['assigned_to'].required = False'''
-        if company_view:
-            #self.fields['billing_address_line'].required = True
-            #self.fields['billing_street'].required = True
-            #self.fields['billing_city'].required = True
-            #self.fields['billing_state'].required = True
-            #self.fields['billing_postcode'].required = True
-            #self.fields['billing_country'].required = True
-            pass
-
+        self.fields['br_approved'].widget.attrs['style']="width:auto;"
+        
+        self.fields["owner"].choices = [(user.get('id'), user.get('username')) for user in User.objects.filter(role="USER",is_superuser=False).values('id', 'username')]
         # lead is not mandatory while editing
         '''if self.instance.id:
             self.fields['lead'].required = False
@@ -73,11 +34,7 @@ class CompanyForm(forms.ModelForm):
 
     class Meta:
         model = Company
-        fields = ('name', 'phone', 'email', 'website', 'industry',
-                  'description', 'status',
-                  'billing_address_line', 'billing_street',
-                  'billing_city', 'billing_state',
-                  'billing_postcode', 'billing_country')
+        fields = ('name','owner',"br_approved","br_pic")
 
 
 class CompanyCommentForm(forms.ModelForm):

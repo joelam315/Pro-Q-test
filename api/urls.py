@@ -77,7 +77,9 @@ from api.views import (
 	RemoveProjectMiscView,
 	RemoveProjectExpenseView,
 	RemoveProjectRoomItemView,
-	GetMiscListView
+	GetMiscListView,
+	GetItemTypeListView,
+	GetRoomTypeFormulaListView
 )
 
 
@@ -147,7 +149,9 @@ urlpatterns = [
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
+	path('room_type/formula/get/',GetRoomTypeFormulaListView.as_view(),name="get_room_types"),
 	path('item/materials/get/',GetItemMaterials.as_view(),name="get_item_materials"),
+	path('item_types/get/',GetItemTypeListView.as_view(),name="get_item_types"),
 	path('expense_types/get/',GetExpenseTypeListView.as_view(),name="get_expense_types"),
 	path('misc/list/',GetMiscListView.as_view(),name="get_misc_list")
 ]

@@ -133,11 +133,9 @@
                       <thead>
                         {% if active_users|length > 0 %}
                         <tr>
-                          <th width="20%">Username</th>
-                          <th width="20%">Email Address</th>
-                          <th width="8%">User Role</th>
-                          <th width="8%">Permissions</th>
-                          <th width="15%">Status</th>
+                          <th width="30%">Username</th>
+                          <th width="30%">Display Name</th>
+                          <th width="20%">Status</th>
                           <th width="20%">Actions</th>
                         </tr>
                         {% endif %}
@@ -151,24 +149,7 @@
                         {% for user in active_users %}
                         <tr class="text-center">
                           <td><a href="{% url 'common:view_user' user.id %}">{{ user.username }}</a></td>
-                          <td>{{ user.email }}</td>
-                          <td class="user_role">{% if user.is_superuser %} ADMIN {% else %} {{user.role}} {% endif %}
-                          </td>
-                          <td>
-                            {% if user.is_superuser or user.role == 'ADMIN' %}
-                            Sales, Marketing
-                            {% else %}
-                            {% if user.has_sales_access and user.has_marketing_access %}
-                            Sales, Marketing
-                            {% elif user.has_sales_access and not user.has_marketing_access %}
-                            Sales
-                            {% elif not user.has_sales_access and user.has_marketing_access %}
-                            Marketing
-                            {% else %}
-                            {{''}}
-                            {% endif %}
-                            {% endif %}
-                          </td>
+                          <td>{{ user.display_name }}</td>
                           <td>
                             {% ifnotequal request.user user  %}
                             <a {% if user.is_active %}
@@ -195,10 +176,6 @@
                             <a href="{% url 'common:remove_user' user.id %}" class="btn btn-danger trash action"
                               {% if request.user.email == user.email %} style="visibility: hidden;" {% endif %}><i
                                 class="fas fa-trash-alt"></i>Delete</a>
-                            {% if user.email != admin_email and request.user != user %}
-                            <a style="color:black;margin-bottom: -11px;" data-id="{{user.id}}" href=""
-                              class="fa-passwd-reset fa-stack" title="Change Password"><i class="fa fa-undo fa-stack-2x"></i><i
-                                class="fa fa-lock fa-stack-1x"></i></a>{% endif %}
                           </td>
                         </tr>
                         {% endfor %}
@@ -229,10 +206,9 @@
                       <thead>
                         {% if inactive_users|length > 0 %}
                         <tr>
-                          <th width="20%">Username</th>
-                          <th width="20%">Email Address</th>
-                          <th width="8%">User Role</th>
-                          <th width="15%">Status</th>
+                          <th width="30%">Username</th>
+                          <th width="30%">Display Name</th>
+                          <th width="20%">Status</th>
                           <th width="20%">Actions</th>
                         </tr>
                         {% endif %}
@@ -246,9 +222,7 @@
                         {% for user in inactive_users %}
                         <tr class="text-center">
                           <td><a href="{% url 'common:view_user' user.id %}">{{ user.username }}</a></td>
-                          <td>{{ user.email }}</td>
-                          <td class="user_role">{% if user.is_superuser %} ADMIN {% else %} {{user.role}} {% endif %}
-                          </td>
+                          <td>{{ user.display_name }}</td>
                           <td>
                             {% ifnotequal request.user user  %}
                             <a {% if user.is_active %}
@@ -275,10 +249,6 @@
                             <a href="{% url 'common:remove_user' user.id %}" class="btn btn-danger trash action"
                               {% if request.user.email == user.email %} style="visibility: hidden;" {% endif %}><i
                                 class="fas fa-trash-alt"></i>Delete</a>
-                            {% if user.email != admin_email and request.user != user %}
-                            <a style="color:black;margin-bottom: -11px;" data-id="{{user.id}}" href=""
-                              class="fa-passwd-reset fa-stack" title="Change Password"><i class="fa fa-undo fa-stack-2x"></i><i
-                                class="fa fa-lock fa-stack-1x"></i></a>{% endif %}
                           </td>
                         </tr>
                         {% endfor %}

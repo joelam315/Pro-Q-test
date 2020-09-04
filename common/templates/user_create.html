@@ -23,27 +23,17 @@
             {% if user_obj %}EDIT{% else %}CREATE{% endif %} USER
           </div>
           <div class="row marl">
-            <div class="filter_col col-md-4">
+            <div class="filter_col col-md-6">
               <div class="form-group">
-                <label for="id_firstname">First Name{% if user_form.first_name.field.required %}<span
+                <label for="id_firstname">Display Name{% if user_form.display_name.field.required %}<span
                     class="error">*</span>{% endif %}</label>
-                <input type="text" class="form-control" name="first_name"
-                  value="{% if user_obj %}{{ user_obj.first_name }}{% else %}{{request.POST.first_name}}{% endif %}"
-                  placeholder="First Name">
+                <input type="text" class="form-control" name="display_name"
+                  value="{% if user_obj %}{{ user_obj.display_name }}{% else %}{{request.POST.display_name}}{% endif %}"
+                  placeholder="Display Name">
               </div>
-              <span class="error_ajax" id="id_first_name" style="color:red">{{ errors.first_name }}</span>
+              <span class="error_ajax" id="id_display_name" style="color:red">{{ errors.display_name }}</span>
             </div>
-            <div class="filter_col col-md-4">
-              <div class="form-group">
-                <label for="id_lastname">Last Name{% if user_form.last_name.field.required %}<span
-                    class="error">*</span>{% endif %}</label>
-                <input type="text" class="form-control" name="last_name"
-                  value="{% if user_obj %}{{ user_obj.last_name }}{% else %}{{request.POST.last_name}}{% endif %}"
-                  placeholder="Last Name">
-              </div>
-              <span class="error_ajax" id="id_last_name" style="color:red">{{ errors.last_name }}</span>
-            </div>
-            <div class="filter_col col-md-4">
+            <div class="filter_col col-md-6">
               <div class="form-group">
                 <label for="id_username">Username{% if user_form.username.field.required %}<span
                     class="error">*</span>{% endif %}</label>
@@ -52,37 +42,6 @@
                   placeholder="Username">
               </div>
               <span class="error_ajax" id="id_username" style="color:red">{{ errors.username }}</span>
-            </div>
-            <div class="filter_col col-md-6" {% if user_obj %} style="display: none;" {% endif %}>
-              <div class="form-group">
-                <label for="id_email">Email Address{% if user_form.email.field.required %}<span
-                    class="error">*</span>{% endif %}</label>
-                <input type="text" class="form-control" name="email"
-                  value="{% if user_obj %}{{ user_obj.email }}{% else %}{{request.POST.email}}{% endif %}"
-                  {% if user_obj %} readonly="" {% endif %} placeholder="Email">
-              </div>
-              <span class="error_ajax" id="id_email" style="color:red">{{ errors.email }}</span>
-            </div>
-            <div class="filter_col col-md-6"
-              {% if request.user.role != 'ADMIN' and not request.user.is_superuser or request.user.id == user_obj.id %}style="display:none;"
-              {% endif %}>
-              <div class="form-group">
-                <label for="id_role">User Role{% if user_form.role.field.required %}<span
-                    class="error">*</span>{% endif %}</label>
-                {% if request.user.role == 'ADMIN' or request.user.is_superuser %}
-                <select name="role" class="form-control" id="user_role">
-                  {% for key, value in form.role.field.choices %}
-                  <option value="{{key}}" {% if value == user_obj.role %}selected="selected"
-                    {% elif user_obj.is_superuser and value == "ADMIN" %}selected{% endif %}>{{value}}</option>
-                  {% endfor %}
-                </select>
-                {% else %}
-                <select name="role" id="user_roles">
-                  <option value="{{user_obj.role}}">{{user_obj.role}}</option>
-                </select>
-                {% endif %}
-                <span class="error_ajax" id="id_role" style="color:red">{{ user_form.role.errors }}</span>
-              </div>
             </div>
             {% if not user_obj %}
             <div class="filter_col col-md-6">
@@ -95,59 +54,7 @@
               <span class="error_ajax" id="id_password" style="color:red">{{ errors.password }}</span>
             </div>
             {% endif %}
-            <div class="filter_col col-md-6">
-              <div class="form-group">
-                <label for="exampleInputEmail1">Upload Profile Picture{% if user_form.profile_pic.field.required %}<span
-                    class="error">*</span>{% endif %}</label>
-                <input type="file" name="profile_pic" accept="image/*" class="form-control" />
-              </div>
-
-              {% if user_obj %}<span>{{user_profile_name }}</span>{% endif %}
-              <span class="error" id="id_profile_pic">{{ errors.profile_pic }}</span>
-
-            </div>
-            {% if request.user.is_superuser or request.user.role == 'ADMIN' %}
-            <div class="filter_col col-md-6">
-              <div class="form-group">
-                <label for="exampleInputEmail1">Permissions <span class="error">*</span></label>
-                <br>
-                <!-- {{user_form.sales}} -->
-                <div class="btn-group">
-                  <label class="btn "> Sales
-                    <input type="checkbox" name="has_sales_access" id="has_sales_access_" autocomplete="off"
-                      {% if user_obj.has_sales_access %} checked {% endif %}
-                      {% if user_obj.is_superuser or user_obj.role == 'ADMIN' %} disabled="disabled" readonly="readonly"
-                      checked="checked" {% endif %}>
-                  </label>
-                  <label class="btn "> Marketing
-                    <input type="checkbox" name="has_marketing_access" id="has_marketing_access_" autocomplete="off"
-                      {% if user_obj.has_marketing_access %} checked {% endif %}
-                      {% if user_obj.is_superuser or user_obj.role == 'ADMIN' %} disabled="disabled" readonly="readonly"
-                      checked="checked" {% endif %}>
-                  </label>
-                </div>
-                <span class="error_ajax" id="id_has_sales_access" style="color: red;"></span>
-                <span class="error_ajax" id="id_has_marketing_access" style="color: red;"></span>
-
-              </div>
-
-            </div>
-            <div class="filter_col col-md-6">
-              <div class="form-group">
-                <label for="exampleInputEmail1">Team {% if user_form.teams.field.required %}<span
-                    class="error">*</span>{% endif %}</label>
-                <!-- {{user_form.teams}} -->
-                <select name="teams" id="id_teams" multiple>
-                  {% for team in teams %}
-                  <option value="{{team.id}}" {% if team in user_obj.user_teams.all %} selected {% endif %}>
-                    {{team.name}}</option>
-                  {% endfor %}
-                </select>
-                <span id="id_teams_error" style="color: red;"></span>
-              </div>
-              <span class="error_ajax" id="id_password" style="color:red">{{ errors.teams }}</span>
-            </div>
-            {% endif %}
+            
           </div>
         </div>
         <p style="color:red" id="forbiden_error"></p>

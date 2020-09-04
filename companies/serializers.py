@@ -230,6 +230,8 @@ class SetChargingStagesSerializer(serializers.ModelSerializer):
 			sum_percen+=validated_data["values"][i]
 		if sum_percen!=100:
 			raise ValidationError("The total percentage is not equal to 100.")
+		if len(validated_data.get("descriptions"))<validated_data.get("quantity"):
+			raise ValidationError("Description array length less than quantity.")
 		charging_stages=ChargingStages.objects.update_or_create (company=company,defaults={"quantity":validated_data["quantity"],"values":validated_data["values"],"descriptions":validated_data["descriptions"]})
 		return charging_stages[0]
 

@@ -1,0 +1,46 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th width="50%">
+        <a href='#'>
+        Name
+        </a>
+        <span class="caret"></span>
+      </th>
+      <th>
+        <a href="#">
+        Symbol
+        </a>
+      </th>
+      <th>
+        <a href="#">
+        Data Type
+        </a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% ifequal room_properties|length  0 %}
+    <tr>
+      <td class="cell">
+        NO ROOM PROPERTIES FOUND!!
+      </td>
+    </tr>
+    {% endifequal %}
+    {% for room_property in room_properties %}
+    <tr>
+      <td class="cell">
+        <a class="cell parentname" id="{{ room_property.id }}">
+        {{ room_property.name }}
+        </a>
+      </td>
+      <td class="cell parentemail">
+        {{ room_property.data_type }}
+      </td>
+      <td class="cell parentemail">
+        {{ room_property.symbol }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

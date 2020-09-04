@@ -61,10 +61,10 @@ from projects.serializers import (
 	GetProjectWithChargingStageRequestSerializer,
 	GetProjectAllItemResponseSerializer,
 	GetProjectAllRoomItemResponseSerializer,
-	GetProjectProfitAnalysisResponseSerializer
+	GetProjectProfitAnalysisResponseSerializer,
 
 )
-from rooms.models import Room, RoomType, RoomItem
+from rooms.models import Room, RoomType, RoomItem,RoomTypeFormula
 from rooms.serializers import (
 	CreateRoomSerializer,
 	UpdateRoomSerializer,
@@ -78,14 +78,19 @@ from rooms.serializers import (
 	SetProjectRoomItemResponseSerializer,
 	GetRoomTypeListResponseSerializer,
 	GetRoomRelatedItemResponseSerializer,
-	GetRoomItemRequestSerializer
+	GetRoomItemRequestSerializer,
+	GetRoomTypeRequestSerializer,
+	GetRoomTypeFormulaListResponseSerializer
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
 from project_items.models import ItemType,ItemFormula,ItemTypeMaterial
 from project_items.serializers import (
 	GetItemMaterialsRequestSerializer,
-	GetItemMaterialsResponseSerializer
+	GetItemMaterialsResponseSerializer,
+	GetItemTypeListResponseSerializer,
+	GetItemRequestSerializer,
+	GetItemFormulaListResponseSerializer
 )
 from project_misc.models import ProjectMisc,Misc
 from project_misc.serializers import (
@@ -1849,7 +1854,11 @@ class SetProjectRoomItemView(APIView):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		serialized=SetRoomItemSerializer(data=data,context={'request':request})
+		try:
+			room_item=RoomItem.objects.get(item=data.get("data"),room=data.get("room"))
+			serialized=SetRoomItemSerializer(instance=room_item,data=data,context={'request':request})
+		except ObjectDoesNotExist:
+			serialized=SetRoomItemSerializer(data=data,context={'request':request})
 		serialized.is_valid(raise_exception=True)
 		try:
 			room_item=serialized.save()
@@ -1978,8 +1987,12 @@ class SetProjectMiscView(APIView):
 		ret={}
 		ret["result"]=True
 		data=request.data
-		serialized=SetProjectMiscSerializer(data=data,context={'request':request})
-		serialized=is_valid(raise_exception=True)
+		try:
+			instance=ProjectMisc.objects.get(misc=data.get("misc"),project=data.get("project"))
+			serialized=SetProjectMiscSerializer(instance=instance,data=data,context={'request':request})
+		except ObjectDoesNotExist:
+			serialized=SetProjectMiscSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
 		try:
 			project_misc=serialized.save()
 		except ValidationError as err:
@@ -2020,12 +2033,16 @@ class RemoveProjectMiscView(APIView):
 		ret={}
 		ret['result']=True
 		data=request.data
-		if data.get("id")==None:
+		if data.get("project_id")==None:
 			ret["result"]=False
-			ret["reason"]="Missing id"
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		if data.get("misc_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing misc_id"
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 		try:
-			pm=ProjectMisc.objects.get(id=data["id"])
+			pm=ProjectMisc.objects.get(project=data["project_id"],misc=data["misc_id"])
 		except ObjectDoesNotExist:
 			ret["result"]=False
 			ret["reason"]="Project misc not found."
@@ -2359,6 +2376,29 @@ class GetRoomTypeListView(APIView):
 		ret["room_types"]=room_types
 		return Response(ret, status=status.HTTP_200_OK)
 
+class GetRoomTypeFormulaListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get room type formula list", 
+		security=[{'Bearer': []}],
+		request_body=GetRoomTypeRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetRoomTypeFormulaListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		room_type_formula_list=RoomTypeFormula.objects.filter(is_active=True)
+		ret["room_type_formula_list"]=[room_type_formula.as_json() for room_type_formula in room_type_formula_list.all()]
+		return Response(ret,status=status.HTTP_200_OK)
+
 #room - item
 class GetRoomRelatedItemListView(APIView):
 	permission_classes=[IsAuthenticated]
@@ -2368,6 +2408,7 @@ class GetRoomRelatedItemListView(APIView):
 	@swagger_auto_schema(
 		operation_description="Get room related item list by room type id", 
 		security=[{'Bearer': []}],
+		request_body=GetRoomTypeRequestSerializer,
 		manual_parameters=[token_param],
 		responses={
 			status.HTTP_201_CREATED: GetRoomRelatedItemResponseSerializer(),
@@ -2432,7 +2473,6 @@ class GetItemMaterials(APIView):
 			ret["result"]=False
 			ret["reason"]="Item type not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
-			return Response(ret,status=status.HTTP_200_OK)
 		except ValidationError as err:
 			ret['result']=False
 			ret['reason']=err.messages[0]
@@ -2441,6 +2481,52 @@ class GetItemMaterials(APIView):
 			ret['result']=False
 			ret['reason']="Please input item type id, not name."
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		return Response(ret,status=status.HTTP_200_OK)
+
+class GetItemTypeListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get item type list", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetItemTypeListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		item_type_list=ItemType.objects.filter(is_active=True)
+		ret["item_type_list"]=[item_type.as_json() for item_type in item_type_list.all()]
+		return Response(ret,status=status.HTTP_200_OK)
+
+class GetItemFormulaListView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get item formula list", 
+		security=[{'Bearer': []}],
+		request_body=GetItemRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetItemFormulaListResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		item_formula_list=ItemFormula.objects.filter(is_active=True)
+		ret["item_formula_list"]=[item_formula.as_json() for item_formula in item_formula_list.all()]
+		return Response(ret,status=status.HTTP_200_OK)
 
 #misc
 class GetMiscListView(APIView):

@@ -119,4 +119,10 @@ class ItemFormula(models.Model):
 	def __str__(self):
 		return str(self.item)+": "+self.name
 
+	def as_json(self):
+		return dict(
+			name=self.name,
+			formula=self.formula
+		)
+
 

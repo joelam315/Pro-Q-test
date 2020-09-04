@@ -74,14 +74,13 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name',
-                  'username', 'role', 'profile_pic',
-                  'has_sales_access', 'has_marketing_access']
+        fields = ['display_name',
+                  'username']
 
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
         super(UserForm, self).__init__(*args, **kwargs)
-        self.fields['first_name'].required = True
+        #self.fields['first_name'].required = True
         if not self.instance.pk:
             self.fields['password'].required = True
 

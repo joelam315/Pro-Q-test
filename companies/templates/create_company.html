@@ -21,7 +21,7 @@
       <div class="card">
         <div class="card-body">
           <div class="card-title text-center">
-            {% if company_obj %}EDIT{% else %}CREATE{% endif %} ACCOUNT
+            {% if company_obj %}EDIT{% else %}CREATE{% endif %} COMPANY
           </div>
           <div class="row marl">
             <div class="col-md-4">
@@ -33,167 +33,34 @@
                   <span class="error" id="id__name">{{ company_form.name.errors }}</span>
                 </div>
               </div>
+            </div>
+            <div class="col-md-4">
               <div class="filter_col col-md-12">
                 <div class="form-group">
-                  <label for="exampleInputEmail1">Website{% if company_form.website.field.required %}<span
-                      class="error">*</span>{% endif %}</label>
-                  {{ company_form.website }}
-                  <span class="error" id="id__website">{{ company_form.website.errors }}</span>
-                </div>
-              </div>
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label for="exampleInputEmail1" class="required">Phone{% if company_form.phone.field.required %}<span
+                  <label for="exampleInputEmail1" class="required">Owner{% if company_form.owner.field.required %}<span
                       class="error_marker" style="color:red">*</span>{% endif %}</label>
-                  {{ company_form.phone }}
-                  <span class="error" id="id__phone">{{ company_form.phone.errors }}</span>
-                </div>
-              </div>
-              <div class="filter_col col-md-12">
-                <div class="form-group ">
-                  <label for="exampleInputEmail1" class="required">Email
-                    Address{% if company_form.email.field.required %}<span class="error_marker"
-                      style="color:red">*</span>{% endif %}</label>
-                  {{ company_form.email }}
-                  <span class="error" id="id__email">{{ company_form.email.errors }}</span>
-                </div>
-              </div>
-              <div class="filter_col col-md-12">
-                <div class="form-group ">
-                  <label for="exampleInputEmail1" class="required">Leads{% if company_form.lead.field.required %}<span
-                      class="error_marker" style="color:red">*</span>{% endif %}</label>
-                  <!-- <select name="lead" class="form-control" placeholder="Lead" required="" id="id_lead">
-                    <option value="" selected="">---------</option>
-                    {% for lead in leads %}
-                    <option value="{{lead.id}}" {% ifequal company_obj.lead.id lead.id %}selected{% endifequal %}>
-                      {{lead.first_name}} {{lead.last_name}}</option>
-                    {% endfor %}
-                  </select> -->
-                  {{ company_form.lead }}
-                  <span class="error" id="id__lead">{{ company_form.lead.errors }}</span>
+                  {{ company_form.owner }}
+                  <span class="error" id="id__owner">{{ company_form.owner.errors }}</span>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
-              <div class="filter_col billing_block col-md-12" style="padding: 0px;">
-                <div class="form-group">
-                  <label for="exampleInputEmail1">Billing Address
-                    {% if company_form.billing_address_line.field.required %}<span class="error_marker"
-                      style="color:red">*</span>{% endif %}</label>
-                  {{ company_form.billing_address_line }}
-                  <span class="error"
-                    id="id__billing_address_line">{{ company_form.billing_address_line.errors }}</span>
-                </div>
-                <div class="row" style="margin-top: 10px;">
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">Street {% if company_form.billing_street.field.required %}<span
-                          class="error_marker" style="color:red">*</span>{% endif %}</label>
-                      {{ company_form.billing_street }}
-                      <span class="error" id="id__billing_street">{{ company_form.billing_street.errors }}</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">PostCode
-                        {% if company_form.billing_postcode.field.required %}<span class="error_marker"
-                          style="color:red">*</span>{% endif %}</label>
-                      {{ company_form.billing_postcode }}
-                      <span class="error" id="id__billing_postcode">{{ company_form.billing_postcode.errors }}</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">City {% if company_form.billing_city.field.required %}<span
-                          class="error_marker" style="color:red">*</span>{% endif %}</label>
-                      {{ company_form.billing_city }}
-                      <span class="error" id="id__billing_city">{{ company_form.billing_city.errors }}</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">State {% if company_form.billing_state.field.required %}<span
-                          class="error_marker" style="color:red">*</span>{% endif %}</label>
-                      {{ company_form.billing_state }}
-                      <span class="error" id="id__billing_state">{{ company_form.billing_state.errors }}</span>
-                    </div>
-                  </div>
-                  <div class="col-md-12" style="margin-top: 10px;">
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">Country {% if company_form.billing_country.field.required %}<span
-                          class="error_marker" style="color:red">*</span>{% endif %}</label>
-                      {{ company_form.billing_country }}
-                      <span class="error" id="id__billing_country">{{ company_form.billing_country.errors }}</span>
-                    </div>
-                  </div>
-                  <div class="filter_col col-md-12">
-                    <div class="form-group ">
-                      <label for="id_contacts"
-                        class="required">Contacts{% if company_form.contacts.field.required %}<span class="error_marker"
-                          style="color:red">*</span>{% endif %}</label>
-                      {{ company_form.contacts }}
-                      <span class="error" id="id__contacts">{{ company_form.contacts.errors }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h6 style="color:white;">Copy Address</h6>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="filter_col col-12">
-                <div class="form-group">
-                  <label for="exampleInputEmail1">Assign To </label>
-                  <select name="assigned_to" id="id_assigned_to" class="assigned_users form-control" multiple>
-                    {% for user in users %}
-                    {% if user.is_active %}
-                    <option value="{{user.id}}" {% if user in company_obj.assigned_to.all %} selected="" {% endif %}>
-                      {{user.email}}</option>
-                    {% endif %}
-
-                    {% endfor %}
-                  </select>
-                  <input type="hidden" id="id_assigned_to_hidden" name="assigned_to_">
-                  <span class="error" id="id__assigned_to">{{ company_form.assigned_to.errors }}</span>
-
-                  <!-- <label for="id_sattus">Assign To{% if company_form.assigned_to.field.required %}<span
-                      class="error">*</span>{% endif %}</label>
-                  {{ company_form.assigned_to }}
-                  <span class="error">{{ company_form.assigned_to.errors }}</span> -->
-                </div>
-              </div>
-              <div class="filter_col col-12">
-                <div class="form-group">
-                  <label for="id_sattus">Status{% if company_form.status.field.required %}<span
-                      class="error">*</span>{% endif %}</label>
-                  {{ company_form.status }}
-                  <span class="error">{{ company_form.status.errors }}</span>
-                </div>
-              </div>
-              <div class="filter_col col-12">
-                <div class="form-group">
-                  <label>Tags</label>
-                  <div class="txt-box-div" id="tag-div"><input type="text" name="tags" id="tags_1"
-                      value="{% for t in company_obj.tags.all %}{{t.name}}, {% endfor %}" class="tags" />
-                  </div>
-                </div>
-              </div>
               <div class="filter_col col-md-12">
                 <div class="form-group">
-                  <label for="exampleInputEmail1">Attachment</label>
-                  <input type="file" name="company_attachment">
-                  {% if company_obj.company_attachment.count %}
-                  {% for attachment in company_obj.company_attachment.all %}
-                  <div id="attachment{{attachment.id}}" class="mt-2">
-                    <a target="_blank" href="{{ attachment.attachment.url }}">{{ attachment.file_name }}</a>
-                    {% if not attachment.created_by.role == 'ADMIN' or attachment.created_by.role == request.user.role %}
-                    <a class="action btn primary_btn" onclick="remove_attachment({{attachment.id}})">X</a>
-                    {% endif %}
-                  </div>
-                  {% endfor %}
-                  {% endif %}
-                  <span class="error"></span>
+                  <label for="exampleInputEmail1" class="required">BR Approved{% if company_form.br_approved.field.required %}<span
+                      class="error_marker" style="color:red">*</span>{% endif %}</label>
+                  {{ company_form.br_approved }}
+                  <span class="error" id="id__br_approved">{{ company_form.br_approved.errors }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label for="exampleInputEmail1" class="required">BR{% if company_form.br_pic.field.required %}<span
+                      class="error_marker" style="color:red">*</span>{% endif %}</label>
+                  {{ company_form.br_pic }}
+                  <span class="error" id="id__br_pic">{{ company_form.br_pic.errors }}</span>
                 </div>
               </div>
             </div>
@@ -223,33 +90,7 @@
   //   $('.assigned_users').select2();
   // });
   $(document).ready(function () {
-    $("#id_contacts").select2();
-    $("#id_lead").select2();
-    $("#id_assigned_to").select2()
-    $("#id_teams").select2()
-    // $("#id_assigned_to").change(function () {
-    //   $("#id_assigned_to").attr('name', 'assigned_to')
-    // })
-    // $("#id_assigned_to")
-    // var data_assigned_to = []
-    // data_assigned_to = $('#id_assigned_to').val()
-    // $('#id_assigned_to_').val($('#id_assigned_to').val())
-    // console.log($('#id_assigned_to').val())
-    // console.log($('#id_assigned_to_').val())
-    // $('#id_assigned_to').change(function(){
-    //   data_assigned_to = []
-    //   data_assigned_to.push($(this).val())
-    //   $('#id_assigned_to_hidden').val(data_assigned_to)
-    // })
-  });
 
-  $("#copy_billing_btn").click(function () {
-    var address_line = $("#id_address_line").val();
-    var street = $("#id_street").val();
-    var city = $("#id_city").val();
-    var state = $("#id_state").val();
-    var postcode = $("#id_postcode").val();
-    var country = $("#id_country").val();
   });
 
   $(".savenew").on('click', function (e) {
@@ -258,58 +99,12 @@
     $('#formid').submit()
   });
 
-  function onAddTag(tag) {
-    alert("Added a tag: " + tag);
-  }
-  function onRemoveTag(tag) {
-    alert("Removed a tag: " + tag);
-  }
-
-  function onChangeTag(input, tag) {
-    alert("Changed a tag: " + tag);
-  }
 
   $(function () {
 
-    $('#tags_1').tagsInput({ width: 'auto' });
-    $('#tags_2').tagsInput({
-      width: 'auto',
-      onChange: function (elem, elem_tags) {
-        var languages = ['php', 'ruby', 'javascript'];
-        $('.tag', elem_tags).each(function () {
-          if ($(this).text().search(new RegExp('\\b(' + languages.join('|') + ')\\b')) >= 0)
-            $(this).css('background-color', 'yellow');
-        });
-      }
-    });
-    $('#tags_3').tagsInput({
-      width: 'auto',
 
-      //autocomplete_url:'test/fake_plaintext_endpoint.html' //jquery.autocomplete (not jquery ui)
-      autocomplete_url: 'test/fake_json_endpoint.html' // jquery ui autocomplete requires a json endpoint
-    });
-
-
-    // Uncomment this line to see the callback functions in action
-    //      $('input.tags').tagsInput({onAddTag:onAddTag,onRemoveTag:onRemoveTag,onChange: onChangeTag});   
-
-    // Uncomment this line to see an input with no interface for adding new tags.
-    //      $('input.tags').tagsInput({interactive:false});
   });
-  function remove_attachment(x) {
-    const con = confirm("Do you want to Delete it for Sure!?");
-    if (con == true) {
-      $.post('{% url "cases:remove_attachment" %}', {
-        "attachment_id": x
-      }, function (data) {
-        if (data.error) {
-          alert(data.errors)
-        } else {
-          $("#attachment" + data.attachment_object).remove()
-        }
-      })
-    }
-  }
+
 
 
 

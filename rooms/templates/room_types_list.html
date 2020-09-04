@@ -1,0 +1,38 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th width="50%">
+        <a href='#'>
+        Name
+        </a>
+        <span class="caret"></span>
+      </th>
+      <th>
+        <a href="#">
+        Active
+        </a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% ifequal rooms|length  0 %}
+    <tr>
+      <td class="cell">
+        NO ROOMS FOUND!!
+      </td>
+    </tr>
+    {% endifequal %}
+    {% for room in items %}
+    <tr>
+      <td class="cell">
+        <a class="cell parentname" id="{{ room.id }}">
+        {{ room.name }}
+        </a>
+      </td>
+      <td class="cell parentemail">
+        {{ room.is_active }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

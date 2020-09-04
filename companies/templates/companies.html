@@ -44,27 +44,7 @@
                       value="{{request.POST.name}}" {%endif%} />
                   </div>
                 </div>
-                <div class="filter_col col-md-2">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1">City</label>
-                    <input type="text" class="form-control" placeholder="City" name="city" {% if request.POST %}
-                      value="{{request.POST.city}}" {%endif%} />
-                  </div>
-                </div>
                 <input type="hidden" name="tab_status" id="tab_status">
-                <div class="filter_col col-md-2">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1">Tags</label>
-                    <select class="form-control" id="id_tag" name="tag" multiple>
-                      <!-- <option value="">--Select Tags--</option> -->
-                      {% for tag in tags %}
-                      <option value="{{tag.id}}" {% if request_tags %}
-                        {% if tag.id|slugify in request_tags %}selected{% endif %}{% endif %}>{{ tag.name }}
-                      </option>
-                      {% endfor%}
-                    </select>
-                  </div>
-                </div>
                 <div class="filter_col col-lg-2">
                   <div class="form-group buttons_row">
                     <button class="btn btn-primary save" type="submit">Search</button>
@@ -111,12 +91,9 @@
                         {% if open_companies|length > 0 %}
                         <tr>
                           <th width="5%">ID</th>
-                          <th width="12%">Name</th>
-                          <th width="8%">Created By</th>
-                          <th width="5%">City</th>
-                          <th width="5%">State</th>
+                          <th width="22%">Name</th>
+                          <th width="18%">Owner</th>
                           <th width="10%">Created On</th>
-                          <th width="10%">Tags</th>
                           <th width="10%">Actions</th>
                         </tr>
                         {% endif %}
@@ -138,37 +115,9 @@
                               href="#">{{ each_company.name }}</a>{% endif %}
                           </td>
                           <td>
-                            {% if each_company.created_by %}
-                            {% if each_company.created_by.profile_pic %}
-                            {% thumbnail each_company.created_by.profile_pic "40x40" crop="center" as im %}
-                            <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}"
-                              title="{{ each_company.created_by }}">
-                            {% endthumbnail %}
-                            {% else %}
-                            <img src="{% static 'images/user.png' %}" alt="Micro profile pic"
-                              style="width: 40px;height: 40px;" title="{{ each_company.created_by }}" />
-                            {% endif %}
-                            {% else %}
-                            None
-                            {% endif %}
+                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.username}}</a>
                           </td>
-                          <td>{% if each_company.billing_city %}{{ each_company.billing_city }} {% else %} Not specified
-                            {% endif %}</td>
-                          <td>{% if each_company.billing_state %}{{ each_company.billing_state }} {% else %} Not
-                            specified {% endif %}</td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
-                          <td style="display: block;">
-                            {% with tags=each_company.tags.all %}
-                            {% if tags %}
-                            {% for tag in tags %}
-                            <span class="text-left color{{forloop.counter}} tag_class_acc" id="list_tag"
-                              data-link="{{tag.id}}" style="cursor: pointer;">{{ tag.name }}</span>
-                            {% endfor %}
-                            {% else %}
-                            No Tags
-                            {% endif %}
-                            {% endwith %}
-                          </td>
                           <td class="actions">
                             {% if each_company.contacts.all %}
                             <a href="{% url 'companies:create_mail' %}" class="btn btn-primary edit company_send_mail"
@@ -214,12 +163,9 @@
                         {% if close_companies|length > 0 %}
                         <tr>
                           <th width="5%">ID</th>
-                          <th width="15%">Name</th>
-                          <th width="10%">Created By</th>
-                          <th width="10%">City</th>
-                          <th width="10%">State</th>
-                          <th width="10%">Created On</th>
-                          <th width="18%">Tags</th>
+                          <th width="31%">Name</th>
+                          <th width="26%">Owner</th>
+                          <th width="16%">Created On</th>
                           <th width="15%">Actions</th>
                         </tr>
                         {% endif %}
@@ -237,37 +183,9 @@
                               data-target="#exampleModalCenter_company{{each_company.id}}">{{ each_company.name }}</a>{% endif %}
                           </td>
                           <td>
-                            {% if each_company.created_by %}
-                            {% if each_company.created_by.profile_pic %}
-                            {% thumbnail each_company.created_by.profile_pic "40x40" crop="center" as im %}
-                            <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}"
-                              title="{{ each_company.created_by }}">
-                            {% endthumbnail %}
-                            {% else %}
-                            <img src="{% static 'images/user.png' %}" alt="Micro profile pic"
-                              style="width: 40px;height: 40px;" title="{{ each_company.created_by }}" />
-                            {% endif %}
-                            {% else %}
-                            None
-                            {% endif %}
+                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.username}}</a>
                           </td>
-                          <td>{% if each_company.billing_city %}{{ each_company.billing_city }} {% else %} Not specified
-                            {% endif %}</td>
-                          <td>{% if each_company.billing_state %}{{ each_company.billing_state }} {% else %} Not
-                            specified {% endif %}</td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
-                          <td style="display: block;">
-                            {% with tags=each_company.tags.all %}
-                            {% if tags %}
-                            {% for tag in tags %}
-                            <span class="text-left color{{forloop.counter}} tag_class_acc" data-link="{{tag.id}}"
-                              style="cursor: pointer;" id="list_tag">{{ tag.name }}</span>
-                            {% endfor %}
-                            {% else %}
-                            No Tags
-                            {% endif %}
-                            {% endwith %}
-                          </td>
                           <td class="actions">
                             <a href="{% url 'companies:view_company' each_company.id %}" class="btn btn-info edit" title="View"><i
                                 class="fas fa-eye"></i></a>
@@ -459,7 +377,7 @@
                     </div>
                     <div class="col-md-12">
                       <div class="created_information">
-                        Created by <b>{{ company_record.created_by }}</b> created on
+                        Owner <b>{{ company_record.owner.username }}</b> created on
                         <b title="{{ company_record.created_on }}">{{ company_record.created_on_arrow }}</b>
                       </div>
                     </div>
@@ -640,7 +558,7 @@
                     </div>
                     <div class="col-md-12">
                       <div class="created_information">
-                        Created by <b>{{ company_record.created_by }}</b> created on
+                        Owner <b>{{ company_record.owner.username }}</b> created on
                         <b title="{{ company_record.created_on }}">{{ company_record.created_on_arrow }}</b>
                       </div>
                     </div>

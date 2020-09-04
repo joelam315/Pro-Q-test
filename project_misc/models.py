@@ -38,7 +38,7 @@ class ProjectMisc(models.Model):
 
 	def as_json(self):
 		ret= dict(
-			id=self.id,
+			id=self.misc.id,
 			name=self.misc.name,
 			unit_price=float(self.unit_price),
 			quantity=self.quantity,
