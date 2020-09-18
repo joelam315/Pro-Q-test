@@ -97,22 +97,23 @@ class Company(models.Model):
     def as_json(self):
         return dict(
             name=self.name,
-            logo_path="api/media/"+str(self.logo_pic)
+            logo_path="api/media/"+str(self.logo_pic),
+            owner=self.owner.display_name
         )
 
     class Meta:
         ordering = ['-created_on']
 
     def get_quotation_general_remarks_json(self):
-        general_remarks=self.company_quotation_general_remarks.order_by('index')
+        general_remarks=self.company_quotation_general_remarks.order_by('index','id')
         return [general_remark.as_json() for general_remark in general_remarks]
 
     def get_invoice_general_remarks_json(self):
-        general_remarks=self.company_invoice_general_remarks.order_by('index')
+        general_remarks=self.company_invoice_general_remarks.order_by('index','id')
         return [general_remark.as_json() for general_remark in general_remarks]
 
     def get_receipt_general_remarks_json(self):
-        general_remarks=self.company_receipt_general_remarks.order_by('index')
+        general_remarks=self.company_receipt_general_remarks.order_by('index','id')
         return [general_remark.as_json() for general_remark in general_remarks]
 
     def get_charging_stages_json(self):

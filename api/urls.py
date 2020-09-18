@@ -79,7 +79,12 @@ from api.views import (
 	RemoveProjectRoomItemView,
 	GetMiscListView,
 	GetItemTypeListView,
-	GetRoomTypeFormulaListView
+	GetRoomTypeFormulaListView,
+	UpdateUsernameAndPhoneRequestView,
+	VerifyNewUserUsernameAndPhoneView,
+	UserLogoutView,
+	GetUserInfoView,
+	GetProjectTimetableView
 )
 
 
@@ -90,9 +95,13 @@ urlpatterns = [
 	#path('login/',UserLoginView.as_view(),name='user_login'),
 	path('login/',UserRegisterOrLoginView.as_view(),name="user_login"),
 	path('check/', TokenVerifyView.as_view(), name='token_check'),
+	path('profile/',GetUserInfoView.as_view(),name="get_user_info"),
 	path('check/ready_to_create/project/',CheckReadyToCreateProjectView.as_view(),name="ready_create_project_check"),
 	path('refresh/',TokenRefreshView.as_view(),name='token_refresh'),
+	path('logout/',UserLogoutView.as_view(),name="user_logout"),
 	path('verify/phone/',UserPhoneVerifyView.as_view(),name='phone_verify'),
+	path('update/phone/',UpdateUsernameAndPhoneRequestView.as_view(),name='update_new_phone_request'),
+	path('verify/new_phone/',VerifyNewUserUsernameAndPhoneView.as_view(),name="new_phone_verify"),
 	path('company/set/',SetCompanyView.as_view(),name="set_company"),
 	path('company/get/',GetCompanyView.as_view(),name="get_company"),
 	path('doc_format/get/choices/',GetDocumentFormatChoicesView.as_view(),name="get_doc_format_choices"),
@@ -136,6 +145,7 @@ urlpatterns = [
 	path('project/receipt/preview/',PreviewProjectReceipt.as_view(),name="preview_project_receipt"),
 	path('project/receipt/remarks/update/',UpdateProjectReceiptRemarks.as_view(),name="update_project_receipt_remarks"),
 	path('project/receipt/generate/',GenerateProjectReceipt.as_view(),name="generate_project_receipt"),
+	path('project/timetable/get/',GetProjectTimetableView.as_view(),name="get_project_timetable"),
 	path('project/work/create/',CreateProjectWorkView.as_view(),name="create_project_work"),
 	path('project/work/update/',UpdateProjectWorkView.as_view(),name="update_project_work"),
 	path('project/work/remove/',RemoveProjectWorkView.as_view(),name="remove_project_work"),

@@ -50,6 +50,12 @@ class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
             if request_post.get('name'):
                 queryset = queryset.filter(
                     name__icontains=request_post.get('name'))
+            if request_post.get('owner'):
+                queryset=queryset.filter(
+                    owner__username__icontains=request_post.get('owner'))
+            if request_post.get('br_approved'):
+                queryset=queryset.filter(
+                    br_approved__icontains=request_post.get('br_approved'))
             if request_post.get('city'):
                 queryset = queryset.filter(
                     billing_city__contains=request_post.get('city'))
@@ -84,7 +90,8 @@ class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
         search = False
         if (
             self.request.POST.get('name') or self.request.POST.get('city') or
-            self.request.POST.get('industry') or self.request.POST.get('tag')
+            self.request.POST.get('industry') or self.request.POST.get('tag') or 
+            self.request.POST.get('br_approved') or self.request.POST.get('owner')
         ):
             search = True
 
@@ -326,14 +333,14 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
                 else:
                     tag = Tags.objects.create(name=t.lower())
                 company_object.tags.add(tag)
-        if self.request.POST.getlist('contacts', []):
+        '''if self.request.POST.getlist('contacts', []):
             company_object.contacts.clear()
             company_object.contacts.add(*self.request.POST.getlist('contacts'))
         if self.request.POST.getlist('assigned_to', []):
             company_object.assigned_to.clear()
             company_object.assigned_to.add(*self.request.POST.getlist('assigned_to'))
         else:
-            company_object.assigned_to.clear()
+            company_object.assigned_to.clear()'''
         if self.request.FILES.get('company_attachment'):
             attachment = Attachments()
             attachment.created_by = self.request.user
@@ -344,7 +351,7 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
                 'company_attachment')
             attachment.save()
 
-        if self.request.POST.getlist('teams', []):
+        '''if self.request.POST.getlist('teams', []):
             company_object.teams.clear()
             company_object.teams.add(*self.request.POST.getlist('teams'))
         else:
@@ -356,9 +363,9 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
             assinged_to_users_ids = company_object.assigned_to.all().values_list('id', flat=True)
             for user_id in user_ids:
                 if user_id not in assinged_to_users_ids:
-                    company_object.assigned_to.add(user_id)
+                    company_object.assigned_to.add(user_id)'''
 
-        assigned_to_list = list(company_object.assigned_to.all().values_list('id', flat=True))
+        #assigned_to_list = list(company_object.assigned_to.all().values_list('id', flat=True))
         current_site = get_current_site(self.request)
         #recipients = list(set(assigned_to_list) - set(previous_assigned_to_users))
         #send_email_to_assigned_user.delay(recipients, company_object.id, domain=current_site.domain,
@@ -381,14 +388,13 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
         context = super(CompanyUpdateView, self).get_context_data(**kwargs)
         context["company_obj"] = self.object
         if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
-            if ((self.request.user != context['company_obj'].created_by ) and
-                (self.request.user not in context['company_obj'].assigned_to.all())):
+            if ((self.request.user != context['company_obj'].created_by )):
                 raise PermissionDenied
         context["company_form"] = context["form"]
         if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
             self.users = self.users.filter(Q(role='ADMIN') | Q(id__in=[self.request.user.id,]))
         context["users"] = self.users
-        context["industries"] = INDCHOICES
+        '''context["industries"] = INDCHOICES
         context["countries"] = COUNTRIES
         context["contact_count"] = Contact.objects.count()
         if self.request.user.role == 'ADMIN':
@@ -402,7 +408,7 @@ class CompanyUpdateView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView
         if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
             context["lead_count"] = Lead.objects.filter(
                 Q(assigned_to__in=[self.request.user]) | Q(created_by=self.request.user)).exclude(status='closed').count()
-        context["teams"] = Teams.objects.all()
+        context["teams"] = Teams.objects.all()'''
         return context
 
 

@@ -50,7 +50,8 @@ class RoomPropertyForm(forms.ModelForm):
         fields=(
             'name',
             'symbol',
-            'data_type'
+            'data_type',
+            'custom_properties'
         )
 
 class RoomTypeFormulaForm(forms.ModelForm):

@@ -33,7 +33,7 @@
                     <tr> <td class="first_td">No.</td><td>{{receipt_no}}</td></tr>
                     <tr><td class="first_td">Co</td><td>:</td></tr>
                     <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
-                    <tr><td class="first_td">From</td><td>: {{company.owner.first_name}} {{company.owner.last_name}}</td></tr>
+                    <tr><td class="first_td">From</td><td>: {{company.owner.display_name}}</td></tr>
                     <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
                   </td>
@@ -72,7 +72,7 @@
 
             <br>
             <br>
-            <div>
+            <div style="page-break-inside: avoid !important;">
               <table style="width: 100%;">
                 <colgroup>
                   <col span="1" style="width: 60%;">
@@ -94,8 +94,8 @@
                       
                     </td>
                     <td>
-                      {% if company.logo_pic %}
-                          {% thumbnail company.logo_pic "125x125" as im %}
+                      {% if company.sign %}
+                          {% thumbnail company.sign "125x125" as im %}
                           <img src="\app/{{ im.url }}">
                           {% endthumbnail %}
                       {% endif %}

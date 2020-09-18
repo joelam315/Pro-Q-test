@@ -44,6 +44,20 @@
                       value="{{request.POST.name}}" {%endif%} />
                   </div>
                 </div>
+                <div class="filter_col col-md-2">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Owner Username</label>
+                    <input type="text" class="form-control" placeholder="Owner Username" name="owner" {% if request.POST %}
+                      value="{{request.POST.owner}}" {%endif%} />
+                  </div>
+                </div>
+                <div class="filter_col col-md-2">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">BR Approved</label>
+                    <input type="text" class="form-control" placeholder="BR Approved" name="br_approved" {% if request.POST %}
+                      value="{{request.POST.br_approved}}" {%endif%} />
+                  </div>
+                </div>
                 <input type="hidden" name="tab_status" id="tab_status">
                 <div class="filter_col col-lg-2">
                   <div class="form-group buttons_row">
@@ -64,7 +78,7 @@
     <div class="col-md-12 col-lg-12 col-xl-12">
       <div class="table_container_row row marl no-gutters">
         <div class="col-md-12">
-          <ul class="nav nav-tabs" id="myTab" role="tablist">
+          <!--<ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item">
               <a class="nav-link active" id="open-tab" data-toggle="tab" href="#open" role="tab" aria-controls="open"
                 aria-selected="true">Active ({{open_companies|length}})</a>
@@ -73,13 +87,13 @@
               <a class="nav-link" id="close-tab" data-toggle="tab" href="#close" role="tab" aria-controls="close"
                 aria-selected="false">Closed ({{close_companies|length}})</a>
             </li>
-          </ul>
+          </ul>-->
           <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="open" role="tabpanel" aria-labelledby="open">
               <div class="card">
                 <div class="card-body">
                   <div class="panel-heading-list card-title text-right">
-                    <span class="total_count float-left">Open Companies - {% if show_pageitems %}
+                    <span class="total_count float-left">Companies - {% if show_pageitems %}
                       {% show_pageitems %}{% else %}{{open_companies|length}}{% endif %}</span>
                     <span class="filter_toggle ">
                       <a href="#" class="primary_btn"><i class="fas fa-filter"></i></a>
@@ -91,8 +105,9 @@
                         {% if open_companies|length > 0 %}
                         <tr>
                           <th width="5%">ID</th>
-                          <th width="22%">Name</th>
-                          <th width="18%">Owner</th>
+                          <th width="17%">Name</th>
+                          <th width="13%">Owner</th>
+                          <th width="10">BR Approved</th>
                           <th width="10%">Created On</th>
                           <th width="10%">Actions</th>
                         </tr>
@@ -117,6 +132,7 @@
                           <td>
                             <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.username}}</a>
                           </td>
+                          <td title="{{each_company.created_on}}">{{ each_company.br_approved }}</td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
                           <td class="actions">
                             {% if each_company.contacts.all %}
@@ -268,24 +284,20 @@
                         </div>
                       </div>
                       {% endif %}
-                      {% if company_record.phone %}
                       <div class="filter_col col-md-12">
                         <div class="form-group">
-                          <label class="acc_field_label" for="id_phone" data-name="name">Phone</label>
-                          <div class="account_field" id="company_phone" data-name="name">{{ company_record.phone }}
+                          <label class="acc_field_label" for="id_owner" data-name="name">Owner</label>
+                          <div class="account_field" id="company_owner" data-name="name">{{ company_record.owner.display_name }}
                           </div>
                         </div>
                       </div>
-                      {% endif %}
-                      {% if company_record.status %}
                       <div class="filter_col col-md-12">
                         <div class="form-group">
-                          <label class="acc_field_label" for="id_status" data-name="name">Status</label>
-                          <div class="account_field" id="company_status" data-name="name">{{ company_record.status }}
+                          <label class="acc_field_label" for="id_br_approved" data-name="name">BR Approved</label>
+                          <div class="account_field" id="company_br_approved" data-name="name">{{ company_record.br_approved }}
                           </div>
                         </div>
                       </div>
-                      {% endif %}
                     </div>
                     <div class="col-md-4">
                       {% if company_record.email %}

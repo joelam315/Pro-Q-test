@@ -121,8 +121,10 @@ class Project(models.Model):
 
         return dict(
             id=self.id,
+            job_no='J'+format(self.job_no, "04"),
             project_title=self.project_title,
             status=self.status,
+            district=self.district,
             details=self.details,
             work_location=self.work_location,
             start_date=str(self.start_date),

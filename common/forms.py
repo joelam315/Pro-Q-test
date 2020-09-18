@@ -75,7 +75,7 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['display_name',
-                  'username']
+                  'username','email']
 
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -130,7 +130,7 @@ class UserForm(forms.ModelForm):
             marketing = self.instance.has_marketing_access
         return marketing
 
-    def clean_email(self):
+    '''def clean_email(self):
         email = self.cleaned_data.get("email")
         if self.instance.id:
             if self.instance.email != email:
@@ -144,7 +144,7 @@ class UserForm(forms.ModelForm):
             if not User.objects.filter(
                     email=self.cleaned_data.get("email")).exists():
                 return self.cleaned_data.get("email")
-            raise forms.ValidationError('User already exists with this email')
+            raise forms.ValidationError('User already exists with this email')'''
 
 
 class LoginForm(forms.ModelForm):

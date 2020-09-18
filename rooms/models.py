@@ -1,4 +1,5 @@
 import arrow
+import json
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from projects.models import Project
@@ -12,7 +13,9 @@ class RoomProperty(models.Model):
 	name=models.CharField(max_length=50)
 	symbol=models.CharField(max_length=50,unique=True)
 	data_type=models.CharField(max_length=50,choices=DATA_TYPE)
-	sub_properties=JSONField(null=True,blank=True)
+	custom_properties=JSONField(null=True,blank=True)
+	custom_property_formulas=JSONField(null=True,blank=True)
+	property_formulas=JSONField(null=True,blank=True)
 
 	def __str__(self):
 		return self.name
@@ -23,8 +26,24 @@ class RoomProperty(models.Model):
 			name=self.name,
 			symbol=self.symbol,
 			data_type=self.data_type,
-			sub_properties=self.sub_properties
+			custom_properties=self.custom_properties
 		)
+
+	def custom_property_cal(self):
+		if self.data_type!="custom properties":
+			return None
+		custom_properties=self.custom_properties
+		custom_property_formulas=self.custom_property_formulas
+		property_formulas=self.property_formulas
+		params=[custom_property for custom_property in custom_properties]
+		#params.sort(key=len_symbol,reverse=True)
+		#return params
+		for param in params:
+			
+			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["symbol"],0)))
+			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["symbol"],0)))
+		
+		return ne.evaluate(cal_formula)
 
 class RoomType(models.Model):
 	name=models.CharField(max_length=50)
@@ -56,8 +75,14 @@ class RoomTypeFormula(models.Model):
 		#params.sort(key=len_symbol,reverse=True)
 		#return params
 		for param in params:
-			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["name"],0)))
-			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["name"],0)))
+			if param["data_type"]=="custom properties":
+				custom_params=param.custom_properties
+				for custom_param in custom_params:
+					cal_formula=cal_formula.replace("\""+param["symbol"]+"."+custom_param+"\"",str(value.get(param["symbol"],0).get(custom_param,0)))
+					cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+custom_param+"\'",str(value.get(param["symbol"],0).get(custom_param,0)))
+			else:
+				cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["symbol"],0)))
+				cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["symbol"],0)))
 		
 		return ne.evaluate(cal_formula)
 
@@ -98,6 +123,7 @@ class Room(models.Model):
 			room_type=str(self.room_type),
 			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()]
 		)
+		ret["properties"]=dict()
 		formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
 		for formula in formulas:
 			ret["properties"][formula.name]=formula.cal(self.value)

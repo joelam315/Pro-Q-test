@@ -63,7 +63,20 @@
                 </div>
               </div>
             </div>
-
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Custom Properties{% if room_property_form.custom_properties.field.required %}<span
+                                class="error">*</span>{% endif %}</label>
+                      {{ room_property_form.custom_properties }}
+                      <span class="error">{{ room_property_form.custom_properties.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <input type="hidden" id="save_new_form" name="savenewform">
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">

@@ -150,11 +150,11 @@
                         <table class="table table-hover" id="table_room_type_formula" {% if room_type_formula_objs|length <= 0 %}style="display:none"{% endif %}>
                           <thead>
                             <tr>
-                              <th scope="col" width="15%">#</th>
-                              <th scope="col" width="40%">Name</th>
+                              <th scope="col" width="10%">#</th>
+                              <th scope="col" width="30%">Name</th>
                               <th scope="col" width="30%">Formula</th>
                               <th scope="col" width="10%">Active</th>
-                              <th scope="col" width="15%">Action</th>
+                              <th scope="col" width="20%">Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -164,7 +164,7 @@
                               <td>{{room_type_formula_obj.name}}</td>
                               <td>{{room_type_formula_obj.formula}}</td>
                               <td>{{room_type_formula_obj.is_active}}</td>
-                              <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ room_type_formula_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{room_type_formula_obj.id}}" data-editname="{{room_type_formula_obj.name}}" data-editvaluebasedprice="{{room_type_formula_obj.value_based_price}}" data-editisactive="{{room_type_formula_obj.is_active}}"><i
+                              <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ room_type_formula_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{room_type_formula_obj.id}}" data-editname="{{room_type_formula_obj.name}}" data-editformula="{{room_type_formula_obj.formula}}" data-editisactive="{{room_type_formula_obj.is_active}}"><i
                         class="fas fa-pencil-alt"></i></button> <button type="button" class="btn btn-danger" style="font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;" id="removeId_{{ room_type_formula_obj.id }}" data-toggle="modal" data-target="#removeModalCenter" data-removeid="{{room_type_formula_obj.id}}"><i class="fas fa-trash-alt"></i></button></td>
                             </tr>
                             {% endfor %}

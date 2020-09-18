@@ -30,8 +30,8 @@
      <div class="col-md-3">
         <div class="item sky_blue">
           <a href="{% url 'companies:list'%}">
-            <div class="title">Companies</div>
-            <div class="count">{{companies|length}}</div>
+            <div class="title">Companies need BR Approval</div>
+            <div class="count">{{companies_need_approve|length}}</div>
             <!-- <div class="more"><a href="#">Go Live</a></div> -->
           </a>
         </div>
@@ -39,6 +39,48 @@
     </div>
     <!-- count_blocks_row ends here -->
     <div class="open_sections row">
+      <div class="col-md-6 table_container_row">
+        <div class="card">
+          <div class="card-body">
+            <div class="card-title">
+              <span>Recent Users</span>
+            </div>
+            <div class="table-responsive">
+              {% if users %}
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th width="30%">Username</th>
+                    <th width="30%">Display Name</th>
+                    <th width="40%">Date Joined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for user in users|slice:"10" %}
+                  <tr>
+                    <td>
+                      <div class="text_ellipsis">
+                      <a href="{% url 'common:view_user' user.id %}">{{user.username}}</a>
+                    </div></td>
+                    <td>
+                      <span>
+                        {{user.display_name}}
+                      </span>
+                    </td>
+                    <td>
+                      <span>{{user.date_joined}}</span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% else %}
+              <p style="text-align:center">There are no records</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="col-md-6 table_container_row">
         <div class="card">
           <div class="card-body">
@@ -51,8 +93,9 @@
                 <thead>
                   <tr>
                     <th width="30%">Name</th>
-                    <th width="30%">Tags</th>
-                    <th width="40%">Assigned To</th>
+                    <th width="20%">Owner</th>
+                    <th width="20%">BR Approved</th>
+                    <th width="30%">Created On</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -63,47 +106,18 @@
                       <a href="{% url 'companies:view_company' company.id %}">{{company.name}}</a>
                     </div>
                     </td>
-                    <td style="display: block;">
-                      {% for tag in company.tags.all|slice:'3' %}
-                      <span class="text-left color{{forloop.counter}} tag_class_acc" id="list_tag"
-                        data-link="{{tag.id}}" style="cursor: pointer;">{{tag.name}}</span>
-                      {% empty %}
-                      <span class="text-left">No Tags</span>
-                      {% endfor %}
-                      {% if company.tags.all|length > 3 %}
-                      <a href="{% url 'companies:view_company' company.id %}">
-                        <span class="text-left" id="list_tag">{{company.tags.all|length|subtract:'3'}}<span> more
-                          </span></span></a>
-                      {% endif %}
-                    </td>
                     <td>
-                      {% with users=company.assigned_to.all %}
-                      {% for user in users|slice:'3' %}
-                      {% if user.profile_pic %}
-                      {% thumbnail user.profile_pic "40x40" crop="center" as im %}
                       <span>
-                        <a href="{% url 'common:view_user' user.id %}">
-                          <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}"
-                            title="{{ user.email }}">
-                        </a>
-                        {% endthumbnail %}
-                        {% else %}
-                        <a href="{% url 'common:view_user' user.id %}">
-                          <img src="{% static 'images/user.png' %}" title="{{ user.email }}" width="40" height="40">
+                        <a href="{% url 'common:view_user' company.owner.id %}">
+                          {{company.owner.username}}
                         </a>
                       </span>
-                      {% endif %}
-                      {% empty %}
-                      <span class="text-left">None</span>
-                      {% endfor %}
-                      {% if users|length > 3 %}
-                      <div>
-                        <a href="{% url 'companies:view_company' company.id %}">
-                          <span class="text-left mt-2" id="list_tag">{{users|length|subtract:'3'}}<span> more
-                            </span></span></a>
-                      </div>
-                      {% endif %}
-                      {% endwith %}
+                    </td>
+                    <td>
+                      <span>{{company.br_approved}}</span>
+                    </td>
+                    <td>
+                      <span>{{company.created_on}}</span>
                     </td>
                   </tr>
                   {% endfor %}
@@ -116,81 +130,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-6 table_container_row">
-        <div class="card">
-          <div class="card-body">
-            <div class="card-title">
-              <span>Recent Opportunities</span>
-            </div>
-            <div class="table-responsive">
-              {% if opportunities %}
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th width="30%">Name</th>
-                    <th width="30%">Tags</th>
-                    <th width="40%">Assigned To</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for opportunity in opportunities|slice:"10" %}
-                  <tr>
-                    <td>
-                      <div class="text_ellipsis">
-                      <a href="{% url 'opportunity:opp_view' opportunity.id %}">{{opportunity.name}}</a>
-                    </div></td>
-                    <td style="display: block;">
-                      {% for tag in opportunity.tags.all|slice:'3' %}
-                      <span class="text-left color{{forloop.counter}} tag_class_opp" id="list_tag"
-                        data-link="{{tag.id}}" style="cursor: pointer;">{{tag.name}}</span>
-                      {% empty %}
-                      <span class="text-left">No Tags</span>
-                      {% endfor %}
-                      {% if opportunity.tags.all|length > 3 %}
-                      <a href="{% url 'opportunity:opp_view' opportunity.id %}">
-                        <span class="text-left" id="list_tag">{{opportunity.tags.all|length|subtract:'3'}}<span> more
-                          </span></span></a>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% with users=opportunity.assigned_to.all %}
-                      {% for user in users|slice:'3'  %}
-                      {% if user.profile_pic %}
-                      {% thumbnail user.profile_pic "40x40" crop="center" as im %}
-                      <span>
-                        <a href="{% url 'common:view_user' user.id %}">
-                          <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}"
-                            title="{{ user.email }}">
-                        </a>
-                        {% endthumbnail %}
-                        {% else %}
-                        <a href="{% url 'common:view_user' user.id %}">
-                          <img src="{% static 'images/user.png' %}" title="{{ user.email }}" width="40" height="40">
-                        </a>
-                      </span>
-                      {% endif %}
-                      {% empty %}
-                      <span class="text-left">None</span>
-                      {% endfor %}
-                      {% if users|length > 3 %}
-                      <a href="{% url 'opportunity:opp_view' opportunity.id %}">
-                        <span class="text-left mt-2" id="list_tag">{{users|length|subtract:'3'}}<span> more
-                          </span></span>
-                      </a>
-                      {% endif %}
-                      {% endwith %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-              {% else %}
-              <p style="text-align:center">There are no records</p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </div>
   </div>
 </div>

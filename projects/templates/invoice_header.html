@@ -13,7 +13,7 @@
 <table>
 	<tbody>
 		<tr>
-			<td rowspan="5">
+			<td rowspan="6">
 				{% if company.logo_pic %}
                    	{% thumbnail company.logo_pic "125x125" as im %}
                     <img src="\app/{{ im.url }}">
@@ -26,26 +26,31 @@
             	{{ company.name|upper }}
             </td>
 		</tr>
-		{% if company.billing_address_line%}
-		<tr>
+		{% if doc_header.address%}
+        <tr>
             <td style="font-size: 9px;">
-            	Address: {{ company.billing_address_line }}
+                Address: {{ doc_header.address }}
             </td>
-		</tr>
-		{% endif %}
-        {% if company.phone%}
-		<tr>
-            <td style="font-size: 9px;">
-            	Tel: {{ company.phone }}
-            </td>
-		</tr>
+        </tr>
         {% endif %}
-        {% if company.email%}
-		<tr>	
+        {% if doc_header.tel%}
+        <tr>
             <td style="font-size: 9px;">
-            	Email: {{ company.email }}
+                Tel: {{ doc_header.tel }}
             </td>
-		</tr>
+        </tr>
+        {% endif %}
+        {% if doc_header.fax%}
+        <tr>    
+            <td style="font-size: 9px;">
+                Fax: {{ doc_header.fax }}
+            </td>
+        </tr>
+        {% endif %}
+        {% if doc_header.email%}
+        <tr style="vertical-align: top;">    
+            <td style="font-size: 9px;vertical-align: top;">Email: {{ doc_header.email }}</td>
+        </tr>
         {% endif %}
 	</tbody>
 </table>

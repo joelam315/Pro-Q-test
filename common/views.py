@@ -73,19 +73,20 @@ class HomeView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(HomeView, self).get_context_data(**kwargs)
-        companies = Company.objects.filter(status="open")
+        companies=Company.objects.all()
+        companies_need_approve = Company.objects.filter(br_approved=False)
         #contacts = Contact.objects.all()
-        if self.request.user.role == "ADMIN" or self.request.user.is_superuser:
+        '''if self.request.user.role == "ADMIN" or self.request.user.is_superuser:
             pass
         else:
             companies = companies.filter(
                 Q(assigned_to__id__in=[self.request.user.id]) |
                 Q(created_by=self.request.user.id))
-            '''contacts = contacts.filter(
+            contacts = contacts.filter(
                 Q(assigned_to__id__in=[self.request.user.id]) |
                 Q(created_by=self.request.user.id))'''
-            
         context["companies"] = companies
+        context["companies_need_approve"] = companies_need_approve
         context["users"]=User.objects.filter(role="USER",is_superuser=False)
         
         #context["contacts_count"] = contacts.count()
@@ -270,6 +271,7 @@ class CreateAdminView(AdminRequiredMixin, CreateView):
         user = form.save(commit=False)
         if form.cleaned_data.get("password"):
             user.set_password(form.cleaned_data.get("password"))
+        user.role="ADMIN"
         user.save()
 
         if self.request.POST.getlist('teams'):
@@ -375,12 +377,12 @@ class UpdateAdminView(LoginRequiredMixin, UpdateView):
                     'common:admins_list'), 'error': False}
                 if self.request.user.id == user.id:
                     data = {'success_url': reverse_lazy(
-                        'common:profile'), 'error': False}
+                        'common:admins_list'), 'error': False}
                     return JsonResponse(data)
                 return JsonResponse(data)
         if self.request.is_ajax():
             data = {'success_url': reverse_lazy(
-                'common:profile'), 'error': False}
+                'common:admins_list'), 'error': False}
             return JsonResponse(data)
         return super(UpdateAdminView, self).form_valid(form)
 

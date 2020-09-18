@@ -65,27 +65,13 @@
                 </div>
               </div>
               {% endif %}
-              {% if user_obj.role %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_industry" data-name="name">Role</label>
-                  <div class="account_field" id="account_industry" data-name="name">{{ user_obj.role }}</div>
-                </div>
-              </div>
-              {% endif %}
             </div>
             <div class="col-md-6">
               <div class="filter_col col-md-12">
                 <div class="form-group">
-                  <label class="acc_field_label" for="id_shipping_address" data-name="name">Profile pic</label>
-                  <div class="profile_pic" style="text-align: left;">
-                    {% if user_obj.profile_pic %}
-                    {% thumbnail user_obj.profile_pic "125x125" as im %}
-                    <img src="{{ im.url }}">
-                    {% endthumbnail %}
-                    {% else %}
-                    <img src="https://cdn.dribbble.com/users/99875/screenshots/4353558/2018-03-01biker_site-2.gif" />
-                    {% endif %}
+                  <label class="acc_field_label" for="id_display_name" data-name="name">Display Name</label>
+                  <div class="display_name" style="text-align: left;">
+                    {{user_obj.display_name}}
                   </div>
                 </div>
               </div>
@@ -202,9 +188,8 @@
                     <thead>
                       <tr>
                         <th width="5%">S.No</th>
-                        <th width="25%">Company Name</th>
-                        <th width="20%">Phone</th>
-                        <th width="25%">Email</th>
+                        <th width="45%">Company Name</th>
+                        <th width="40%">BR Approved</th>
                       </tr>
                     </thead>
                     {% endif %}
@@ -213,8 +198,7 @@
                       <tr id="contacts_details{{company.id}}" class="text-center">
                         <td scope="row">{{ forloop.counter }}</td>
                         <td><a href="{% url 'companies:view_company' company.id %}">{{ company.name }}</a></td>
-                        <td>{{ company.phone }}</td>
-                        <td>{{ company.email }}</td>
+                        <td>{{ company.br_approved }}</td>
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -229,7 +213,7 @@
           </div>
         </div>
       </form>
-      <form method='GET' class="companydetails_row">
+      <!--<form method='GET' class="companydetails_row">
         <div class="table_container_row row marl no-gutters">
           <div class="col-md-12">
             <div class="card">
@@ -352,7 +336,7 @@
             <br clear="all">
           </div>
         </div>
-      </form>
+      </form>-->
     </div>
   </div>
 </div>

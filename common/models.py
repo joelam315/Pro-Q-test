@@ -45,6 +45,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         max_length=1000, upload_to=img_url, null=True, blank=True)
     has_sales_access = models.BooleanField(default=False)
     has_marketing_access = models.BooleanField(default=False)
+    new_phone= PhoneNumberField(null=True,blank=True)
+    new_phone_verify_code=models.CharField(max_length=6,blank=True,null=True)
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', ]
@@ -68,11 +70,16 @@ class User(AbstractBaseUser, PermissionsMixin):
             full_name = self.username
         return full_name'''
 
+    def as_json(self):
+        return dict(
+            phone=str(self.phone),
+        )
+
     def __str__(self):
         return self.username
 
     class Meta:
-        ordering = ['-is_active']
+        ordering = ['-date_joined']
 
 
 class Address(models.Model):

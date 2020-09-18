@@ -47,9 +47,9 @@
             </h5>
           </div>
           <div class="row marl">
-            <div class="col-md-4">
+            <div class="col-md-6">
               {% if company_record.name %}
-              <div class="filter_col col-md-12" id="iname">
+              <div class="filter_col col-md-6" id="iname">
                 <div class="form-group">
                   <label class="acc_field_label" for="id_name" data-name="name">Name</label>
                   <div class="account_field" id="company_name" data-name="name">{{ company_record.name }}</div>
@@ -64,94 +64,48 @@
                 </div>
               </div>
               {% endif %}
-              {% if company_record.status %}
+
               <div class="filter_col col-md-12">
                 <div class="form-group">
-                  <label class="acc_field_label" for="id_status" data-name="name">Status</label>
-                  <div class="account_field" id="company_status" data-name="name">{{ company_record.status }}</div>
+                  <label class="acc_field_label" for="id_status" data-name="br_approved">BR Approved</label>
+                  <div class="account_field" id="company_br_approved" data-name="br_approved">{{ company_record.br_approved }}</div>
                 </div>
               </div>
-              {% endif %}
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="acc_field_label" for="id_owner" data-name="owneer">Owner Name</label>
+                  {% if company_record.owner.display_name %}
+                  <div class="account_field" id="company_owner" data-name="owner">{{ company_record.owner.display_name }}</div>
+                  {% else %}
+                  <div class="account_field" id="company_owner" data-name="owner">{{ company_record.owner.username }}</div>
+                  {% endif %}
+                </div>
+              </div>
             </div>
-            <div class="col-md-4">
-              {% if company_record.email %}
-              <div class="filter_col col-md-12">
+            <div class="col-md-6">
+              {% if company_record.logo_pic %}
+              <div class="filter_col col-md-6" id="iname">
                 <div class="form-group">
-                  <label class="acc_field_label" for="id_email" data-name="name">Email</label>
-                  <div class="account_field" id="company_email" data-name="name">{{ company_record.email }}</div>
+                  <div class="form-group">
+                    <label class="acc_field_label" for="id_shipping_address" data-name="name">Logo pic</label>
+                    <div class="profile_pic" style="text-align: left;">
+                      {% if company_record.logo_pic %}
+                      {% thumbnail company_record.logo_pic "125x125" as im %}
+                      <img src="{{ im.url }}">
+                      {% endthumbnail %}
+                      {% endif %}
+                    </div>
+                  </div>
                 </div>
               </div>
               {% endif %}
+              
+              
               {% if company_record.website %}
               <div class="filter_col col-md-12">
                 <div class="form-group">
                   <label class="acc_field_label" for="id_website" data-name="name">Website</label>
                   <div class="account_field" id="company_website" data-name="name">{{ company_record.website }}</div>
-                </div>
-              </div>
-              {% endif %}
-              {% if company_record.contacts.all %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_website" data-name="name">Contacts</label>
-                  {% for contact in company_record.contacts.all %}
-                  <div class="account_field" id="company_website" data-name="name">{{ contact }}</div>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
-              {% if company_record.lead %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_website" data-name="name">lead</label>
-                  <div class="account_field" id="company_website" data-name="name">{{ company_record.lead }}</div>
-                </div>
-              </div>
-              {% endif %}
-            </div>
-            <div class="col-md-4">
-              {% if company_record.billing_address_line or company_record.billing_street or  company_record.billing_city or   company_record.billing_state or company_record.billing_postcode or company_record.billing_country %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_billing_address" data-name="name">Billing Address</label>
-                  <div class="account_field" id="company_billing_address" data-name="name">
-                    {{company_record.get_complete_address}}
-                  </div>
-                </div>
-              </div>
-              {% endif %}
-              <div class="filter_col col-md-12">
-                {% if company_record.assigned_to.all %}
-                <div class="form-group">
-                  <label class="case_field_label" for="id_contact" data-name="name">Assigned To</label>
-                  <div class="case_field" id="case_contact" data-name="name">
-                    {% for user in company_record.assigned_to.all %}
-                    <div>
-                      <a href="{% url 'common:view_user' user.id %}">{{user}}</a>
-                    </div>
-                    {% endfor %}
-                  </div>
-                </div>
-                {% endif %}
-              </div>
-              {% if company_record.description %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_description" data-name="name">Description</label>
-                  <div class="account_field" id="company_description" data-name="name">{{ company_record.description }}
-                  </div>
-                </div>
-              </div>
-              {% endif %}
-              {% if company_record.tags.all %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_tags" data-name="name">Tags</label>
-                  <div class="account_field" id="company_tags" data-name="name">
-                    {% for tag in company_record.tags.all %}
-                    <span class="text-left" id="list_tag">{{ tag.name }}</span>
-                    {% endfor %}
-                  </div>
                 </div>
               </div>
               {% endif %}
