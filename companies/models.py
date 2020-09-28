@@ -12,7 +12,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.utils.text import slugify
 from contacts.models import Contact
 from teams.models import Teams
-from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
+from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES, PROJECT_LOWER_CHOICES
 
 
 class Tags(models.Model):
@@ -193,6 +193,9 @@ class EmailLog(models.Model):
 class DocumentFormat(models.Model):
     company =models.OneToOneField(Company,related_name='company_doc_format',on_delete=models.CASCADE)
     
+    project_upper_format=models.CharField(choices=UPPER_CHOICES,max_length=20)
+    project_lower_format=models.CharField(choices=PROJECT_LOWER_CHOICES,max_length=20)
+
     quot_upper_format=models.CharField(choices=UPPER_CHOICES,max_length=20)
     quot_middle_format=models.CharField(choices=MIDDLE_CHOICES,max_length=20)
     quot_lower_format=models.CharField(choices=LOWER_CHOICES,max_length=20)
@@ -210,6 +213,8 @@ class DocumentFormat(models.Model):
 
     def as_json(self):
         return dict(
+            project_upper_format=self.project_upper_format,
+            project_lower_format=self.project_lower_format,
             quot_upper_format=self.quot_upper_format,
             quot_middle_format=self.quot_middle_format,
             quot_lower_format=self.quot_lower_format,

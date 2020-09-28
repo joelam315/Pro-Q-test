@@ -86,6 +86,7 @@ urlpatterns = [
     path('emails/', include('emails.urls', namespace="emails")),
     path('project_items/',include('project_items.urls',namespace="project_items")),
     path('project_misc/',include('project_misc.urls',namespace="project_misc")),
+    path('project_expenses/',include('project_expenses.urls',namespace="project_expenses")),
     path('rooms/',include('rooms.urls',namespace="rooms")),
     #path('function_items/',include('function_items.urls',namespace="function_items")),
     # path('planner/', include('planner.urls', namespace="planner")),

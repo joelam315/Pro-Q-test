@@ -30,13 +30,17 @@ UPPER_CHOICES=(
 )
 
 MIDDLE_CHOICES=(
-	("Date","Date"),
-	("Number","Number"),
-	("Alphabet","Alphabet")
+	("Date",_("日期(YYYYMMDD)")),
+	("Number",_("4位數字(0000-9999)")),
+	("Alphabet",_("英文字母(A-Z)"))
 )
 
 LOWER_CHOICES=(
-	("Date","Date"),
-	("Number","Number"),
-	("Alphabet","Alphabet")
+	("Date",_("日期(YYYYMMDD)")),
+	("Number",_("4位數字(0000-9999)")),
+	("Alphabet",_("英文字母(A-Z)"))
+)
+
+PROJECT_LOWER_CHOICES=(
+	("Number",_("4位數字(0000-9999)")),
 )

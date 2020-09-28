@@ -71,7 +71,10 @@ class SetDocumentFormatSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=DocumentFormat
-		fields=("quot_upper_format",
+		fields=(
+			"project_upper_format",
+			"project_lower_format",
+			"quot_upper_format",
 			"quot_middle_format",
 			"quot_lower_format",
 			"invoice_upper_format",
@@ -90,10 +93,12 @@ class SetDocumentFormatSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
-		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"]})
+		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"],'project_upper_format':validated_data["project_upper_format"],'project_lower_format':validated_data["project_lower_format"]})
 		return doc_format[0]
 
 class DocumentFormatJsonSerializer(serializers.Serializer):
+	project_upper_format=serializers.CharField(max_length=1)
+	project_lower_format=serializers.CharField()
 	quot_upper_format=serializers.CharField(max_length=1)
 	quot_middle_format=serializers.CharField()
 	quot_lower_format=serializers.CharField()
@@ -113,6 +118,7 @@ class GetDocumentFormatChoiceResponseSerializer(serializers.Serializer):
 	upper_choices=serializers.ListField(child=serializers.CharField())
 	middle_choices=serializers.ListField(child=serializers.CharField())
 	lower_choices=serializers.ListField(child=serializers.CharField())
+	project_lower_choices=serializers.ListField(child=serializers.CharField())
 
 class DocumentHeaderInformationSerializer(serializers.ModelSerializer):
 	class Meta:

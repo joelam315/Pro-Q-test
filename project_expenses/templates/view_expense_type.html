@@ -1,0 +1,95 @@
+{% extends 'sales/base.html' %}
+{% load staticfiles %}
+{% load paginate %}
+{% load thumbnail %}
+{% block breadcrumb %}
+{% block extralinks %}
+<link rel="stylesheet" href="{% static 'css/bootstrap-suggest.css' %}">
+<style>
+  .opacity_block {
+    opacity: 0.2;
+  }
+  #map {
+    height: 400px;  /* The height is 400 pixels */
+    width: 100%;  /* The width is the width of the web page */
+  }
+</style>
+{% endblock extralinks %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"> <a href="{% url 'project_expenses:list_expense_types' %}">Expense Type</a></li>
+  </ol>
+</nav>
+{% endblock %}
+{% block content %}
+<!-- CONTACTS VIEW STARTS -->
+<div class="main_container" id="maincontainer">
+  <div class="overview_form_block row marl justify-content-center">
+    <div class="col-md-8" id="opacity_block">
+      <div class="card">
+
+        <div class="card-body" id="datashow">
+
+          <div class="card-title text-right">
+            <h5>
+              <span class="float-left title">Overview</span>
+              <span class="" style="margin-top: 0px">
+                <div class="dropdown buttons_row" style="width:auto; display:inline-block; left:0">
+                  <button class="btn primary_btn dropdown-toggle" type="button" data-toggle="dropdown">Actions
+                    <span class="caret"></span></button>
+                  <ul class="dropdown-menu" style="width:fit-content; min-width:-webkit-fill-available; margin-top: 0;">
+                    <li><a href="{% url 'project_expenses:edit_expense_type' expense_type_record.id %}"
+                        style="background:#17a2b8; color: white; font-weight: 600;">Edit</a></li>
+                  </ul>
+                </div>
+              </span>
+            </h5>
+          </div>
+
+          <div class="row marl">
+            <div class="col-md-4">
+              <div class="filter_col col-md-12" id="iname">
+                <div class="form-group">
+                  <label class="expense_type_field_label" for="id_name" data-name="name">Name</label>
+                  <div class="expense_type_field" id="expense_type_name" data-name="name">{{ expense_type_record.name }}</div>
+                </div>
+              </div>
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="expense_type_field_label" for="id_type" data-name="name">Active</label>
+                  <div class="expense_type_field" id="expense_type_type" data-name="name">{{ expense_type_record.is_active }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    <div class="overview_form_block row marl justify-content-center" id="loading_spinner"
+      style="z-index: 10; left: 0; right: 0; vertical-align: middle; position: absolute; margin-top: 15%;">
+
+      <div class="spinner-border text-primary" style="width: 5em; height: 5em;" role="status">
+        <span class="sr-only">Processing File...</span>
+      </div>
+    </div>
+  </div>
+  <!-- CONTACTS VIEW ENDS -->
+  {% endblock%}
+  {% block js_block %}
+  <script type="text/javascript">
+    $('#loading_spinner').hide()
+
+
+
+    function HideError(e) {
+    }
+    function HideError(e) {
+      $("#CommentError").hide()
+      $("#AttachmentError").hide()
+    }
+
+
+  </script>
+  <script src="{% static 'js/bootstrap-suggest.js' %}"></script>
+  {% endblock js_block %}

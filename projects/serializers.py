@@ -40,6 +40,8 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 			cs.append(r)
 		cdf=company.company_doc_format
 		df={
+			"project_upper_format":cdf.project_upper_format,
+			"project_lower_format":cdf.project_lower_format,
 			"quot_upper_format":cdf.quot_upper_format,
 			"quot_middle_format":cdf.quot_middle_format,
 			"quot_lower_format":cdf.quot_lower_format,
@@ -220,9 +222,15 @@ class ProjectExpenseByTypeJsonSerializer(serializers.Serializer):
 	items=ProjectExpenseJsonSerializer(many=True)
 	sum_price=serializers.FloatField()
 
+class ProjectChargingStageJsonSerializer(serializers.Serializer):
+	value=serializers.IntegerField()
+	description=serializers.CharField()
+	sum_price=serializers.FloatField()
+	date=serializers.DateField()
+
 class GetProjectProfitAnalysisJsonSerializer(serializers.Serializer):
-	income_items=serializers.DictField(child=ProjectItemByTypeJsonSerializer())
-	outcome_items=serializers.DictField(child=ProjectItemByTypeJsonSerializer())
+	income_items=ProjectChargingStageJsonSerializer(many=True)
+	outcome_items=serializers.DictField(child=ProjectExpenseByTypeJsonSerializer())
 	total_income=serializers.FloatField()
 	total_outcome=serializers.FloatField()
 	gross_profit_margin=serializers.FloatField()
@@ -232,4 +240,9 @@ class GetProjectProfitAnalysisResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	project_profit_analysis=GetProjectProfitAnalysisJsonSerializer()
 
+class ProjectStatusJsonSerializer(serializers.Serializer):
+	project_status=serializers.ListField(child=serializers.CharField(),max_length=2,min_length=2)
 
+class ListProjectStatusResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	project_status_list=ProjectStatusJsonSerializer()

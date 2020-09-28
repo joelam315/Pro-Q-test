@@ -1,7 +1,13 @@
 import arrow
+import time
 from django.db import models
 from projects.models import Project
 from django.utils.translation import ugettext_lazy as _
+
+def expense_img_url(self, filename):
+    hash_ = int(time.time())
+    return "%s/%s/%s/%s" % ("companies",str(self.project.company.id), self.expense_prepend,filename)
+
 
 class ExpenseType(models.Model):
 	name=models.CharField(max_length=50)
@@ -17,17 +23,21 @@ class ExpenseType(models.Model):
 		)
 
 class ProjectExpense(models.Model):
+	expense_prepend = "expense"
+
 	name=models.CharField(max_length=50)
 	project=models.ForeignKey(Project,related_name="project_expense",on_delete=models.CASCADE)
 	expense_type=models.ForeignKey(ExpenseType,related_name="type_related_expense",on_delete=models.PROTECT)
 	price=models.DecimalField(
         max_digits=12, decimal_places=2)
 	pic=models.CharField(max_length=50,blank=True,null=True,verbose_name="Person in charge")
-	remark=models.TextField(blank=True,null=True)
+	remark=models.TextField(blank=True,null=True,default="")
 	pay_date=models.DateField()
+	img=models.FileField(
+        max_length=1000, upload_to=expense_img_url, null=True, blank=True)
 
 	def __str__(self):
-		return str(self.project)+": "+self.name
+		return str(self.project)+" expense: "+self.name
 
 	def as_json(self):
 		ret=dict(
@@ -36,11 +46,12 @@ class ProjectExpense(models.Model):
 			expense_type=self.expense_type.as_json(),
 			price=self.price,
 			pic=self.pic,
-			remark=self.remark,
-			pay_date=str(models.pay_date)
+			remark=self.remark if self.remark else "",
+			pay_date=str(self.pay_date)
 
 		)
-
+		if self.img:
+			ret["img_path"]="api/media/"+str(self.img)
 		return ret
 
 

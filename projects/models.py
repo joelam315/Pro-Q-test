@@ -1,5 +1,6 @@
 import arrow
 import math
+import decimal
 from decimal import Decimal
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -12,6 +13,8 @@ from companies.utils import *
 from phonenumber_field.modelfields import PhoneNumberField
 from teams.models import Teams
 from projects.utils import PROJECT_STATUS
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
+
 
 def number2alphabet(number):
     str=""
@@ -119,9 +122,9 @@ class Project(models.Model):
         )
     def as_json(self):
 
-        return dict(
+        ret= dict(
             id=self.id,
-            job_no='J'+format(self.job_no, "04"),
+            job_no=self.document_format["project_upper_format"],
             project_title=self.project_title,
             status=self.status,
             district=self.district,
@@ -131,6 +134,10 @@ class Project(models.Model):
             due_date=str(self.due_date),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        if self.document_format["project_lower_format"]=="Number":
+            ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
+        
+        return ret
     def all_room_items(self):
         items={}
         rooms=self.project_rooms.all()
@@ -158,14 +165,28 @@ class Project(models.Model):
                 items[item.item.item_type.name]["items"].append(item.as_json())
                 items[item.item.item_type.name]["sum_price"]+=item.unit_price*item.quantity
         return items
+    def all_charging_stages(self):
+        items=[]
+        charging_stages=self.charging_stages
+        i=0
+        total=self.total_amount()
+        receipts=self.project_receipt_records.all()
+        for charging_stage in charging_stages:
+            items.append({"value":charging_stage["value"],"description": charging_stage["description"] if charging_stage.get("description") else "","sum_price":(total*decimal.Decimal(charging_stage["value"])/100)})
+            try:
+                receipt=receipts.get(receipt_id=len(items))
+                items[-1]["date"]=receipt.generated_on.strftime("%Y-%m-%d")
+            except ObjectDoesNotExist:
+                pass
+        return items
     def all_expense(self):
         items={}
         expenses=self.project_expense.all()
         for expense in expenses:
-            if expense.expense_type not in items:
-                items[expense.expense_type]={"items":[],"sum_price":0}
-            items[expense.expense_type]["items"].append(expense.as_json())
-            items[expense.expense_type]["sum_price"]+=expense.price
+            if expense.expense_type.name not in items:
+                items[expense.expense_type.name]={"items":[],"sum_price":0}
+            items[expense.expense_type.name]["items"].append(expense.as_json())
+            items[expense.expense_type.name]["sum_price"]+=expense.price
         return items
     def quot_format(self):
         return dict(
@@ -249,7 +270,7 @@ class Project(models.Model):
         return receipt_no
     def quot_preview(self):
         ret=dict(
-            job_no='J'+format(self.job_no, "04"),
+            job_no=self.document_format["project_upper_format"],
             quot_format=self.quot_format(),
             items=self.all_items(),
             charging_stages=self.charging_stages,
@@ -257,11 +278,13 @@ class Project(models.Model):
             quotation_no=self.generate_quot_no(),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        if self.document_format["project_lower_format"]=="Number":
+            ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
         return ret 
 
     def invoice_preview(self,stage_id):
         ret=dict(
-            job_no='J'+format(self.job_no, "04"),
+            job_no=self.document_format["project_upper_format"],
             invoice_format=self.invoice_format(),
             amount=((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100),
             total_amount=(float)(self.total_amount()),
@@ -270,10 +293,12 @@ class Project(models.Model):
             invoice_no=self.generate_invoice_no(),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        if self.document_format["project_lower_format"]=="Number":
+            ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
         return ret
     def receipt_preview(self,stage_id):
         ret=dict(
-            job_no='J'+format(self.job_no, "04"),
+            job_no=self.document_format["project_upper_format"],
             receipt_format=self.receipt_format(),
             amount=((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100),
             total_amount=(float)(self.total_amount()),
@@ -282,20 +307,24 @@ class Project(models.Model):
             receipt_no=self.generate_receipt_no(),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        if self.document_format["project_lower_format"]=="Number":
+            ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
         return ret
     def profit_analyse(self):
-        income=self.all_items()
+        income=self.all_charging_stages()
         outcome=self.all_expense()
-        total_income=sum(income[item]["sum_price"] for item in income)
-        total_outcome=sum(outcome[item]["sum_price"] for item in outcome)
+
+        total_income=self.total_amount()
+
+        total_outcome=sum(outcome[item]["sum_price"] for item in outcome.keys())
+
         ret=dict(
             income_items=income,
             outcome_items=outcome,
             total_income=total_income,
             total_outcome=total_outcome,
-            gross_profit_margin=((float)((total_income-total_outcome)/total_income))*100
+            gross_profit_margin=0 if total_income==0 else ((float)((total_income-total_outcome)/total_income))*100
         )
-
         return ret
     @property
     def created_on_arrow(self):
@@ -382,7 +411,7 @@ class ProjectInvoice(models.Model):
     class Meta:
         unique_together = (('project', 'invoice_id'),)
     generated_on = models.DateTimeField(auto_now_add=True)
-    project=models.ForeignKey(Project,on_delete=models.CASCADE)
+    project=models.ForeignKey(Project,related_name='project_invoice_records',on_delete=models.CASCADE)
     invoice_id=models.PositiveIntegerField()
 
     def __str__(self):
@@ -392,7 +421,7 @@ class ProjectReceipt(models.Model):
     class Meta:
         unique_together = (('project', 'receipt_id'),)
     generated_on = models.DateTimeField(auto_now_add=True)
-    project=models.ForeignKey(Project,on_delete=models.CASCADE)
+    project=models.ForeignKey(Project,related_name='project_receipt_records',on_delete=models.CASCADE)
     receipt_id=models.PositiveIntegerField()
 
     def __str__(self):

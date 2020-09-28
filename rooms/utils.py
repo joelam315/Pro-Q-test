@@ -2,12 +2,12 @@ import pytz
 from django.utils.translation import ugettext_lazy as _
 
 DATA_TYPE=(
-	('Boolean','bool'),
-	('Number','num'),
-	('Custom Property','custom property')
+	('bool','Boolean'),
+	('num','Number'),
+	('custom property','Custom Property')
 )
 
 SUB_DATA_TYPE=(
-	('Boolean','bool'),
-	('Number','num'),
+	('bool','Boolean'),
+	('num','Number'),
 )

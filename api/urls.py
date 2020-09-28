@@ -84,7 +84,9 @@ from api.views import (
 	VerifyNewUserUsernameAndPhoneView,
 	UserLogoutView,
 	GetUserInfoView,
-	GetProjectTimetableView
+	GetProjectTimetableView,
+	GetProjectStatusListView,
+	PreCalRoomTypeFormulaView
 )
 
 
@@ -156,10 +158,12 @@ urlpatterns = [
 	path('project/expense/update/',UpdateProjectExpenseView.as_view(),name="update_project_expense"),
 	path('project/expense/remove/',RemoveProjectExpenseView.as_view(),name="remove_project_expense"),
 	path('project/profit/analysis/get/',GetProjectProfitAnalysisView.as_view(),name="get_project_profit_analysis"),
+	path('project_status/get/',GetProjectStatusListView.as_view(),name="get_project_status_list"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
 	path('room_type/formula/get/',GetRoomTypeFormulaListView.as_view(),name="get_room_types"),
+	path('room_type/precal/',PreCalRoomTypeFormulaView.as_view(),name="precal_room_type_formula"),
 	path('item/materials/get/',GetItemMaterials.as_view(),name="get_item_materials"),
 	path('item_types/get/',GetItemTypeListView.as_view(),name="get_item_types"),
 	path('expense_types/get/',GetExpenseTypeListView.as_view(),name="get_expense_types"),

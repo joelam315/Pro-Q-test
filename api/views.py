@@ -50,9 +50,9 @@ from companies.serializers import (
 	GetDocumentFormatChoiceResponseSerializer,
 	GetGeneralRemarksSerializer
 )
-from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES
+from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES,PROJECT_LOWER_CHOICES
 from projects.models import Project, ProjectInvoice, ProjectReceipt
-from projects.utils import ROOM_TYPE
+from projects.utils import ROOM_TYPE, PROJECT_STATUS
 from projects.serializers import (
 	CreateProjectSerializer, 
 	UpdateProjectSerializer,
@@ -66,6 +66,7 @@ from projects.serializers import (
 	GetProjectAllItemResponseSerializer,
 	GetProjectAllRoomItemResponseSerializer,
 	GetProjectProfitAnalysisResponseSerializer,
+	ListProjectStatusResponseSerializer
 
 )
 from rooms.models import Room, RoomType, RoomItem,RoomTypeFormula
@@ -84,7 +85,9 @@ from rooms.serializers import (
 	GetRoomRelatedItemResponseSerializer,
 	GetRoomItemRequestSerializer,
 	GetRoomTypeRequestSerializer,
-	GetRoomTypeFormulaListResponseSerializer
+	GetRoomTypeFormulaListResponseSerializer,
+	PreCalRoomTypeFormulaResponseSerializer,
+	PreCalRoomTypeFormulaSerializer
 )
 from customers.models import Customer
 from customers.serializers import SetProjectCustomerSerializer
@@ -127,7 +130,8 @@ from project_expenses.serializers import (
 	GetExpenseTypeListResponseSerializer,
 	CreateProjectExpenseSerializer,
 	UpdateProjectExpenseSerializer,
-	GetProjectExpenseRequestSerializer
+	GetProjectExpenseRequestSerializer,
+	CreateProjectExpenseResponseSerializer
 )
 
 from api.renderers import APIRenderer
@@ -586,9 +590,9 @@ class GetDocumentFormatChoicesView(APIView):
 		ret={}
 		ret["result"]=True
 		ret["upper_choices"]=[UPPER_CHOICE[0] for UPPER_CHOICE in UPPER_CHOICES]
-		ret["middle_choices"]=[MIDDLE_CHOICE[0] for MIDDLE_CHOICE in MIDDLE_CHOICES]
-		ret["lower_choices"]=[LOWER_CHOICE[0] for LOWER_CHOICE in LOWER_CHOICES]
-
+		ret["middle_choices"]=[MIDDLE_CHOICE for MIDDLE_CHOICE in MIDDLE_CHOICES]
+		ret["lower_choices"]=[LOWER_CHOICE for LOWER_CHOICE in LOWER_CHOICES]
+		ret["project_lower_choices"]=[PROJECT_LOWER_CHOICE for PROJECT_LOWER_CHOICE in PROJECT_LOWER_CHOICES]
 		return Response(ret,status=status.HTTP_200_OK)
 
 class SetDocumentFormatView(APIView):
@@ -931,6 +935,28 @@ class GetReceiptGeneralRemarksView(APIView):
 		return Response(ret, status=status.HTTP_200_OK)
 
 #project
+
+class GetProjectStatusListView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get project status list", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_201_CREATED: ListProjectStatusResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret['result']=True
+		project_status_list=PROJECT_STATUS
+		ret["project_status_list"]=project_status_list
+		return Response(ret, status=status.HTTP_200_OK)
 
 class GetProjectListView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -1612,6 +1638,8 @@ class GenerateProjectReceipt(APIView):
 		pdf.close()
 		os.remove("out.pdf")
 		#os.remove(doc_header_path)
+		ProjectReceipt.objects.get_or_create(project=project,receipt_id=charging_stage_id)
+		
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 	
@@ -2057,6 +2085,49 @@ class RemoveProjectRoomItemView(APIView):
 			ret["reason"]="Permission Denied"
 			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
+class PreCalRoomTypeFormulaView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=RoomType
+	serializer_class=PreCalRoomTypeFormulaSerializer
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Pre-calculate room type formula", 
+		security=[{'Bearer': []}],
+		request_body=PreCalRoomTypeFormulaSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: PreCalRoomTypeFormulaResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		serialized=PreCalRoomTypeFormulaSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		try:
+			result=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Room type not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		ret["formula"]=(result)
+		return Response(ret,status=status.HTTP_200_OK)
+
 class PreCalProjectRoomItemFormulaView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -2097,7 +2168,7 @@ class PreCalProjectRoomItemFormulaView(APIView):
 			ret["result"]=False
 			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
-		ret["formula"](result)
+		ret["formula"]=(result)
 		return Response(ret,status=status.HTTP_200_OK)
 
 
@@ -2771,6 +2842,19 @@ class CreateProjectExpenseView(APIView):
 	serializer_class=CreateProjectExpenseSerializer
 	renderer_classes=[APIRenderer]
 
+	@swagger_auto_schema(
+		operation_description="Create a project expense", 
+		security=[{'Bearer': []}],
+		request_body=CreateProjectExpenseSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CreateProjectExpenseResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret["result"]=True
@@ -2892,9 +2976,9 @@ class GetProjectProfitAnalysisView(APIView):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		if data.get("id"):
+		if data.get("project_id"):
 			try:
-				project=Project.objects.get(id=data.get("id"))
+				project=Project.objects.get(id=data.get("project_id"))
 			except ObjectDoesNotExist:
 				ret["result"]=False
 				ret["reason"]="Project not found"
@@ -2910,5 +2994,5 @@ class GetProjectProfitAnalysisView(APIView):
 
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
-			raise ValidationError("Missing id")
+			raise ValidationError("Missing project_id")
 

@@ -91,7 +91,7 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 class SetRoomItemSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=RoomItem
-		fields=("item","room","unit_price","value","quantity","remark")
+		fields=("item","room","material","unit_price","value","quantity","remark")
 
 	def create(self,validated_data):
 		user = None
@@ -114,6 +114,7 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 						raise ValidationError("Item value missing: "+item_property.symbol)
 			data["value"]=_value
 			data["quantity"]=validated_data["quantity"]
+			data["material"]=validated_data["material"]
 			if validated_data.get("remark"):
 				data["remark"]=validated_data["remark"]
 			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
@@ -157,6 +158,32 @@ class GetRoomItemRequestSerializer(serializers.ModelSerializer):
 
 class GetRoomTypeRequestSerializer(serializers.Serializer):
 	room_type=serializers.IntegerField()
+
+class PreCalRoomTypeFormulaSerializer(serializers.ModelSerializer):
+	value=serializers.JSONField(required=True)
+
+	class Meta:
+		model = Room
+		fields=["room_type","value"]
+
+	def create(self,validated_data):
+		user=None
+		request=self.context.get("request")
+		if request and hasattr(request,"user"):
+			user=request.user
+
+		try:
+			Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			raise ValidationError("Please create a company first")
+
+		formulas=RoomTypeFormula.objects.filter(room_type=validated_data["room_type"])
+		ret={}
+
+		for formula in formulas:
+			ret[formula.name]=formula.cal(value=validated_data["value"])
+
+		return ret
 
 class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 	value=serializers.JSONField(required=True)
@@ -233,6 +260,10 @@ class SetProjectRoomItemResponseSerializer(serializers.Serializer):
 	room_item_id=serializers.IntegerField()
 
 class PreCalProjectRoomItemFormulaResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	formula=serializers.DictField(child=serializers.FloatField())
+
+class PreCalRoomTypeFormulaResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	formula=serializers.DictField(child=serializers.FloatField())
 

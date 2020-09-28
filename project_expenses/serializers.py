@@ -3,6 +3,11 @@ from .models import ExpenseType,ProjectExpense
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist, ValidationError
+from common.fields import Base64ImageField
+
+from companies.models import Company
+from projects.models import Project
+
 
 class ExpenseTypeJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
@@ -13,12 +18,15 @@ class GetExpenseTypeListResponseSerializer(serializers.Serializer):
 	expense_types=ExpenseTypeJsonSerializer(many=True)
 
 class CreateProjectExpenseSerializer(serializers.ModelSerializer):
+	img=Base64ImageField(
+		max_length=None, use_url=True,required=False,allow_null=True
+	)
 
 	class Meta:
 		model=ProjectExpense
-		fields=("name","project","expense_type","price","pic","remark","pay_date")
+		fields=("name","project","expense_type","price","pic","remark","pay_date", "img")
 
-	def create(self, validation_data):
+	def create(self, validated_data):
 		user = None
 		request = self.context.get("request")
 		if request and hasattr(request, "user"):
@@ -27,12 +35,12 @@ class CreateProjectExpenseSerializer(serializers.ModelSerializer):
 		if not company:
 			raise ValidationError("You must create a company first.")
 
-		project=get_object_or_404(Project,id=instance)
+		project=validated_data["project"]
 
 		if user==project.company.owner:
-			project_expense=ProjectExpense.objects.create(**validation_data)
+			project_expense=ProjectExpense.objects.create(**validated_data)
 
-			return project_milestone
+			return project_expense
 		else:
 			raise PermissionDenied
 
@@ -46,12 +54,17 @@ class CreateProjectExpenseResponseSerializer(serializers.Serializer):
 	project_expense_id=serializers.IntegerField()
 
 class UpdateProjectExpenseSerializer(serializers.ModelSerializer):
+	project_expense=serializers.IntegerField()
+	img=Base64ImageField(
+		max_length=None, use_url=True,required=False,allow_null=True
+	)
+	expense_type=serializers.IntegerField(required=False)
 
 	class Meta:
 		model=ProjectExpense
-		fields=("name","expense_type","price","pic","remark","pay_date")
+		fields=("project_expense","name","expense_type","price","pic","remark","pay_date", "img")
 
-	def update(self,instance,validation_data):
+	def update(self,instance,validated_data):
 		user = None
 		request = self.context.get("request")
 		if request and hasattr(request, "user"):
@@ -66,14 +79,23 @@ class UpdateProjectExpenseSerializer(serializers.ModelSerializer):
 			if validated_data.get("name"):
 				project_expense.name=validated_data["name"]
 			if validated_data.get("expense_type"):
-				project_expense.expense_type=validated_data["expense_type"]
+				try:
+					expense_type=ExpenseType.objects.get(id=validated_data["expense_type"])
+				except ObjectDoesNotExist:
+					raise ValidationError("Expense Type not found")
+				project_expense.expense_type=expense_type
 			if validated_data.get("pic"):
 				project_expense.pic=validated_data["pic"]
+			if validated_data.get("price"):
+				project_expense.price=validated_data["price"]
 			if validated_data.get("pay_date"):
 				project_expense.pay_date=validated_data["pay_date"]
 			if validated_data.get("remark"):
 				project_expense.remark=validated_data["remark"]
+			if validated_data.get("img",False)!=False:
+				project_expense.img=validated_data["img"]
 			project_expense.save()
+			return project_expense
 		else:
 			raise PermissionDenied
 
