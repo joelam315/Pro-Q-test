@@ -1,4 +1,5 @@
 import os
+import logging
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views
@@ -16,12 +17,13 @@ from rest_framework_simplejwt import authentication
 
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
-from common.access_decorators_mixins import admin_login_required, app_login_required
+from common.access_decorators_mixins import admin_login_required, app_login_required, AdminAccessRequiredMixin
 from django.http import HttpResponse
 import json
 from companies.models import Company
-
 app_name = 'crm'
+
+logger = logging.getLogger(__name__)
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -59,8 +61,10 @@ def protected_serve(request, path, document_root=None, show_indexes=False):
             raise PermissionDenied
 
     raise PermissionDenied
-    
-    
+ 
+
+
+        
 
 
 urlpatterns = [
@@ -94,8 +98,7 @@ urlpatterns = [
     path('api/',include('api.urls',namespace="api")),
     url(r'^%s(?P<path>.*)$' % settings.MEDIA_URL[1:], admin_serve, {'document_root': settings.MEDIA_ROOT}),
     url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
-    url(r'^api/%s(?P<path>.*)$' % settings.MEDIA_URL[1:], protected_serve, {'document_root': settings.MEDIA_ROOT})
-    
+    url(r'^api/%s(?P<path>.*)$' % settings.MEDIA_URL[1:], protected_serve, {'document_root': settings.MEDIA_ROOT}),
     
 
 ]#+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

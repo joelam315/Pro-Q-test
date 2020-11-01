@@ -132,7 +132,8 @@ class ItemTypeDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailVie
 
 	def get_context_data(self, **kwargs):
 		context = super(ItemTypeDetailView, self).get_context_data(**kwargs)
-		context['item_type_material']=self.object.item_type_materials.all()
+		#context['item_type_material']=self.object.item_materials
+		#context['item_type_material']=self.object.item_type_materials.all()
 		return context
 
 class UpdateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
@@ -189,7 +190,7 @@ class UpdateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateVie
 	def get_context_data(self, **kwargs):
 		context = super(UpdateItemTypeView, self).get_context_data(**kwargs)
 		context["item_type_obj"] = self.object
-		context["item_type_material_objs"]=self.object.item_type_materials.all()
+		#context["item_type_material_objs"]=self.object.item_type_materials.all()
 		if (self.request.user.role != "ADMIN" and not self.request.user.is_superuser):
 			raise PermissionDenied
 

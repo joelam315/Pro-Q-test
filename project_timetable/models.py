@@ -41,6 +41,7 @@ class ProjectMilestone(models.Model):
 	description=models.TextField(blank=True,null=True)
 	img=models.FileField(
         max_length=1000, upload_to=milestone_img_url, null=True, blank=True)
+	img_upload_date=models.DateField(null=True)
 
 	def __str__(self):
 		return str(self.project)+" milestone "+str(self.id) +" "+self.name
@@ -58,4 +59,11 @@ class ProjectMilestone(models.Model):
 		)
 		if self.img:
 			ret["img_path"]="api/media/"+str(self.img)
+		return ret
+
+	def img_record(self):
+		ret=dict()
+		if self.img:
+			ret["img_path"]="api/media/"+str(self.img)
+			ret["date"]=self.img_upload_date
 		return ret

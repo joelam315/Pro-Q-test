@@ -1,3 +1,4 @@
+from datetime import datetime
 from .models import ProjectWork, ProjectMilestone
 from companies.models import Company
 from projects.models import Project
@@ -95,7 +96,9 @@ class CreateProjectMilestoneSerializer(serializers.ModelSerializer):
 
 		if user==project.company.owner:
 			project_milestone=ProjectMilestone.objects.create(**validated_data)
-
+			if validated_data.get("img",False)!=False:
+				project_milestone.img_upload_date=datetime.now()
+				project_milestone.save()
 			return project_milestone
 		else:
 			raise PermissionDenied
@@ -133,6 +136,9 @@ class UpdateProjectMilestoneSerializer(serializers.ModelSerializer):
 				project_milestone.description=validated_data["description"]
 			if validated_data.get("img",False)!=False:
 				project_milestone.img=validated_data["img"]
+				project_milestone.img_upload_date=datetime.now()
+			elif validated_data.get("img")==None:
+				project_milestone.img_upload_date=None
 			project_milestone.save()
 			return project_milestone
 		else:

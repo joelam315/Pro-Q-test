@@ -27,6 +27,7 @@ class ItemProperty(models.Model):
 
 class ItemType(models.Model):
 	name=models.CharField(max_length=50)
+	item_type_materials=JSONField(null=True,blank=True)
 	is_active=models.BooleanField(default=True)
 
 	def __str__(self):
@@ -40,7 +41,7 @@ class ItemType(models.Model):
 
 class ItemTypeMaterial(models.Model):
 	name=models.CharField(max_length=50)
-	item_type=models.ForeignKey(ItemType,related_name="item_type_materials",on_delete=models.PROTECT)
+	item_type=models.ForeignKey(ItemType,related_name="item_type_materials_s",on_delete=models.PROTECT)
 	value_based_price=models.DecimalField(
         max_digits=12, decimal_places=2)
 	is_active=models.BooleanField(default=True)

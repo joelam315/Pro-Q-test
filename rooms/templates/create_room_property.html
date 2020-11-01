@@ -63,20 +63,99 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
+            <div id="div_custom_properties" class="col-md-12" style="display:{% ifequal room_property_obj.data_type 'custom property' %}block{% else %}none{% endifequal %};">
               <div class="filter_col col-md-12">
+
+                <div class="form-group">
+                  <label for="exampleInputEmail1" class="required">Custom Properties{% if room_property_form.custom_properties.field.required %}<span class="error">*</span>{% endif %}</label>
+                  <div class="col-sm-12" style="display: flex;">
+                    <div class="col-sm-10">
+                      <div class="row marl buttons_row text-center form_btn_row">
+                        <div class="col-sm-10" style="display: flex;">
+                          <label class="col-md-2" style="align-self: center;">Name</label>
+                          <input id="add_custom_property_name" class="assigned_users form-control col-md-3" />
+                          <label class="col-md-2" style="align-self: center;">Symbol</label>
+                          <input id="add_custom_property_symbol" class="assigned_users form-control col-md-3" />
+                        </div>
+                      </div>
+                      <div class="row marl buttons_row text-center form_btn_row">
+                        <div class="col-sm-10" style="display: flex;">
+                          <label class="col-md-2" style="align-self: center;">Data Type</label>
+                          <select id="add_custom_property_data_type" class="assigned_users form-control col-md-3">
+                            {% for obj in sub_data_type %}
+                            <option value="{{obj.0}}">{{obj.1}}</option>
+                            {% endfor %}
+                          </select>
+                          <label class="col-md-2" style="align-self: center;">Group ID</label>
+                          <input id="add_custom_property_group_id" class="assigned_users form-control col-md-3" />
+                          <span class="error" id="id__custom_properties">{{ room_property_form.custom_properties.errors }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-2" style="display: flex;">
+                      <div class="col-md-2 row marl buttons_row form_btn_row text-center">
+                        <button type="button" class="btn btn-default save" id="add_custom_property" onclick="addCustomPropertyToList()">Add</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div class="form-group">
                   <div class="row">
                     <div class="filter_col col-md-12">
-                      <label for="exampleInputEmail1" class="required">Custom Properties{% if room_property_form.custom_properties.field.required %}<span
-                                class="error">*</span>{% endif %}</label>
-                      {{ room_property_form.custom_properties }}
+                      
+                      <table id="table_custom_properties" class="table table-hover">
+                        <thead>
+                          <th>Name</th>
+                          <th>Symbol</th>
+                          <th>Data Type</th>
+                          <th>Group ID</th>
+                          <th>Action</th>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                      </table>
+                      <input id="id_custom_properties" type="hidden" name="custom_properties">
                       <span class="error">{{ room_property_form.custom_properties.errors }}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            {% if room_property_obj %}
+            <div class="col-md-12" style="display:{% ifequal room_property_obj.data_type 'custom property' %}block{% else %}none{% endifequal %};">
+              <div class="row marl buttons_row text-center form_btn_row">
+                <div class="filter_col col-md-12">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1" class="required">Custom Property Formulas</label>
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <table class="table table-hover" id="table_custom_property_formula" {% if not room_property_obj.custom_property_formulas or room_property_obj.custom_property_formulas == None  %}style="display:none"{% endif %}>
+                          <thead>
+                            <tr>
+                              <th scope="col" width="10%">#</th>
+                              <th scope="col" width="30%">Name</th>
+                              <th scope="col" width="30%">Formula</th>
+                              <th scope="col" width="20%">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <input id="id_custom_property_formulas" type="hidden" name="custom_property_formulas">
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addModal">
+                          Add Custom Property Formula
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
             <input type="hidden" id="save_new_form" name="savenewform">
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
@@ -95,7 +174,132 @@
 
   </div>
 </form>
+{% if room_property_obj %}
+<!-- Add Formula Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">Add Custom Property Formula</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+        <div class="modal-body">
+            <div class="col-md-12">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Name
+                            <span class="error_marker" style="color:red"> * </span>
+                          </label>
+                          <input type="text" id="add_custom_property_formula_name" placeholder="Name" class="form-control" />
+                          <span class="error"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-12">
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Formula
+                      <span class="error_marker" style="color:red"> * </span>
+                    </label>
+                    <textarea name="custom_property_formula" class="form-control" placeholder="Custom Property Formula" required="" id="add_custom_property_formula_formula"></textarea>
+                    <span class="error" id="id__add_custom_property_formula_formula"></span>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="create_custom_property_formula" class="btn btn-primary" onclick="addCustomPropertyFormula()">Add</button>
+        </div>
+    </div>
+  </div>
+</div>
 
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Edit Custom Property Formula</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+        <div class="modal-body">
+            <div class="col-md-12">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-4">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required">Name<span
+                              class="error">*</span></label>
+                          <input type="text" id="edit_custom_property_formula_name" placeholder="Name" class="form-control" />
+                          <span class="error"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+                <div class="col-md-12">
+                  {% if request.user.role == "ADMIN" or request.user.is_superuser %}
+                  <div class="form-group col-md-12">
+                    <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
+                    <textarea name="custom_property_formula" class="form-control" placeholder="Custom Property Formula" required="" id="edit_custom_property_formula_formula"></textarea>
+                    <span class="error" id="id__edit_custom_property_formula_formula"></span>
+                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="edit_custom_property_formula" class="btn btn-primary">Update</button>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Modal -->
+<div class="modal fade" id="removeModalCenter" tabindex="-1" role="dialog" aria-labelledby="removeModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeModalLongTitle">Alert</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        It will remove the custom property formula. Do you confirm to do this?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" style="background-color: #dc3545;border-color: #dc3545;">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 {% block js_block %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
@@ -106,10 +310,193 @@
     $("#save_new_form").val('true')
     $('#add_form').submit()
   });
-  $(document).ready(function () {
 
+  $(document).ready(function () {
+    initCP();
+    initCPF();
+    updateCPTable();
+    updateCPFTable();
   });
 
+  $("#id_data_type").on('change',function() {
+
+    if(this.value=="custom property"){
+      $("#div_custom_properties").css("display", "block");
+    }
+    else{
+      $("#div_custom_properties").css("display", "none");
+    }
+  });
+
+  function decode(str) {
+    str=str.replace(/&#(\d+);/g, function(match, dec) {
+      return String.fromCharCode(dec);
+    });
+    return str.replace(/&quot;/g, '\\"');
+  }
+
+  var cp_str=decode("{{room_property_obj.custom_properties}}").replaceAll("'",'"');
+  $('#id_custom_properties').val(cp_str);
+  var cp;
+
+
+  var cpf_str=decode("{{room_property_obj.custom_property_formulas}}").replaceAll("'",'"');
+  $('#id_custom_property_formulas').val(cpf_str);
+  var cpf;
+  var cur;
+
+  function initCP(){
+    if(cp_str=="None" || cp_str==""){
+      cp=[]
+    }
+    else{
+      cp=JSON.parse(cp_str);
+      console.log(cp);
+    }
+  }
+
+  function initCPF(){
+    if(cpf_str=="None" || cpf_str==""){
+      cpf=[]
+    }
+    else{
+      cpf=JSON.parse(cpf_str);
+      console.log(cpf);
+    }
+  }
+
+  function updateCPTable(){
+    //console.log(cp_str);
+    var tbody=$("#table_custom_properties tbody");
+    var content="";
+    if(Object.keys(cp).length==0){
+      tbody.html("<td colspan='2'>There is no custom property</td>");
+    }
+    else{
+      for(i in cp){
+        content+="<tr><td>"+cp[i].name+"</td><td>"+cp[i].symbol+"</td><td>"+cp[i].data_type+"</td><td>"+cp[i].group_id+"</td><td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+i+"' onclick='removeCustomProertyFromList("+i+")'>X</button></td></tr>\n";
+      }
+      tbody.html(content);
+    }
+    
+    console.log(tbody);
+  }
+
+  function updateCPFTable(){
+    console.log(cpf_str);
+    var tbody=$("#table_custom_property_formula tbody");
+    var content="";
+    if(Object.keys(cpf).length==0){
+      tbody.html("<td colspan='2'>There is no custom property formula</td>");
+    }
+    else{
+      for(i in cpf){
+        content+="<tr id='row_"+(parseInt(i)+1)+"'>"+
+          "<th scope='row'>"+(parseInt(i)+1)+"</th>"+
+          "<td>"+cpf[i].name+"</td>"+
+          "<td>"+cpf[i].formula+"</td>"+
+          "<td><button type='button' class='btn btn-success edit' title='Edit' data-toggle='modal' data-target='#editModal' data-editid='"+i+"' data-editname='"+cpf[i].name+"' data-editformula='"+cpf[i].formula+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;'  data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-remove=\""+i+"\"><i class='fas fa-trash-alt'></i></button></td>"+
+        "</tr>\n";
+      }
+      tbody.html(content);
+    }
+    
+    console.log(tbody);
+  }
+
+  function resetAddCPInput(){
+    $("#add_custom_property_symbol").val("");
+    $("#add_custom_property_data_type").prop('selectedIndex',0);
+  }
+
+  function addCustomPropertyToList(){
+    var name=$("#add_custom_property_name").val();
+    var symbol=$("#add_custom_property_symbol").val();
+    var data_type=$("#add_custom_property_data_type").val();
+    var group_id=$("#add_custom_property_group_id").val();
+    cp.push({"name":name,"symbol":symbol,"data_type":data_type,"group_id":group_id});
+    $("#id_custom_properties").val(JSON.stringify(cp));
+    updateCPTable();
+    resetAddCPInput();
+  }
+
+  function removeCustomProertyFromList(i){
+    //console.log(cp);
+    cp.splice(i,1);
+    //console.log(cp);
+    $("#id_custom_properties").val(JSON.stringify(cp));
+    updateCPTable()
+  }
+
+  //Custom Property Formula Start
+
+  function addCustomPropertyFormula(){
+
+    document.getElementById("table_custom_property_formula").removeAttribute("style");
+    var name=$('#add_custom_property_formula_name').val();
+    var formula=$('#add_custom_property_formula_formula').val();
+    cpf.push({"name":name,"formula":formula});
+    clearCustomPropertyFormula();
+    $("#id_custom_property_formulas").val(JSON.stringify(cpf));
+    updateCPFTable();
+    $('#addModal').modal('hide');
+  }
+
+  $('#editModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var name=button.data('editname')
+    var formula=button.data('editformula')
+    var id=button.data('editid')
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    cur=name
+    modal.find('#edit_custom_property_formula_name').val(name)
+    modal.find('#edit_custom_property_formula_formula').val(formula)
+    modal.find('.btn-primary').attr('onclick','updateCustomPropertyFormula(\"'+id+'\")')
+  })
+
+
+  function updateCustomPropertyFormula(id){
+    var name=$("#edit_custom_property_formula_name").val();
+    var formula=$('#edit_custom_property_formula_formula').val()
+
+    cpf[id]={"name":name,"formula":formula};
+    $("#id_custom_property_formulas").val(JSON.stringify(cpf));
+    updateCPFTable();
+    $('#editModal').modal('hide');
+  }
+
+  function clearCustomPropertyFormula(){
+    $('#add_custom_property_formula_name').val('');
+    $('#add_custom_property_formula_formula').val('');
+  }
+
+  $('#removeModalCenter').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget); // Button that triggered the modal
+    var id=button.data('remove');
+    //var id = button.data('removeid') // Extract info from data-* attributes
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this);
+    modal.find('.btn-danger').attr('onclick','removeCustomPropertyFormula(\"'+id+'\")');
+  })
+
+  function removeCustomPropertyFormula(i){
+      //console.log(id);
+      var tbody=$("#table_custom_property_formula tbody").parent();
+      cpf.splice(i,1);
+      $("#id_custom_property_formulas").val(JSON.stringify(cpf));
+      updateCPFTable();
+      console.log(tbody.children().length);
+      if(tbody.children().length<=0){
+
+        tbody.parent().attr("style","display:none");
+      }
+      $('#removeModalCenter').modal('hide');
+    }
+
+//Custom Property Formula End
 
 </script>
 {% endblock js_block %}

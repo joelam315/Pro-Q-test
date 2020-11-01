@@ -28,6 +28,7 @@ class ItemTypeForm(forms.ModelForm):
         model = ItemType
         fields = (
             'name',
+            'item_type_materials',
             'is_active'
         )
 

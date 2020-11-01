@@ -14,7 +14,6 @@ from contacts.models import Contact
 from teams.models import Teams
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES, PROJECT_LOWER_CHOICES
 
-
 class Tags(models.Model):
     name = models.CharField(max_length=20)
     slug = models.CharField(max_length=20, unique=True, blank=True)
@@ -153,6 +152,14 @@ class Company(models.Model):
             else:
                 address += self.get_billing_country_display()
         return address
+
+    def get_project_comparison(self):
+        project_comparison=self.project_comparison
+        ret=[]
+        for project in project_comparison.projects.all():
+            profit_analysis=project.profit_analyse_for_compare()
+            ret.append(profit_analysis)
+        return ret
 
     @property
     def created_on_arrow(self):

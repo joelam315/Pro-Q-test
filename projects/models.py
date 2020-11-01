@@ -172,12 +172,14 @@ class Project(models.Model):
         total=self.total_amount()
         receipts=self.project_receipt_records.all()
         for charging_stage in charging_stages:
-            items.append({"value":charging_stage["value"],"description": charging_stage["description"] if charging_stage.get("description") else "","sum_price":(total*decimal.Decimal(charging_stage["value"])/100)})
+            received=ProjectReceipt.objects.filter(project=self,receipt_id=i).exists()
+            items.append({"value":charging_stage["value"],"description": charging_stage["description"] if charging_stage.get("description") else "","sum_price":(total*decimal.Decimal(charging_stage["value"])/100),"received":received})
             try:
                 receipt=receipts.get(receipt_id=len(items))
                 items[-1]["date"]=receipt.generated_on.strftime("%Y-%m-%d")
             except ObjectDoesNotExist:
                 pass
+            i+=1
         return items
     def all_expense(self):
         items={}
@@ -268,6 +270,11 @@ class Project(models.Model):
             receipt_no+=number2alphabet(self.job_no) 
 
         return receipt_no
+    def list_charging_stage_amounts(self):
+        ret=[]
+        for charging_stage in self.charging_stages:
+            ret.append({"value":charging_stage["value"],"price":((float)(self.total_amount())*charging_stage["value"]/100)})
+        return ret
     def quot_preview(self):
         ret=dict(
             job_no=self.document_format["project_upper_format"],
@@ -276,10 +283,13 @@ class Project(models.Model):
             charging_stages=self.charging_stages,
             general_remarks=self.quotation_remarks,
             quotation_no=self.generate_quot_no(),
-            customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
+            work_location=self.work_location,
+            customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None,
+            can_update_charging_stage=False if not self.quotation_generated_on else True
         )
         if self.document_format["project_lower_format"]=="Number":
             ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
+        ret["total_price"]=sum(ret["items"][item]["sum_price"] for item in ret["items"])
         return ret 
 
     def invoice_preview(self,stage_id):
@@ -291,6 +301,7 @@ class Project(models.Model):
             charging_stage=self.charging_stages[stage_id],
             general_remarks=self.invoice_remarks,
             invoice_no=self.generate_invoice_no(),
+            work_location=self.work_location,
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
         if self.document_format["project_lower_format"]=="Number":
@@ -305,6 +316,7 @@ class Project(models.Model):
             charging_stage=self.charging_stages[stage_id],
             general_remarks=self.receipt_remarks,
             receipt_no=self.generate_receipt_no(),
+            work_location=self.work_location,
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
         if self.document_format["project_lower_format"]=="Number":
@@ -326,10 +338,37 @@ class Project(models.Model):
             gross_profit_margin=0 if total_income==0 else ((float)((total_income-total_outcome)/total_income))*100
         )
         return ret
+
+    def profit_analyse_for_compare(self):
+        income=self.all_charging_stages()
+        outcome=self.all_expense()
+
+        total_income=self.total_amount()
+
+        total_outcome=sum(outcome[item]["sum_price"] for item in outcome.keys())
+
+        ret=dict(
+            project_id=self.id,
+            project_title=self.project_title,
+            job_no=self.document_format["project_upper_format"],
+            total_income=total_income,
+            total_outcome=total_outcome,
+            gross_profit_margin=0 if total_income==0 else ((float)((total_income-total_outcome)/total_income))*100
+        )
+        if self.document_format["project_lower_format"]=="Number":
+            ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
+        return ret
+
     @property
     def created_on_arrow(self):
         return arrow.get(self.created_on).humanize()
 
+class CompanyProjectComparison(models.Model):
+    company=models.OneToOneField(Company,on_delete=models.CASCADE,related_name='project_comparison')
+    projects=models.ManyToManyField(Project,blank=True,related_name="compared_project_record")
+
+    def __str__(self):
+        return str(self.company)+"'s Comparison"
 
 class ProjectHistory(models.Model):
     """Model definition for ProjectHistory.

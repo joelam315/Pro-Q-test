@@ -276,7 +276,7 @@ class SetInvoiceGeneralRemarkSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
-		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
+		general_remark=InvoiceGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
 		return general_remark[0]
 
 
@@ -305,5 +305,5 @@ class SetReceiptGeneralRemarkSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
-		general_remark=QuotationGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
+		general_remark=ReceiptGeneralRemark.objects.update_or_create (company=company,index=validated_data["index"],defaults={"content":validated_data["content"]})
 		return general_remark[0]

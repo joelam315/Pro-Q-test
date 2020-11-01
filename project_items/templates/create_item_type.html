@@ -49,7 +49,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-12">
+            <!--<div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
                 <div class="form-group">
                   <label for="exampleInputEmail1">Item Type Materials{% if item_type_form.item_type_materials.field.required %}<span
@@ -58,7 +58,7 @@
                   <span class="error">{{ item_type_form.item_type_materials.errors }}</span>
                 </div>
               </div>
-            </div>
+            </div>-->
             {% if item_type_obj %}
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
@@ -66,7 +66,7 @@
                   <div class="form-group">
                     <div class="row">
                       <div class="filter_col col-md-12">
-                        <table class="table table-hover" id="table_item_type_material" {% if item_type_material_objs|length <= 0 %}style="display:none"{% endif %}>
+                        <table class="table table-hover" id="table_item_type_material" {% if item_type_obj.item_type_materials == "{}"  %}style="display:none"{% endif %}>
                           <thead>
                             <tr>
                               <th scope="col" width="15%">#</th>
@@ -77,7 +77,7 @@
                             </tr>
                           </thead>
                           <tbody>
-                            {% for item_type_material_obj in item_type_material_objs %}
+                            {% for item_type_material in item_type_obj.item_type_materials %}
                             <tr id="row_{{ item_type_material_obj.id }}">
                               <th scope='row'>{{forloop.counter}}</th>
                               <td>{{item_type_material_obj.name}}</td>
@@ -89,6 +89,8 @@
                             {% endfor %}
                           </tbody>
                         </table>
+                        <input id="id_item_type_materials" type="hidden" name="item_type_materials">
+                        <span class="error">{{ item_type_obj.item_type_materials.errors }}</span>
                       </div>
                     </div>
                     <div class="row">
@@ -132,7 +134,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="item_type_material_form" method="POST" action='{% url 'project_items:add_item_type_material' %}'>
+        <form id="add_item_type_material_form">
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
@@ -141,21 +143,20 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Name{% if item_type_material_form.name.field.required %}<span
-                              class="error">*</span>{% endif %}</label>
-                          {{ item_type_material_form.name }}
-                          <span class="error">{{ item_type_material_form.name.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Name
+                            <span class="error_marker" style="color:red"> * </span>
+                          </label>
+                          <input type="text" id="add_item_type_material_name" placeholder="Name" class="form-control" required="" />
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
                   </div>
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
-                    <label for="inputZip">Value Based Price{% if item_type_material_form.value_based_price.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ item_type_material_form.value_based_price }}
-                    <span class="error" id="id__price">{{ item_type_material_form.value_based_price.errors }}</span>
-                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                    <label for="inputZip">Value Based Price<span class="error_marker" style="color:red"> * </span></label>
+                    <input type="number" name="value_based_price" class="form-control" placeholder="Value based price" required="" id="add_item_type_material_value_based_price">
+                    <span class="error" id="id__price"></span>
                   </div>
                   {% endif %}
                 </div>
@@ -164,11 +165,10 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Is Active{% if item_type_material_form.is_active.field.required %}<span
-                                    class="error">*</span>{% endif %}</label>
-                          {{ item_type_material_form.is_active }}
-                          <input type="hidden" value={{ item_type_obj.id }} name="item_type">
-                          <span class="error">{{ item_type_material_form.is_active.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Is Active</label>
+                          <input type="checkbox" name="is_active" class="form-control" style="width:auto;" placeholder="Is active" id="add_item_type_material_is_active" checked="">
+                          <input type="hidden" value="1" name="item_type">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -197,7 +197,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="edit_item_type_material_form" method="POST" action="/project_items/item_type_material/edit/">
+      <form id="edit_item_type_material_form">
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
@@ -206,21 +206,18 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Name{% if item_type_material_form.name.field.required %}<span
-                              class="error">*</span>{% endif %}</label>
-                          {{ item_type_material_form.name }}
-                          <span class="error">{{ item_type_material_form.name.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Name<span class="error">*</span></label>
+                          <input type="text" name="name" class="form-control" placeholder="Name" required="" id="edit_item_type_material_name">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
                   </div>
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
-                    <label for="inputZip">Value Based Price{% if item_type_material_form.value_based_price.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ item_type_material_form.value_based_price }}
-                    <span class="error" id="id__price">{{ item_type_material_form.value_based_price.errors }}</span>
-                    <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
+                    <label for="inputZip">Value Based Price<span class="error_marker" style="color:red"> * </span></label>
+                    <input type="number" name="value_based_price" class="form-control" placeholder="Value based price" required="" id="edit_item_type_material_value_based_price">
+                    <span class="error" id="id__price"></span>
                   </div>
                   {% endif %}
                 </div>
@@ -229,11 +226,10 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Is Active{% if item_type_material_form.is_active.field.required %}<span
-                                    class="error">*</span>{% endif %}</label>
-                          {{ item_type_material_form.is_active }}
-                          <input type="hidden" value={{ item_type_obj.id }} name="item_type">
-                          <span class="error">{{ item_type_material_form.is_active.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Is Active</label>
+                          <input type="checkbox" name="is_active" class="form-control" style="width:auto;" placeholder="Is active" id="edit_item_type_material_is_active">
+                          <input type="hidden" value="1" name="item_type">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -277,6 +273,7 @@
 {% block js_block %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 <script type="text/javascript">
+  console.log("{{ item_type_obj.item_type_materials }}");
   var curId=-1;
   $(".savenew").on('click', function (e) {
     e.preventDefault()
@@ -284,11 +281,12 @@
     $('#add_form').submit()
   });
   $(document).ready(function () {
-
+    initITM();
+    updateITMTable();
   });
 
-    $('#item_type_material_form').submit(function() { // catch the form's submit event
-      $.ajax({ // create an AJAX call...
+    $('#add_item_type_material_form').submit(function() { // catch the form's submit event
+      /*$.ajax({ // create an AJAX call...
           data: $(this).serialize(), // get the form data
           type: $(this).attr('method'), // GET or POST
           url: $(this).attr('action'), // the file to call
@@ -296,12 +294,13 @@
             console.log(response);
             addItemTypeMaterial(response.id);
           }
-      });
+      });*/
+      addItemTypeMaterial();
       return false;
   });
 
   $('#edit_item_type_material_form').submit(function() { // catch the form's submit event
-      $.ajax({ // create an AJAX call...
+      /*$.ajax({ // create an AJAX call...
           data: $(this).serialize(), // get the form data
           type: $(this).attr('method'), // GET or POST
           url: $(this).attr('action')+curId, // the file to call
@@ -309,22 +308,73 @@
             console.log(response);
             updateItemTypeMaterial(response.id);
           }
-      });
+      });*/
+      updateItemTypeMaterial(curId);
       return false;
   });
+
+  function decode(str) {
+    str=str.replace(/&#(\d+);/g, function(match, dec) {
+      return String.fromCharCode(dec);
+    });
+    return str.replace(/&quot;/g, '\\"');
+  }
+
+  var itm_str=decode("{{item_type_obj.item_type_materials}}").replaceAll("'",'"');
+  $('#id_item_type_materials').val(itm_str);
+  var itm;
+
+  function initITM(){
+    console.log(itm_str);
+    if(itm_str=="None" || itm_str==""){
+      itm=[]
+    }
+    else{
+      itm=JSON.parse(itm_str);
+    }
+    console.log(itm);
+  }
+
+  function updateITMTable(){
+    var tbody=$("#table_item_type_material tbody");
+    var content="";
+    if(Object.keys(itm).length==0){
+      tbody.html("<td colspan='5'>There is no item material</td>");
+    }
+    else{
+      var n=0;
+      for(i in itm){
+        content+="<tr id=\"row_{{ item_type_material_obj.id }}\">"+
+                    "<th scope='row'>"+(parseInt(i)+1)+"</th>"+
+                    "<td>"+itm[i].name+"</td>"+
+                    "<td>"+itm[i].value_based_price+"</td>"+
+                    "<td>"+itm[i].is_active+"</td>"+
+                    "<td>"+
+                      "<button type=\"button\" class=\"btn btn-success edit\" title=\"Edit\" id=\"editId_{{ item_type_material_obj.id }}\" data-toggle=\"modal\" data-target=\"#editModal\" data-editid=\""+i+"\" data-editname=\""+itm[i].name+"\" data-editvaluebasedprice=\""+itm[i].value_based_price+"\" data-editisactive=\""+itm[i].is_active+"\">"+
+                          "<i class=\"fas fa-pencil-alt\"></i>"+
+                      "</button>"+
+                      "<button type=\"button\" class=\"btn btn-danger\" style=\"font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;\" id=\"removeId_"+i+"\" data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+i+"\">"+
+                        "<i class=\"fas fa-trash-alt\"></i>"+
+                      "</button>"+
+                    "</td>"+
+                  "</tr>";
+
+      }
+      tbody.html(content);
+    }
+    console.log(tbody);
+  }
 
   function addItemTypeMaterial(id){
 
     document.getElementById("table_item_type_material").removeAttribute("style");
-    document.getElementById("table_item_type_material").getElementsByTagName("tbody")[0].innerHTML+=
-    "<tr id='row_"+id+"'>"+
-      "<th scope='row'>"+$('#table_item_type_material tr').length+"</th>"+
-      "<td>"+$('#item_type_material_form #id_name').val()+"</td>"+
-      "<td>"+parseFloat($('#item_type_material_form #id_value_based_price').val())+"</td>"+
-      "<td>"+($('#item_type_material_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#item_type_material_form #id_name').val()+"' data-editvaluebasedprice='"+$('#item_type_material_form #id_value_based_price').val()+"' data-editisactive='"+($('#item_type_material_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
-    "</tr>";
+    var name=$('#add_item_type_material_name').val();
+    var value_based_price=$('#add_item_type_material_value_based_price').val();
+    var is_active=$('#add_item_type_material_is_active').is(':checked');
+    itm.push({"name":name,"value_based_price":value_based_price,"is_active":is_active?"True":"False"});
     clearItemTypeMaterial();
+    $("#id_item_type_materials").val(JSON.stringify(itm));
+    updateITMTable();
     $('#addModal').modal('hide');
   }
 
@@ -339,28 +389,30 @@
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
     curId=id
-    modal.find('#id_name').val(name)
-    modal.find('#id_value_based_price').val(value_based_price)
-    modal.find('#id_is_active').prop('checked', is_active=="True"?true:false);
-    modal.find('.btn-primary').attr('onclick','updateItemTypeMaterial('+id+')')
+    modal.find('#edit_item_type_material_name').val(name)
+    modal.find('#edit_item_type_material_value_based_price').val(value_based_price)
+    modal.find('#edit_item_type_material_is_active').prop('checked', is_active=="True"?true:false);
+    //modal.find('.btn-primary').attr('onclick','updateItemTypeMaterial('+id+')')
   })
 
 
   function updateItemTypeMaterial(id){
-    console.log($('#table_item_type_material #row_'+id).html(
-      "<th scope='row'>"+$('#table_item_type_material #row_'+id+' th').html()+"</th>"+
-      "<td>"+$('#edit_item_type_material_form #id_name').val()+"</td>"+
-      "<td>"+parseFloat($('#edit_item_type_material_form #id_value_based_price').val())+"</td>"+
-      "<td>"+($('#edit_item_type_material_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_item_type_material_form #id_name').val()+"' data-editvaluebasedprice='"+$('#edit_item_type_material_form #id_value_based_price').val()+"' data-editisactive='"+($('#edit_item_type_material_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
-    ));
+    
+    var name=$('#edit_item_type_material_name').val();
+    var value_based_price=$('#edit_item_type_material_value_based_price').val();
+    var is_active=$('#edit_item_type_material_is_active').is(':checked');
+    itm[id]={"name":name,"value_based_price":value_based_price,"is_active":is_active?"True":"False"};
+
+    $("#id_item_type_materials").val(JSON.stringify(itm));
+    updateITMTable();
+
     $('#editModal').modal('hide');
   }
 
   function clearItemTypeMaterial(){
-    $('#item_type_material_form #id_name').val('');
-    $('#item_type_material_form #id_value_based_price').val('');
-    $('#item_type_material_form #id_is_active').prop('checked', true);
+    $('#add_item_type_material_name').val('');
+    $('#add_item_type_material_value_based_price').val('');
+    $('#add_item_type_material_is_active').prop('checked', true);
   }
 
   $('#removeModalCenter').on('show.bs.modal', function (event) {
@@ -372,24 +424,18 @@
     modal.find('.btn-danger').attr('onclick','removeItemTypeMaterial('+id+')')
   })
 
-  function removeItemTypeMaterial(id){
-      console.log(id);
-      $.ajax({ // create an AJAX call...
-          data: {"pk":id}, // get the form data
-          type: "POST", // GET or POST
-          url: "{% url 'project_items:remove_item_type_material' %}", // the file to call
-          success: function(response) { // on success..
-            console.log(response);
-            var tbody=$("#row_"+id).parent();
-            $("#row_"+id).remove();
-            console.log(tbody.children().length);
-            if(tbody.children().length<=0){
+  function removeItemTypeMaterial(i){
+      console.log(i);
+      var tbody=$("#table_custom_property_formula tbody").parent();
+      itm.splice(i,1);
+      $("#id_item_type_materials").val(JSON.stringify(itm));
+      updateITMTable();
+      console.log(tbody.children().length);
+      if(tbody.children().length<=0){
 
-              tbody.parent().attr("style","display:none");
-            }
-            $('#removeModalCenter').modal('hide');
-          }
-      });
+        tbody.parent().attr("style","display:none");
+      }
+      $('#removeModalCenter').modal('hide');
     }
 
 

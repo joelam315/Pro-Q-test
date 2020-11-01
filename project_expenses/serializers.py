@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from .models import ExpenseType,ProjectExpense
 
 from django.shortcuts import get_object_or_404
@@ -39,7 +41,9 @@ class CreateProjectExpenseSerializer(serializers.ModelSerializer):
 
 		if user==project.company.owner:
 			project_expense=ProjectExpense.objects.create(**validated_data)
-
+			if validated_data.get("img",False)!=False:
+				project_expense.img_upload_date=datetime.now()
+				project_expense.save()
 			return project_expense
 		else:
 			raise PermissionDenied
@@ -94,6 +98,9 @@ class UpdateProjectExpenseSerializer(serializers.ModelSerializer):
 				project_expense.remark=validated_data["remark"]
 			if validated_data.get("img",False)!=False:
 				project_expense.img=validated_data["img"]
+				project_expense.img_upload_date=datetime.now()
+			elif validated_data.get("img")==None:
+				project_expense.img_upload_date=None
 			project_expense.save()
 			return project_expense
 		else:

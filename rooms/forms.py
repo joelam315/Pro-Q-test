@@ -5,7 +5,7 @@ from rooms.models import (
 
 
 class RoomTypeForm(forms.ModelForm):
-
+    
     def __init__(self, *args, **kwargs):
         super(RoomTypeForm, self).__init__(*args, **kwargs)
         for field in self.fields.values():
@@ -51,7 +51,8 @@ class RoomPropertyForm(forms.ModelForm):
             'name',
             'symbol',
             'data_type',
-            'custom_properties'
+            'custom_properties',
+            'custom_property_formulas'
         )
 
 class RoomTypeFormulaForm(forms.ModelForm):

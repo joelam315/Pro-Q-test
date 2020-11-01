@@ -2,6 +2,8 @@ import datetime
 import json
 import os
 import pdfkit
+import braintree
+import logging
 
 
 from django.shortcuts import get_object_or_404, redirect, render, reverse
@@ -9,6 +11,7 @@ from django.template.loader import render_to_string
 from django.http.response import HttpResponse, JsonResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
+from django.db.models import Q
 
 from common.models import User
 from common.serializers import (
@@ -51,7 +54,7 @@ from companies.serializers import (
 	GetGeneralRemarksSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES,PROJECT_LOWER_CHOICES
-from projects.models import Project, ProjectInvoice, ProjectReceipt
+from projects.models import Project, ProjectInvoice, ProjectReceipt,CompanyProjectComparison
 from projects.utils import ROOM_TYPE, PROJECT_STATUS
 from projects.serializers import (
 	CreateProjectSerializer, 
@@ -66,8 +69,16 @@ from projects.serializers import (
 	GetProjectAllItemResponseSerializer,
 	GetProjectAllRoomItemResponseSerializer,
 	GetProjectProfitAnalysisResponseSerializer,
-	ListProjectStatusResponseSerializer
-
+	ListProjectStatusResponseSerializer,
+	ListProjectInvoiceResponseSerializer,
+	ListProjectReceiptResponseSerializer,
+	SetProjectChargingStagesSerializer,
+	SetProjectQuotationRemarksSerializer,
+	SetProjectInvoiceRemarksSerializer,
+	SetProjectReceiptRemarksSerializer,
+	SetCompanyProjectComparisonSerializer,
+	GetCompanyProjectComparisonResponseSerializer,
+	ListCompanyProjectComparisonSelectionsResponseSerializer
 )
 from rooms.models import Room, RoomType, RoomItem,RoomTypeFormula
 from rooms.serializers import (
@@ -134,10 +145,24 @@ from project_expenses.serializers import (
 	CreateProjectExpenseResponseSerializer
 )
 
+from subscription_plans.models import (
+	SubscriptionPlan,
+	CompanySubscribedPlan
+)
+
+from subscription_plans.serializers import(
+	ListSubscriptionPlanResponseSerializer,
+	GetCurrentSubscribedPlanResponseSerializer
+)
+
 from api.renderers import APIRenderer
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication 
 from rest_framework_simplejwt import authentication
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.settings import api_settings as simplejwt_api_settings
+from rest_framework_simplejwt.state import token_backend
+from rest_framework_simplejwt.utils import datetime_from_epoch
 from rest_framework.permissions import (IsAuthenticated,AllowAny,)
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -158,6 +183,8 @@ from rest_framework import serializers
 
 from django.views.generic import (CreateView, DeleteView, DetailView,
 	TemplateView, UpdateView, View)
+
+logger = logging.getLogger(__name__)
 
 token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,description="Bearer token required", type=openapi.TYPE_STRING)
 
@@ -401,6 +428,55 @@ class GetUserInfoView(APIView):
 		ret["user_info"]=user.as_json()
 		return Response(ret,status=status.HTTP_200_OK)
 
+class UserTokenRefreshView(APIView):
+	#authentication_classes = [authentication.JWTAuthentication]
+	permission_classes = [AllowAny]
+	#permission_classes = [IsAuthenticated]
+	renderer_classes=[APIRenderer]
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		if data.get("refresh"):
+			refresh = RefreshToken(data['refresh'])
+			ret["access"] = str(refresh.access_token)
+
+			if simplejwt_api_settings.ROTATE_REFRESH_TOKENS:
+				if simplejwt_api_settings.BLACKLIST_AFTER_ROTATION:
+					try:
+						# Attempt to blacklist the given refresh token
+						refresh.blacklist()
+					except AttributeError:
+						# If blacklist app not installed, `blacklist` method will
+						# not be present
+						pass
+
+				refresh.set_jti()
+				refresh.set_exp()
+
+				ret['refresh'] = str(refresh)
+
+			user_id=token_backend.decode(str(refresh.access_token),verify=True)["user_id"]
+			try:
+				user=User.objects.get(pk=user_id)
+			except ObjectDoesNotExist:
+				ret["result"]=False
+				ret["reason"]="Permission Denied"
+				return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+			ot=OutstandingToken.objects.create(
+				jti=refresh.payload[simplejwt_api_settings.JTI_CLAIM],
+				token=str(refresh),
+				user=user,
+				created_at=refresh.current_time,
+				expires_at=datetime_from_epoch(refresh.payload["exp"]),
+			)
+			return Response(ret,status=status.HTTP_200_OK)
+
+		else:
+			ret["result"]=False
+			ret["reason"]="Missing refresh"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
 class UserLogoutView(APIView):
 	model=User
@@ -537,40 +613,140 @@ class CheckReadyToCreateProjectView(APIView):
 		except ObjectDoesNotExist:
 			ret["result"]=False
 			ret["reason"]="You must create a company first."
-			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			return Response(ret,status=status.HTTP_200_OK)
 		try:
 			if company.company_charging_stages is None:
 				ret["result"]=False
 				ret["reason"]="You must create company's charging stages first."
-				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+				return Response(ret,status=status.HTTP_200_OK)
 		except ChargingStages.DoesNotExist:
 			ret["result"]=False
 			ret["reason"]="You must create company's charging stages first."
-			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			return Response(ret,status=status.HTTP_200_OK)
 		try:
 			if company.company_doc_format is None:
 				ret["result"]=False
 				ret["reason"]="You must create company's document format first."
-				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+				return Response(ret,status=status.HTTP_200_OK)
 		except DocumentFormat.DoesNotExist:
 			ret["result"]=False
 			ret["reason"]="You must create company's document format first."
-			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			return Response(ret,status=status.HTTP_200_OK)
 		try:
 			if company.company_doc_header is None:
 				ret["result"]=False
 				ret["reason"]="You must create company's document header first."
-				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+				return Response(ret,status=status.HTTP_200_OK)
 		except DocumentHeaderInformation.DoesNotExist:
 			ret["result"]=False
 			ret["reason"]="You must create company's document header first."
-			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			return Response(ret,status=status.HTTP_200_OK)
 
 		if not company.br_approved:
 			ret["result"]=False
 			ret["reason"]="The BR is not yet approved."
-			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			return Response(ret,status=status.HTTP_200_OK)
 		return Response(ret,status=status.HTTP_200_OK)
+
+class ListCompanyProjectComparisonSelectionView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=CompanyProjectComparison
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="List company comparison all selections.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListCompanyProjectComparisonSelectionsResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		#return Response(request.data, status=status.HTTP_201_CREATED)
+		user=request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="You must create a company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		ret["selections"]=[project.profit_analyse_for_compare() for project in company.company_projects.all()]
+
+		return Response(ret, status=status.HTTP_200_OK)
+
+class SetCompanyProjectComparisonView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=CompanyProjectComparison
+	serializer_class = SetCompanyProjectComparisonSerializer
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Set company's compared projects.", 
+		security=[{'Bearer': []}],
+		request_body=SetCompanyProjectComparisonSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		#return Response(request.data, status=status.HTTP_201_CREATED)
+		data = request.data
+		serialized = SetCompanyProjectComparisonSerializer(data=data,context={'request': request})
+		serialized.is_valid(raise_exception=True)
+		try:
+			comparison=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		return Response(ret, status=status.HTTP_200_OK)
+
+class GetCompanyProjectComparisonView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=CompanyProjectComparison
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get company's compared projects.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetCompanyProjectComparisonResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		#return Response(request.data, status=status.HTTP_201_CREATED)
+		user=request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="You must create a company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			ret["comparisons"]=company.get_project_comparison()
+		except CompanyProjectComparison.DoesNotExist:
+			ret["comparisons"]=[]
+
+		return Response(ret, status=status.HTTP_200_OK)
 
 #docuemnt format
 class GetDocumentFormatChoicesView(APIView):
@@ -876,7 +1052,7 @@ class GetInvoiceGeneralRemarksView(APIView):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		ret["general_remarks"]=company.get_general_remarks_json()
+		ret["general_remarks"]=company.get_invoice_general_remarks_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 class SetReceiptGeneralRemarksView(APIView):
@@ -931,7 +1107,7 @@ class GetReceiptGeneralRemarksView(APIView):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		ret["general_remarks"]=company.get_general_remarks_json()
+		ret["general_remarks"]=company.get_receipt_general_remarks_json()
 		return Response(ret, status=status.HTTP_200_OK)
 
 #project
@@ -1081,7 +1257,12 @@ class GetProjectView(APIView):
 		ret["result"]=True
 		data = request.data
 		if data.get("project_id"):
-			project=Project.objects.get(id=data.get("project_id"))
+			try:
+				project=Project.objects.get(id=data.get("project_id"))
+			except ObjectDoesNotExist:
+				ret["result"]=False
+				ret["reason"]="Project not found"
+				return Response(ret,status=status.HTTP_404_NOT_FOUND)
 			ret["project"]=project.as_json()
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
@@ -1123,6 +1304,186 @@ class RemoveProjectView(APIView):
 		if project.company.owner==request.user:
 			project.delete()
 			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class UpdateProjectChargingStagesView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Update project's charging stages",
+		security=[{'Bearer':[]}],
+		request_body=SetProjectChargingStagesSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			serialized = SetProjectChargingStagesSerializer(data=data,context={'request': request})
+			serialized.is_valid(raise_exception=True)
+			serialized.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			ret["quot_preview"]=project.quot_preview()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class UpdateProjectQuotationRemarksView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Update project's quotation remarks",
+		security=[{'Bearer':[]}],
+		request_body=SetProjectQuotationRemarksSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			serialized = SetProjectQuotationRemarksSerializer(data=data,context={'request': request})
+			serialized.is_valid(raise_exception=True)
+			serialized.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			ret["quot_preview"]=project.quot_preview()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class UpdateProjectInvoiceRemarksView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Update project's invoice remarks",
+		security=[{'Bearer':[]}],
+		request_body=SetProjectInvoiceRemarksSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			serialized = SetProjectInvoiceRemarksSerializer(data=data,context={'request': request})
+			serialized.is_valid(raise_exception=True)
+			serialized.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			ret["quot_preview"]=project.quot_preview()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class UpdateProjectReceiptRemarksView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Update project's receipt remarks",
+		security=[{'Bearer':[]}],
+		request_body=SetProjectReceiptRemarksSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data = request.data
+		if data.get("project_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			serialized = SetProjectReceiptRemarksSerializer(data=data,context={'request': request})
+			serialized.is_valid(raise_exception=True)
+			serialized.save()
+			return Response(ret,status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+
+			ret["quot_preview"]=project.quot_preview()
+			return Response(ret,status=status.HTTP_200_OK)
 		else:
 			ret["result"]=False
 			ret["reason"]="Permission Denied"
@@ -1271,15 +1632,15 @@ class GenerateProjectQuotation(APIView):
 		options={
 			'enable-local-file-access':'',
 			'page-size': 'Letter',
-	        'margin-top': '1.8in',
-	        'margin-right': '0.75in',
-	        'margin-bottom': '0.5in',
-	        'margin-left': '0.75in',
-	        'encoding': "UTF-8",
-	        'header-html': doc_header_path,
-	        'footer-center': 'Page [page] of [topage]',
-	        'footer-font-name':'Arial,serif',
-	        'footer-font-size':'12'
+			'margin-top': '1.8in',
+			'margin-right': '0.75in',
+			'margin-bottom': '0.5in',
+			'margin-left': '0.75in',
+			'encoding': "UTF-8",
+			'header-html': doc_header_path,
+			'footer-center': 'Page [page] of [topage]',
+			'footer-font-name':'Arial,serif',
+			'footer-font-size':'12'
 		}
 		pdfkit.from_string(html, 'out.pdf', options=options)
 		'''options = {
@@ -1298,6 +1659,48 @@ class GenerateProjectQuotation(APIView):
 			project.save()
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
+
+class ListProjectInvoiceView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class=GetProjectRequestSerializer
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="List project invoices", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListProjectInvoiceResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		if data.get("project_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			project=Project.objects.get(id=data.get("project_id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+			ret["charging_stages"]=project.list_charging_stage_amounts()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
 
 class PreviewProjectInvoice(APIView):
 	permission_classes = [IsAuthenticated]
@@ -1421,7 +1824,9 @@ class GenerateProjectInvoice(APIView):
 			ret["reason"]="Permission Denied"
 			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 		if data.get("charging_stage")>len(project.charging_stages)-1:
-			return serializers.ValidationError("Charging Stage is not in the Project.")
+			ret["result"]=False
+			ret["reason"]="Charging Stage is not in the Project."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
@@ -1445,12 +1850,12 @@ class GenerateProjectInvoice(APIView):
 		options={
 			'enable-local-file-access':'',
 			'page-size': 'Letter',
-	        'margin-top': '1.8in',
-	        'margin-right': '0.75in',
-	        'margin-bottom': '0.5in',
-	        'margin-left': '0.75in',
-	        'encoding': "UTF-8",
-	        'header-html': doc_header_path
+			'margin-top': '1.8in',
+			'margin-right': '0.75in',
+			'margin-bottom': '0.5in',
+			'margin-left': '0.75in',
+			'encoding': "UTF-8",
+			'header-html': doc_header_path
 		}
 		pdfkit.from_string(html, 'out.pdf', options=options)
 		'''options = {
@@ -1467,6 +1872,47 @@ class GenerateProjectInvoice(APIView):
 		ProjectInvoice.objects.get_or_create(project=project,invoice_id=charging_stage_id)
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
+
+class ListProjectReceiptView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class=GetProjectRequestSerializer
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="List project receipts", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListProjectReceiptResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		if data.get("project_id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing project_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			project=Project.objects.get(id=data.get("project_id"))
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project Not Found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if project.company.owner==request.user:
+			ret["charging_stages"]=project.list_charging_stage_amounts()
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
 class PreviewProjectReceipt(APIView):
 	permission_classes = [IsAuthenticated]
@@ -1589,10 +2035,16 @@ class GenerateProjectReceipt(APIView):
 			ret["result"]=False
 			ret["reason"]="Permission Denied"
 			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		if data.get("charging_stage")>len(project.charging_stages)-1:
+			ret["result"]=False
+			ret["reason"]="Charging Stage is not in the Project."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 		try:
 			project_invoice=ProjectInvoice.objects.get(project=project,invoice_id=data.get("charging_stage"))
 		except ObjectDoesNotExist:
-			return serializers.ValidationError("Please Generate Invoice First")
+			ret["result"]=False
+			ret["reason"]="Please Generate Invoice First"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 			
 		charging_stage_id=data.get("charging_stage")
 		context={}
@@ -1619,12 +2071,12 @@ class GenerateProjectReceipt(APIView):
 		options={
 			'enable-local-file-access':'',
 			'page-size': 'Letter',
-	        'margin-top': '1.8in',
-	        'margin-right': '0.75in',
-	        'margin-bottom': '0.5in',
-	        'margin-left': '0.75in',
-	        'encoding': "UTF-8",
-	        'header-html': doc_header_path
+			'margin-top': '1.8in',
+			'margin-right': '0.75in',
+			'margin-bottom': '0.5in',
+			'margin-left': '0.75in',
+			'encoding': "UTF-8",
+			'header-html': doc_header_path
 		}
 		pdfkit.from_string(html, 'out.pdf', options=options)
 		'''options = {
@@ -1642,6 +2094,54 @@ class GenerateProjectReceipt(APIView):
 		
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
+
+class GetProjectImageRecordsView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	serializer_class=GetProjectRequestSerializer
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get project's image records", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND:CommonFalseResponseSerializer()
+		}
+	)
+
+	def post (self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+
+		if data.get("project_id"):
+			try:
+				project=Project.objects.get(id=data.get("project_id"))
+			except ObjectDoesNotExist:
+				ret["result"]=False
+				ret["reason"]="Project not found"
+				return Response(ret,status=status.HTTP_404_NOT_FOUND)
+			ret["images"]=dict()
+			ret["images"]["工程相片"]=[]
+			ret["images"]["收據相片"]=[]
+			for project_milestone in project.project_milestones.exclude(img_upload_date=None).order_by('-img_upload_date'):
+				img=project_milestone.img_record()
+				if img!={}:
+					ret["images"]["工程相片"].append(img)
+			for project_expense in project.project_expense.exclude(img_upload_date=None).order_by('-img_upload_date'):
+				img=project_expense.img_record()
+				if img!={}:
+					ret["images"]["收據相片"].append(img)
+			#ret["images"]["工程相片"]=[project_milestone.img_record() ]
+			#ret["images"]["收據相片"]=[project_expense.img_record() for project_expense in project.project_expense.exclude(img_upload_date=None).order_by('-img_upload_date')]
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			raise ValidationError("Missing project_id")
 	
 #project-customer
 class SetProjectCustomerView(APIView):
@@ -2022,7 +2522,7 @@ class SetProjectRoomItemView(APIView):
 		ret["result"]=True
 		data=request.data
 		try:
-			room_item=RoomItem.objects.get(item=data.get("data"),room=data.get("room"))
+			room_item=RoomItem.objects.get(id=data.get("room_item_id"))
 			serialized=SetRoomItemSerializer(instance=room_item,data=data,context={'request':request})
 		except ObjectDoesNotExist:
 			serialized=SetRoomItemSerializer(data=data,context={'request':request})
@@ -2042,6 +2542,7 @@ class SetProjectRoomItemView(APIView):
 			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		ret["room_item_id"]=room_item.id
+		#ret["remark"]=data.get("remark")+": "+room_item.remark
 		return Response(ret,status=status.HTTP_200_OK)
 
 class RemoveProjectRoomItemView(APIView):
@@ -2654,9 +3155,15 @@ class GetRoomTypeFormulaListView(APIView):
 	def post(self,request,*args,**kwargs):
 		ret={}
 		ret['result']=True
-		room_type_formula_list=RoomTypeFormula.objects.filter(is_active=True)
-		ret["room_type_formula_list"]=[room_type_formula.as_json() for room_type_formula in room_type_formula_list.all()]
-		return Response(ret,status=status.HTTP_200_OK)
+		data=request.data
+		if data.get("room_type"):
+			room_type_formula_list=RoomTypeFormula.objects.filter(room_type=data["room_type"],is_active=True)
+			ret["room_type_formula_list"]=[room_type_formula.as_json() for room_type_formula in room_type_formula_list.all()]
+			return Response(ret,status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Missing room_type"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 
 #room - item
 class GetRoomRelatedItemListView(APIView):
@@ -2996,3 +3503,302 @@ class GetProjectProfitAnalysisView(APIView):
 		else:
 			raise ValidationError("Missing project_id")
 
+#subscription_plan
+class ListSubscriptionPlansView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="List all subscription plans", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListSubscriptionPlanResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		user=request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		ret["subscription_plans"]=[subscription_plan.list_data() for subscription_plan in SubscriptionPlan.objects.filter(visible=True,is_active=True)]
+		return Response(ret,status=status.HTTP_200_OK)
+
+class GetCurrentSubscribedPlanView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get current subscribed plan info", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetCurrentSubscribedPlanResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		user=request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		now=datetime.datetime.now()
+		collection = settings.GATEWAY.customer.search(
+			braintree.CustomerSearch.company == str(company.id)+": "+company.name,
+			braintree.CustomerSearch.phone == str(user.phone)
+		)
+
+		if len(list(collection.items))==0:
+			free_plan=SubscriptionPlan.objects.get(display_price=0)
+			ret["subscribed_plan"]=dict(
+				start_date=company.created_on.date(),
+				next_billing_date="-",
+				plan=free_plan.plan_name)
+			return Response(ret,status=status.HTTP_200_OK)
+		elif len(list(collection.items))==1:
+			customer=list(collection.items)[0]
+
+			subscribed_plans=[]
+			for payment_method in customer.payment_methods:
+				for subscription in payment_method.subscriptions:
+					try:
+						plan_name=SubscriptionPlan.objects.get(id=subscription.plan_id).plan_name
+					except ObjectDoesNotExist:
+						plan_name="Lost Plan Name"
+					if subscription.status==braintree.Subscription.Status.Active:
+						subscribed_plans.append(
+							dict(
+								id=subscription.id,
+								start_date=subscription.first_billing_date,
+								next_billing_date=subscription.next_billing_date,
+								plan=plan_name
+							)
+						)
+
+			if(len(subscribed_plans)==0):# have no subscribed plan
+				free_plan=SubscriptionPlan.objects.get(display_price=0)
+				ret["subscribed_plan"]=dict(
+				start_date=company.created_on.date(),
+				next_billing_date="-",
+				plan=free_plan.plan_name)
+			elif(len(subscribed_plans)==1):# have 1 subscribed plan
+				ret["subscribed_plan"]=subscribed_plans[0]
+			else:# have more than one subscribed plan
+				ret["duplicated_subscription"]=True
+				ret["subscribed_plan"]=subscribed_plans
+
+			return Response(ret,status=status.HTTP_200_OK)
+				
+		
+
+class GetBraintreeClientTokenView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Get braintree client token to create a payment", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		user=request.user
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+		collection = settings.GATEWAY.customer.search(
+			braintree.CustomerSearch.company == str(company.id)+": "+company.name,
+			braintree.CustomerSearch.phone == str(company.owner.phone)
+		)
+
+		if len(list(collection.items))==0:
+			result = settings.GATEWAY.customer.create({
+				"company": str(company.id)+": "+company.name,
+				"phone": str(company.owner.phone),
+			})
+			if result.is_success:
+				customer_id=result.customer.id
+		else:
+			customer_id=list(collection.items)[0].id
+
+		client_token=settings.GATEWAY.client_token.generate({
+			"customer_id": customer_id
+		})
+		ret["client_token"]=client_token
+		return Response(ret,status=status.HTTP_200_OK)
+
+class SubsribePlanView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Subsribe a subscription plan", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		user=request.user
+		data=request.data
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		now=datetime.datetime.now()
+		
+
+		if data.get("nonce"):
+			if data.get("plan_id"):
+
+				collection = settings.GATEWAY.customer.search(
+					braintree.CustomerSearch.company == str(company.id)+": "+company.name,
+					braintree.CustomerSearch.phone == str(user.phone)
+				)
+
+				if len(list(collection.items))==0:
+					result = settings.GATEWAY.customer.create({
+						"company": str(company.id)+": "+company.name,
+						"phone": str(user.phone),
+					})
+					if result.is_success:
+						customer=result.customer
+				else:
+					customer=list(collection.items)[0]
+
+				subscribed_plans=[]
+				for payment_method in customer.payment_methods:
+					for subscription in payment_method.subscriptions:
+						if subscription.status==braintree.Subscription.Status.Active:
+							subscribed_plans.append({"id":subscription.id})
+				try:
+					plan=SubscriptionPlan.objects.get(id=data.get("plan_id"))
+				except ObjectDoesNotExist:
+					ret["reason"]="Invalid plan_id"
+					return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+				if(len(subscribed_plans)==0):# have no subscribed plan
+
+					result = settings.GATEWAY.subscription.create({
+						"payment_method_nonce": data.get("nonce"),
+						"plan_id": plan.id,
+						"merchant_account_id":"interiumdesign"
+					})
+					ret["created"]=False
+					ret["status"]=result.subscription.status
+					ret["plan"]=plan.plan_name
+				elif(len(subscribed_plans)==1):# have 1 subscribed plan
+					result = settings.GATEWAY.subscription.update(subscribed_plans[0]["id"],{
+						"payment_method_nonce": data.get("nonce"),
+						"plan_id": plan.id,
+						"price": plan.display_price,
+						"options":{
+							"prorate_charges":True,
+							"revert_subscription_on_proration_failure":True,
+							"replace_all_add_ons_and_discounts":True
+						}
+					})
+					ret["created"]=True
+					ret["status"]=result.subscription.status
+					ret["plan"]=plan.plan_name
+				else:# have more than one subscribed plan
+					for subscription in subscription_plans:
+						settings.GATEWAY.subscription.cancel(subscription.id)
+					result = settings.GATEWAY.subscription.create({
+						"payment_method_nonce": data.get("nonce"),
+						"plan_id": plan.id,
+						"merchant_account_id":"interiumdesign"
+					})
+					ret["created"]=True
+					ret["status"]=result.subscription.status
+					ret["plan"]=plan.plan_name
+				try:
+					return Response(ret,status=status.HTTP_200_OK)
+				except Exception as e:
+					ret["reason"]=str(e)
+					return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+			else:
+				ret["reason"]="Missing plan_id"
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		else:
+			ret["reason"]="Missing nonce"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+
+class CancelSubsriptionView(APIView):
+	permission_classes=[IsAuthenticated]
+	authentication_classes=[authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Subsribe a subscription plan", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self, request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		user=request.user
+		data=request.data
+		try:
+			company=Company.objects.get(owner=user)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Please create company first."
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		now=datetime.datetime.now()
+		if data.get("subscription_id"):
+			result = settings.GATEWAY.subscription.cancel(data.get("subscription_id"))
+			if result.is_success:
+				return Response(ret,status=status.HTTP_200_OK)
+			else:
+				ret["reason"]=""
+				for error in result.errors.deep_errors:
+					ret["reason"]=ret["reason"]+error.message+"\n"
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		else:
+			ret["reason"]="Missing subscription_id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)

@@ -14,7 +14,7 @@ from rooms.models import (
 	RoomType,RoomProperty,RoomTypeFormula
 )
 from rooms.forms import RoomTypeForm, RoomTypeFormulaForm, RoomPropertyForm
-from rooms.utils import DATA_TYPE
+from rooms.utils import DATA_TYPE,SUB_DATA_TYPE
 
 from project_items.models import Item
 from django.core.exceptions import PermissionDenied
@@ -461,6 +461,7 @@ class CreateRoomPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, Creat
 	def get_context_data(self, **kwargs):
 		context = super(CreateRoomPropertyView, self).get_context_data(**kwargs)
 		context["room_property_form"] = context["form"]
+		context["sub_data_type"]=SUB_DATA_TYPE
 
 		return context
 
@@ -512,6 +513,7 @@ class UpdateRoomPropertyView(AdminAccessRequiredMixin, LoginRequiredMixin, Updat
 	def get_context_data(self, **kwargs):
 		context = super(UpdateRoomPropertyView, self).get_context_data(**kwargs)
 		context["room_property_obj"] = self.object
+		context["sub_data_type"]=SUB_DATA_TYPE
 
 		if (self.request.user.role != "ADMIN" and not
 				self.request.user.is_superuser):

@@ -31,3 +31,5 @@ djangorestframework-simplejwt
 drf-yasg
 Pillow
 numexpr
+braintree
+colorfield

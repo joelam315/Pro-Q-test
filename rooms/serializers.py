@@ -89,9 +89,10 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 			raise PermissionDenied
 
 class SetRoomItemSerializer(serializers.ModelSerializer):
+	room_item_id=serializers.IntegerField(required=False)
 	class Meta:
 		model=RoomItem
-		fields=("item","room","material","unit_price","value","quantity","remark")
+		fields=("room_item_id","item","room","material","unit_price","value","quantity","remark")
 
 	def create(self,validated_data):
 		user = None
@@ -112,12 +113,11 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 						_value[item_property.symbol]=json.loads(validated_data["value"])[item_property.symbol]
 					else:
 						raise ValidationError("Item value missing: "+item_property.symbol)
-			data["value"]=_value
+			#data["value"]=_value
 			data["quantity"]=validated_data["quantity"]
-			data["material"]=validated_data["material"]
 			if validated_data.get("remark"):
 				data["remark"]=validated_data["remark"]
-			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
+			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],material=validated_data["material"],value=_value, defaults=data)
 			return room_item[0]
 		else:
 			raise PermissionDenied
@@ -133,19 +133,28 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 		#project=Project.objects.get(id=validated_data["related_project"].id)
 		if user==validated_data["room"].related_project.company.owner:
 			room_item=instance
+
 			room_item.unit_price=validated_data["unit_price"]
 			_value={}
+			input_value=json.loads(validated_data["value"])
 			if validated_data["value"]:
 				for item_property in validated_data["item"].item_properties.all():
 					if item_property.symbol in validated_data["value"]:
-						_value[item_property.symbol]=validated_data["value"][item_property.symbol]
+						_value[item_property.symbol]=input_value[item_property.symbol]
 					else:
 						raise ValidationError("Item value missing: "+item_property.symbol)
+			if RoomItem.objects.filter(item=validated_data["item"],room=validated_data["room"],material=validated_data["material"],value=_value).exclude(id=room_item.id).exists():
+				raise ValidationError("Same properties item is already existed")
 			room_item.value=_value
 			room_item.quantity=validated_data["quantity"]
 			if validated_data.get("remark"):
 				room_item.remark=validated_data["remark"]
+			else:
+				room_item.remark=""
+			room_item.material=validated_data["material"]
+			room_item.item=validated_data["item"]
 			#room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
+			
 			room_item.save()
 			return room_item
 		else:

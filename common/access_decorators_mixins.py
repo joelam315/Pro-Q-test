@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 
 from django.contrib.auth.mixins import AccessMixin, LoginRequiredMixin
@@ -7,6 +8,7 @@ from django.shortcuts import redirect
 from rest_framework_simplejwt.state import token_backend
 from rest_framework_simplejwt.exceptions import TokenBackendError
 from common.models import User
+
 
 
 def sales_access_required(function):
@@ -82,6 +84,8 @@ def app_login_required(function):
             token=request.META['HTTP_AUTHORIZATION'].split("Bearer")[1].strip()
         except KeyError:
             raise PermissionDenied
+        except AttributeError:
+            raise AttributeError
         try:
             user_id=token_backend.decode(token,verify=True)["user_id"]
         except TokenBackendError:

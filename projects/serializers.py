@@ -1,8 +1,8 @@
 from django.shortcuts import get_object_or_404
-from projects.models import Project
+from projects.models import Project, CompanyProjectComparison
 from datetime import datetime
 from companies.models import Company
-from companies.serializers import GeneralRemarkJsonSerializer
+from companies.serializers import GeneralRemarkJsonSerializer, SetChargingStagesSerializer,SetQuotationGeneralRemarkSerializer,SetInvoiceGeneralRemarkSerializer,SetReceiptGeneralRemarkSerializer
 from customers.models import Customer
 from customers.serializers import CustomerJsonSerializer
 from rooms.serializers import RoomItemJsonSerializer,ProjectItemByRoomJsonSerializer
@@ -117,9 +117,131 @@ class UpdateProjectSerializer(serializers.ModelSerializer):
 class GetProjectRequestSerializer(serializers.Serializer):
 	project_id=serializers.IntegerField()
 
+class SetCompanyProjectComparisonSerializer(serializers.ModelSerializer):
+	
+	class Meta:
+		model=CompanyProjectComparison
+		fields=('projects',)
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		if user==company.owner:
+			comparison, craeted=CompanyProjectComparison.objects.get_or_create(company=company)
+			comparison.projects.set(validated_data["projects"])
+			comparison.save()
+			return comparison
+
 class GetProjectWithChargingStageRequestSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
 	charging_stage=serializers.IntegerField()
+
+class SetProjectChargingStagesSerializer(serializers.Serializer):
+	project_id=serializers.IntegerField()
+	#charging_stages=SetChargingStagesSerializer()
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		project=get_object_or_404(Project,id=validated_data["project_id"])
+		if user==project.company.owner:
+			'''if project.quotation_generated_on:
+				raise ValidationError("The quotation is not allowed to update")'''
+			
+			ccss=company.company_charging_stages
+			cs=[]
+			for i in range(ccss.quantity):
+				r={}
+				r["value"]=ccss.values[i]
+				if ccss.descriptions[i]!=None and ccss.descriptions[i]!="":
+					r["description"]=ccss.descriptions[i]
+				cs.append(r)
+			project.charging_stages=cs
+			project.save()
+			return project
+			'''ccss=validated_data["charging_stages"]
+			cs=[]
+			for i in range(ccss["quantity"]):
+				r={}
+				r["value"]=ccss["values"][i]
+				if ccss["descriptions"][i]!=None and ccss["descriptions"][i]!="":
+					r["description"]=ccss["descriptions"][i]
+				cs.append(r)
+			project.charging_stages=cs
+			project.save()
+			return project'''
+
+class SetProjectQuotationRemarksSerializer(serializers.Serializer):
+	project_id=serializers.IntegerField()
+	quotation_remarks=SetQuotationGeneralRemarkSerializer()
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		project=get_object_or_404(Project,id=validated_data["project_id"])
+		if user==project.company.owner:
+			
+			project.quotation_remarks=validated_data["quotation_remarks"]
+			project.save()
+			return project
+
+class SetProjectInvoiceRemarksSerializer(serializers.Serializer):
+	project_id=serializers.IntegerField()
+	invoice_remarks=SetInvoiceGeneralRemarkSerializer()
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		project=get_object_or_404(Project,id=validated_data["project_id"])
+		if user==project.company.owner:
+			
+			project.invoice_remarks=validated_data["invoice_remarks"]
+			project.save()
+			return project
+
+class SetProjectReceiptRemarksSerializer(serializers.Serializer):
+	project_id=serializers.IntegerField()
+	receipt_remarks=SetReceiptGeneralRemarkSerializer()
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		project=get_object_or_404(Project,id=validated_data["project_id"])
+		if user==project.company.owner:
+			
+			project.receipt_remarks=validated_data["receipt_remarks"]
+			project.save()
+			return project
 
 class ProjectJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
@@ -139,6 +261,19 @@ class GetProjectResponseSerializer(serializers.Serializer):
 class ListProjectResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	projects=ProjectJsonSerializer(many=True)
+
+class CompanyProjectComparisoJsonSerializer(serializers.Serializer):
+	total_income=serializers.FloatField()
+	total_outcome=serializers.FloatField()
+	gross_profit_margin=serializers.FloatField()
+
+class ListCompanyProjectComparisonSelectionsResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	selections=CompanyProjectComparisoJsonSerializer(many=True)
+
+class GetCompanyProjectComparisonResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	comparisons=CompanyProjectComparisoJsonSerializer(many=True)
 
 class QuotationFormatJsonSerializer(serializers.Serializer):
 	quot_upper_format=serializers.CharField()
@@ -173,6 +308,7 @@ class ProjectQuotationPreviewJsonSerializer(serializers.Serializer):
 	general_remarks=serializers.ListField(child=GeneralRemarkJsonSerializer())
 	quotation_no=serializers.CharField()
 	customer_contact=CustomerJsonSerializer()
+	#can_update_charging_stage=serializers.BooleanField()
 
 class ProjectQutationPreviewResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
@@ -188,6 +324,14 @@ class ProjectInvoicePreviewJsonSerializer(serializers.Serializer):
 	invoice_no=serializers.CharField()
 	customer_contact=CustomerJsonSerializer()
 
+class ListChargingStageAmountJsonSerializer(serializers.Serializer):
+	value=serializers.IntegerField()
+	price=serializers.FloatField()
+
+class ListProjectInvoiceResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	charging_stages=ListChargingStageAmountJsonSerializer(many=True)
+
 class ProjectInvoicePreviewResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	invoice_preview=ProjectInvoicePreviewJsonSerializer()
@@ -201,6 +345,10 @@ class ProjectReceiptPreviewJsonSerializer(serializers.Serializer):
 	general_remarks=serializers.ListField(child=GeneralRemarkJsonSerializer())
 	receipt_no=serializers.CharField()
 	customer_contact=CustomerJsonSerializer()
+
+class ListProjectReceiptResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	charging_stages=ListChargingStageAmountJsonSerializer(many=True)
 
 class ProjectReceiptPreviewResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()

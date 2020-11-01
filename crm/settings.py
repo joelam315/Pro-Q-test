@@ -1,8 +1,9 @@
 import os
 import datetime
-
+import braintree
 from celery.schedules import crontab
 from datetime import timedelta
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -62,6 +63,9 @@ INSTALLED_APPS = [
     'project_expenses',
     'project_timetable',
     'api',
+    'subscription_plans',
+    'braintree',
+    'colorfield',
 ]
 
 MIDDLEWARE = [
@@ -143,8 +147,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=90),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 
@@ -163,8 +167,8 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
 
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    'SLIDING_TOKEN_LIFETIME': timedelta(days=90),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=90),
+    'SLIDING_TOKEN_LIFETIME': timedelta(days=7),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
 
 SWAGGER_SETTINGS = {
@@ -189,7 +193,7 @@ REDOC_SETTINGS ={
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = 'Asia/Hong_Kong'
 
 USE_I18N = True
 
@@ -436,3 +440,13 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
     }
 }
+
+GATEWAY = braintree.BraintreeGateway(
+    braintree.Configuration(
+        braintree.Environment.Sandbox,
+        merchant_id="s2w9gn7svv8ff7j2",
+        public_key="xqhbcwp2yy2drjtm",
+        private_key="d1e00e88d22bfa38b6b693d1b8d51b62"
+    )
+)
+

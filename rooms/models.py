@@ -8,6 +8,7 @@ import numexpr as ne
 from django.contrib.postgres.fields import JSONField
 from project_items.models import Item, ItemFormula,ItemTypeMaterial
 from rooms.utils import DATA_TYPE
+from django.core.exceptions import PermissionDenied,ObjectDoesNotExist,ValidationError
 
 class RoomProperty(models.Model):
 	name=models.CharField(max_length=50)
@@ -15,7 +16,7 @@ class RoomProperty(models.Model):
 	data_type=models.CharField(max_length=50,choices=DATA_TYPE)
 	custom_properties=JSONField(null=True,blank=True)
 	custom_property_formulas=JSONField(null=True,blank=True)
-	property_formulas=JSONField(null=True,blank=True)
+	#property_formulas=JSONField(null=True,blank=True)
 
 	def __str__(self):
 		return self.name
@@ -27,7 +28,7 @@ class RoomProperty(models.Model):
 			symbol=self.symbol,
 			data_type=self.data_type,
 			custom_properties=self.custom_properties,
-			property_formulas=self.property_formulas
+			custom_property_formulas=self.custom_property_formulas
 		)
 
 class RoomType(models.Model):
@@ -64,27 +65,28 @@ class RoomTypeFormula(models.Model):
 			#return param["data_type"]
 			if param["data_type"]=="custom property":
 				custom_params=param["custom_properties"]
-				#return param["property_formulas"]
-				if param["property_formulas"]!="null" and param["property_formulas"]!=None:
-					for property_formula_name in param["property_formulas"].keys():
+				#return param["custom_property_formulas"]
+				if param["custom_property_formulas"]!="null" and param["custom_property_formulas"]!=None:
+					for property_formula in param["custom_property_formulas"]:
 						#return "\""+param["symbol"]+"."+property_formula_name+"\" :"+cal_formula
-						if "\""+param["symbol"]+"."+property_formula_name+"\"" in cal_formula or "\'"+param["symbol"]+"."+property_formula_name+"\'" in cal_formula:
+						if "\""+param["symbol"]+"."+property_formula["name"]+"\"" in cal_formula or "\'"+param["symbol"]+"."+property_formula["name"]+"\'" in cal_formula:
 							#return True
 							arr=[]
 							
 							#return value.get(param["symbol"])
-							for custom_property_values in value.get(param["symbol"]):
-								current_property_formula=param["property_formulas"][property_formula_name]
-								for custom_property_name in param["custom_properties"].keys():
-									
-									current_property_formula=current_property_formula.replace("\""+custom_property_name+"\"",str(custom_property_values.get(custom_property_name,0)))
-									current_property_formula=current_property_formula.replace("\'"+custom_property_name+"\'",str(custom_property_values.get(custom_property_name,0)))
-									
-								#return current_property_formula
-								arr.append(ne.evaluate(current_property_formula))
-							var[property_formula_name]=np.array(arr)
-							cal_formula=cal_formula.replace("\""+param["symbol"]+"."+property_formula_name+"\"",property_formula_name)
-							cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+property_formula_name+"\'",property_formula_name)
+							if value.get(param["symbol"]):
+								for custom_property_values in value.get(param["symbol"]):
+									current_property_formula=property_formula["formula"]
+									for custom_property in param["custom_properties"]:
+										
+										current_property_formula=current_property_formula.replace("\""+custom_property["symbol"]+"\"",str(custom_property_values.get(custom_property["symbol"],0)))
+										current_property_formula=current_property_formula.replace("\'"+custom_property["symbol"]+"\'",str(custom_property_values.get(custom_property["symbol"],0)))
+										
+									#return current_property_formula
+									arr.append(ne.evaluate(current_property_formula))
+							var[param["symbol"]+"_"+property_formula["name"]]=np.array(arr)
+							cal_formula=cal_formula.replace("\""+param["symbol"]+"."+property_formula["name"]+"\"",param["symbol"]+"_"+property_formula["name"])
+							cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+property_formula["name"]+"\'",param["symbol"]+"_"+property_formula["name"])
 				'''for custom_param in custom_params:
 					cal_formula=cal_formula.replace("\""+param["symbol"]+"."+custom_param+"\"",str(value.get(param["symbol"],0).get(custom_param,0)))
 					cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+custom_param+"\'",str(value.get(param["symbol"],0).get(custom_param,0)))
@@ -96,14 +98,16 @@ class RoomTypeFormula(models.Model):
 		#return cal_formula
 		#a=
 		#return ne.evaluate('sum(array([1,2]))')
-		return ne.evaluate(cal_formula,var)
+		#return var
+		ret=ne.evaluate(cal_formula,var)
+		return ret if str(ret)!="[]" else 0
 
 	def custom_property_cal(self):
 		if self.data_type!="custom properties":
 			return None
 		custom_properties=self.custom_properties
 		custom_property_formulas=self.custom_property_formulas
-		property_formulas=self.property_formulas
+		custom_property_formulas=self.custom_property_formulas
 		params=[custom_property for custom_property in custom_properties]
 		#params.sort(key=len_symbol,reverse=True)
 		#return params
@@ -148,7 +152,7 @@ class Room(models.Model):
 		ret=dict(
 			name=self.name,
 			value=self.value,
-			room_type=str(self.room_type),
+			room_type=(self.room_type.id,str(self.room_type)),
 			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()]
 		)
 		ret["properties"]=dict()
@@ -160,11 +164,12 @@ class Room(models.Model):
 class RoomItem(models.Model):
 
 	class Meta:
-		unique_together = (("item", "room"),)
+		unique_together = (("item", "room","material","value"),)
 
 	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
 	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.CASCADE)
-	material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True,blank=True)
+	material=models.TextField(null=True,blank=True)
+	#material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True,blank=True)
 	unit_price = models.DecimalField(
         max_digits=12, decimal_places=2)
 	value=JSONField(null=True,blank=True)
@@ -190,18 +195,31 @@ class RoomItem(models.Model):
 		ret= dict(
 			id=self.id,
 			name=self.item.name,
-			item_type=self.item.item_type.name,
+			item_type=(self.item.item_type.id,self.item.item_type.name),
 			unit_price=float(self.unit_price),
 			room=self.room.name,
 			quantity=self.quantity,
 			value=self.value,
-			remark=self.remark
+			remark=self.remark if self.remark!=None else ""
 		)
 		if self.material:
-			ret["material"]=self.material.name
+			ret["material"]=self.material
 		formulas=ItemFormula.objects.filter(item=self.item)
 		rfps={rfp.name:rfp.cal(self.value) for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
-		vbp=self.material.value_based_price if self.material!=None and self.material.value_based_price!=None else self.item.value_based_price 
+		
+		#set vbp
+		vbp=self.item.value_based_price
+		if self.material!=None and self.material!="":
+			itm=self.item.item_type.item_type_materials
+			if itm!=None and itm!=dict():
+				for material in itm:
+					if material["name"]==self.material:
+						if material["value_based_price"]!=None and material["value_based_price"]!="" and int(material["value_based_price"])>0:
+							vbp=material["value_based_price"]
+						break
+		#vbp=self.material.value_based_price if self.material!=None and self.material.value_based_price!=None else self.item.value_based_price 
+		#//
+
 		for formula in formulas:
 			ret[formula.name]=formula.cal(self.value,rfps,vbp)
 		return ret
