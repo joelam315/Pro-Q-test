@@ -35,7 +35,9 @@ class RoomType(models.Model):
 	name=models.CharField(max_length=50)
 	is_active=models.BooleanField(default=True)
 	related_items=models.ManyToManyField(Item,blank=True)
+	#room_properties=JSONField(null=True,blank=True)
 	room_properties=models.ManyToManyField(RoomProperty,blank=True)
+	room_type_formulas=JSONField(null=True,blank=True)
 
 	def __str__(self):
 		return self.name
@@ -47,10 +49,64 @@ class RoomType(models.Model):
 			room_properties=[room_property.as_json() for room_property in self.room_properties.all()]
 		)
 
+	def cal_formulas(self,value):
+		rtps=self.room_properties.all()
+		cal_formulas_obj=self.room_type_formulas
+		params=[rtp.as_json() for rtp in rtps]
+		var={}
+		all_ret={}
+		#params.sort(key=len_symbol,reverse=True)
+		#return params
+		if cal_formulas_obj:
+			for cal_formula_obj in cal_formulas_obj:
+				cal_formula=cal_formula_obj["formula"]
+				for param in params:
+					#return param["data_type"]
+					if param["data_type"]=="custom property":
+						custom_params=param["custom_properties"]
+						#return param["custom_property_formulas"]
+						if param["custom_property_formulas"]!="null" and param["custom_property_formulas"]!=None:
+							for property_formula in param["custom_property_formulas"]:
+								#return "\""+param["symbol"]+"."+property_formula_name+"\" :"+cal_formula
+								if "\""+param["symbol"]+"."+property_formula["name"]+"\"" in cal_formula or "\'"+param["symbol"]+"."+property_formula["name"]+"\'" in cal_formula:
+									#return True
+									arr=[]
+									
+									#return value.get(param["symbol"])
+									if value.get(param["symbol"]):
+										for custom_property_values in value.get(param["symbol"]):
+											current_property_formula=property_formula["formula"]
+											for custom_property in param["custom_properties"]:
+												
+												current_property_formula=current_property_formula.replace("\""+custom_property["symbol"]+"\"",str(custom_property_values.get(custom_property["symbol"],0)))
+												current_property_formula=current_property_formula.replace("\'"+custom_property["symbol"]+"\'",str(custom_property_values.get(custom_property["symbol"],0)))
+												
+											#return current_property_formula
+											arr.append(ne.evaluate(current_property_formula))
+									var[param["symbol"]+"_"+property_formula["name"]]=np.array(arr)
+									cal_formula=cal_formula.replace("\""+param["symbol"]+"."+property_formula["name"]+"\"",param["symbol"]+"_"+property_formula["name"])
+									cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+property_formula["name"]+"\'",param["symbol"]+"_"+property_formula["name"])
+						'''for custom_param in custom_params:
+							cal_formula=cal_formula.replace("\""+param["symbol"]+"."+custom_param+"\"",str(value.get(param["symbol"],0).get(custom_param,0)))
+							cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+custom_param+"\'",str(value.get(param["symbol"],0).get(custom_param,0)))
+						'''
+					else:
+						cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["symbol"],0)))
+						cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["symbol"],0)))
+				
+			#return cal_formula
+			#a=
+			#return ne.evaluate('sum(array([1,2]))')
+			#return var
+				ret=ne.evaluate(cal_formula,var)
+				ret=ret if str(ret)!="[]" else 0
+				all_ret[cal_formula_obj["name"]]=ret
+		return all_ret
+
 
 class RoomTypeFormula(models.Model):
 	name=models.CharField(max_length=50)
-	room_type=models.ForeignKey(RoomType,related_name="room_type_formulas",on_delete=models.PROTECT)
+	room_type=models.ForeignKey(RoomType,related_name="room_type_formulas_s",on_delete=models.PROTECT)
 	formula=models.TextField()
 	is_active=models.BooleanField(default=True)
 
@@ -156,9 +212,12 @@ class Room(models.Model):
 			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()]
 		)
 		ret["properties"]=dict()
-		formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
+		formulas=self.room_type.cal_formulas()
+		for name in Object.keys(formulas):
+			ret["properties"][name]=formulas[name]
+		'''formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
 		for formula in formulas:
-			ret["properties"][formula.name]=formula.cal(self.value)
+			ret["properties"][formula.name]=formula.cal(self.value)'''
 		return ret
 
 class RoomItem(models.Model):

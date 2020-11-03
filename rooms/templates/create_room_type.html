@@ -143,11 +143,14 @@
             {% if room_type_obj %}
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
-                <div class="filter_col col-md-12">
+                <div class="filter_col col-md-12-p-0">
+                  <div class="form-group" style="text-align: left!Important;">
+                    <label for="staticEmail" class="col-sm-4 col-form-label">Room Formula</label>
+                  </div>
                   <div class="form-group">
                     <div class="row">
                       <div class="filter_col col-md-12">
-                        <table class="table table-hover" id="table_room_type_formula" {% if room_type_formula_objs|length <= 0 %}style="display:none"{% endif %}>
+                        <table class="table table-hover" id="table_room_type_formula" {% if room_type_obj.room_type_formulas == "{}" %}style="display:none"{% endif %}>
                           <thead>
                             <tr>
                               <th scope="col" width="10%">#</th>
@@ -158,18 +161,10 @@
                             </tr>
                           </thead>
                           <tbody>
-                            {% for room_type_formula_obj in room_type_formula_objs %}
-                            <tr id="row_{{ room_type_formula_obj.id }}">
-                              <th scope='row'>{{forloop.counter}}</th>
-                              <td>{{room_type_formula_obj.name}}</td>
-                              <td>{{room_type_formula_obj.formula}}</td>
-                              <td>{{room_type_formula_obj.is_active}}</td>
-                              <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ room_type_formula_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{room_type_formula_obj.id}}" data-editname="{{room_type_formula_obj.name}}" data-editformula="{{room_type_formula_obj.formula}}" data-editisactive="{{room_type_formula_obj.is_active}}"><i
-                        class="fas fa-pencil-alt"></i></button> <button type="button" class="btn btn-danger" style="font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;" id="removeId_{{ room_type_formula_obj.id }}" data-toggle="modal" data-target="#removeModalCenter" data-removeid="{{room_type_formula_obj.id}}"><i class="fas fa-trash-alt"></i></button></td>
-                            </tr>
-                            {% endfor %}
                           </tbody>
                         </table>
+                        <input id="id_room_type_formulas" type="hidden" name="room_type_formulas">
+                        <span class="error">{{ room_type_obj.room_type_formulas.errors }}</span>
                       </div>
                     </div>
                     <div class="row">
@@ -213,7 +208,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="room_type_formula_form" method="POST" action='{% url 'rooms:add_room_type_formula' %}'>
+      <form id="add_room_type_formula_form">
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
@@ -222,10 +217,9 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Name{% if room_type_formula_form.name.field.required %}<span
-                              class="error">*</span>{% endif %}</label>
-                          {{ room_type_formula_form.name }}
-                          <span class="error">{{ room_type_formula_form.name.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Name<span class="error">*</span></label>
+                          <input type="text" name="name" class="form-control" placeholder="Name" required="" id="add_room_type_formula_name">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -236,11 +230,10 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Is Active{% if room_type_formula_form.is_active.field.required %}<span
-                                    class="error">*</span>{% endif %}</label>
-                          {{ room_type_formula_form.is_active }}
-                          <input type="hidden" value={{ room_type_obj.id }} name="room_type">
-                          <span class="error">{{ room_type_formula_form.is_active.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Is Active</label>
+                          <input type="checkbox" name="is_active" class="form-control" style="width:auto;" placeholder="Is active" id="add_room_type_formula_is_active" checked="">
+                          <input type="hidden" value="1" name="room_type">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -251,10 +244,9 @@
                 <div class="col-md-12">
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
-                    <label for="inputZip">Formula{% if room_type_formula_form.formula.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ room_type_formula_form.formula }}
-                    <span class="error" id="id__price">{{ room_type_formula_form.formula.errors }}</span>
+                    <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
+                    <textarea name="formula" class="form-control" placeholder="Formula" required="" id="add_room_type_formula_formula"></textarea>
+                    <span class="error" id="id__price"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
@@ -282,7 +274,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="edit_room_type_formula_form" method="POST" action="/rooms/room_type_formula/edit/">
+      <form id="edit_room_type_formula_form">
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
@@ -291,10 +283,9 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Name{% if room_type_formula_form.name.field.required %}<span
-                              class="error">*</span>{% endif %}</label>
-                          {{ room_type_formula_form.name }}
-                          <span class="error">{{ room_type_formula_form.name.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Name<span class="error">*</span></label>
+                          <input type="text" name="name" class="form-control" placeholder="Name" required="" id="edit_room_type_formula_name">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -305,11 +296,10 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Is Active{% if room_type_formula_form.is_active.field.required %}<span
-                                    class="error">*</span>{% endif %}</label>
-                          {{ room_type_formula_form.is_active }}
-                          <input type="hidden" value={{ room_type_obj.id }} name="room_type">
-                          <span class="error">{{ room_type_formula_form.is_active.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Is Active</label>
+                          <input type="checkbox" name="is_active" class="form-control" style="width:auto;" placeholder="Is active" id="edit_room_type_formula_is_active" checked="">
+                          <input type="hidden" value="1" name="room_type">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -320,10 +310,9 @@
                 <div class="col-md-12">
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
-                    <label for="inputZip">Formula{% if room_type_formula_form.formula.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ room_type_formula_form.formula }}
-                    <span class="error" id="id__price">{{ room_type_formula_form.formula.errors }}</span>
+                    <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
+                    <textarea name="formula" class="form-control" placeholder="Formula" required="" id="edit_room_type_formula_formula"></textarea>
+                    <span class="error" id="id__price"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
@@ -383,6 +372,10 @@
 
   var riSet=new Set(); //check related items duplication
 
+  var rtf_str=decode("{{room_type_obj.room_type_formulas}}").replaceAll("'",'"');
+  $('#id_room_type_formulas').val(rtf_str);
+  var rtf;
+
   //init
 
   /*$('form#add_form').ajaxForm({
@@ -430,7 +423,27 @@
     initRPTable();
     initRIChoice();
     initRITable();
+    initRTF();
+    updateRTFTable();
   });
+
+
+  function decode(str) {
+    str=str.replace(/&#(\d+);/g, function(match, dec) {
+      return String.fromCharCode(dec);
+    });
+    return str.replace(/&quot;/g, '\\"');
+  }
+
+  function initRTF(){
+    if(rtf_str=="None" || rtf_str==""){
+      rtf=[]
+    }
+    else{
+      rtf=JSON.parse(rtf_str);
+      console.log(rtf);
+    }
+  }
 
   function initRPChoice(){
     //room properties loop
@@ -439,6 +452,28 @@
     {% endfor %}
 
     console.log(rp_all);
+  }
+
+  function updateRTFTable(){
+    console.log(rtf.str);
+    var tbody=$("#table_room_type_formula tbody");
+    var content="";
+    if(Object.keys(rtf).length==0){
+      tbody.html("<td colspan='4'>There is no room type formula</td>");
+    }
+    else{
+      for(i in rtf){
+        content+="<tr id=\"row_"+(parseInt(i)+1)+"\">"+
+                    "<th scope='row'>"+(parseInt(i)+1)+"</th>"+
+                    "<td>"+rtf[i].name+"</td>"+
+                    "<td>"+rtf[i].formula+"</td>"+
+                    "<td>"+rtf[i].is_active+"</td>"+
+                    "<td><button type=\"button\" class=\"btn btn-success edit\" title=\"Edit\" id=\"editId_"+i+"\" data-toggle=\"modal\" data-target=\"#editModal\" data-editid=\""+i+"\" data-editname=\""+rtf[i].name+"\" data-editformula=\""+rtf[i].formula+"\" data-editisactive=\""+rtf[i].is_active+"\"><i class=\"fas fa-pencil-alt\"></i></button> <button type=\"button\" class=\"btn btn-danger\" style=\"font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;\" id=\"removeId_"+i+"\" data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+i+"\"><i class=\"fas fa-trash-alt\"></i></button></td>"+
+                  "</tr>";
+      }
+      tbody.html(content);
+    }
+    console.log(tbody);
   }
 
   function initRPTable(){
@@ -634,8 +669,8 @@ function updateRelatedItemsValue(){
 //Related Items Function End
 
 
-    $('#room_type_formula_form').submit(function() { // catch the form's submit event
-      $.ajax({ // create an AJAX call...
+    $('#add_room_type_formula_form').submit(function() { // catch the form's submit event
+      /*$.ajax({ // create an AJAX call...
           data: $(this).serialize(), // get the form data
           type: $(this).attr('method'), // GET or POST
           url: $(this).attr('action'), // the file to call
@@ -643,12 +678,13 @@ function updateRelatedItemsValue(){
             console.log(response);
             addRoomTypeFormula(response.id);
           }
-      });
+      });*/
+      addRoomTypeFormula();
       return false;
   });
 
   $('#edit_room_type_formula_form').submit(function() { // catch the form's submit event
-      $.ajax({ // create an AJAX call...
+      /*$.ajax({ // create an AJAX call...
           data: $(this).serialize(), // get the form data
           type: $(this).attr('method'), // GET or POST
           url: $(this).attr('action')+curId, // the file to call
@@ -656,24 +692,24 @@ function updateRelatedItemsValue(){
             console.log(response);
             updateRoomTypeFormula(response.id);
           }
-      });
+      });*/
+      updateRoomTypeFormula(curId);
       return false;
   });
 
   //Room Formula Start
 
-  function addRoomTypeFormula(id){
+  function addRoomTypeFormula(){
 
     document.getElementById("table_room_type_formula").removeAttribute("style");
-    document.getElementById("table_room_type_formula").getElementsByTagName("tbody")[0].innerHTML+=
-    "<tr id='row_"+id+"'>"+
-      "<th scope='row'>"+$('#table_room_type_formula tr').length+"</th>"+
-      "<td>"+$('#room_type_formula_form #id_name').val()+"</td>"+
-      "<td>"+$('#room_type_formula_form #id_formula').val()+"</td>"+
-      "<td>"+($('#room_type_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#room_type_formula_form #id_name').val()+"' data-editformula='"+$('#room_type_formula_form #id_formula').val()+"' data-editisactive='"+($('#room_type_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
-    "</tr>";
+    var name=$('#add_room_type_formula_name').val();
+    var formula=$('#add_room_type_formula_formula').val();
+    var is_active=$('#add_room_type_formula_is_active').is(':checked');
+    rtf.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
     clearRoomTypeFormula();
+    //console.log(rtf);
+    $("#id_room_type_formulas").val(JSON.stringify(rtf));
+    updateRTFTable();
     $('#addModal').modal('hide');
   }
 
@@ -688,28 +724,27 @@ function updateRelatedItemsValue(){
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
     curId=id
-    modal.find('#id_name').val(name)
-    modal.find('#id_formula').val(formula)
-    modal.find('#id_is_active').prop('checked', is_active=="True"?true:false);
-    modal.find('.btn-primary').attr('onclick','updateRoomTypeFormula('+id+')')
+    modal.find('#edit_room_type_formula_name').val(name)
+    modal.find('#edit_room_type_formula_formula').val(formula)
+    modal.find('#edit_room_type_formula_is_active').prop('checked', is_active=="True"?true:false);
+    //modal.find('.btn-primary').attr('onclick','updateRoomTypeFormula('+id+')')
   })
 
 
   function updateRoomTypeFormula(id){
-    console.log($('#table_room_type_formula #row_'+id).html(
-      "<th scope='row'>"+$('#table_room_type_formula #row_'+id+' th').html()+"</th>"+
-      "<td>"+$('#edit_room_type_formula_form #id_name').val()+"</td>"+
-      "<td>"+$('#edit_room_type_formula_form #id_formula').val()+"</td>"+
-      "<td>"+($('#edit_room_type_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_room_type_formula_form #id_name').val()+"' data-editformula='"+$('#edit_room_type_formula_form #id_formula').val()+"' data-editisactive='"+($('#edit_room_type_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
-    ));
+    var name=$('#edit_room_type_formula_name').val();
+    var formula=$('#edit_room_type_formula_formula').val();
+    var is_active=$('#edit_room_type_formula_is_active').is(':checked');
+    rtf[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    $("#id_room_type_formulas").val(JSON.stringify(rtf));
+    updateRTFTable();
     $('#editModal').modal('hide');
   }
 
   function clearRoomTypeFormula(){
-    $('#room_type_formula_form #id_name').val('');
-    $('#room_type_formula_form #id_formula').val('');
-    $('#room_type_formula_form #id_is_active').prop('checked', true);
+    $('#add_room_type_material_name').val('');
+    $('#add_room_type_material_formula').val('');
+    $('#add_room_type_material_is_active').prop('checked', true);
   }
 
   $('#removeModalCenter').on('show.bs.modal', function (event) {
@@ -723,22 +758,15 @@ function updateRelatedItemsValue(){
 
   function removeRoomTypeFormula(id){
       console.log(id);
-      $.ajax({ // create an AJAX call...
-          data: {"pk":id}, // get the form data
-          type: "POST", // GET or POST
-          url: "{% url 'rooms:remove_room_type_formula' %}", // the file to call
-          success: function(response) { // on success..
-            console.log(response);
-            var tbody=$("#table_room_type_formula tbody #row_"+id).parent();
-            $("#table_room_type_formula tbody #row_"+id).remove();
-            console.log(tbody.children().length);
-            if(tbody.children().length<=0){
-
-              tbody.parent().attr("style","display:none");
-            }
-            $('#removeModalCenter').modal('hide');
-          }
-      });
+      var tbody=$("#table_room_type_formula tbody").parent();
+      rtf.splice(id,1);
+      $("#id_room_type_formulas").val(JSON.stringify(rtf));
+      updateRTFTable();
+      console.log(tbody.children().length);
+      if(tbody.children().length<=0){
+        tbody.parent().attr("style","display:none");
+      }
+      $("#removeModalCenter").modal('hide');
     }
 
 //Room Formula End

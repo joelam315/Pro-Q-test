@@ -192,7 +192,7 @@ class UpdateRoomTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateVie
 	def get_context_data(self, **kwargs):
 		context = super(UpdateRoomTypeView, self).get_context_data(**kwargs)
 		context["room_type_obj"] = self.object
-		context["room_type_formula_objs"]=self.object.room_type_formulas.all()
+		#context["room_type_formula_objs"]=self.object.room_type_formulas.all()
 		context["items"]=Item.objects.all()
 		context["room_properties"]=RoomProperty.objects.all()
 		if (self.request.user.role != "ADMIN" and not self.request.user.is_superuser):

@@ -30,6 +30,7 @@ class RoomTypeForm(forms.ModelForm):
             'name',
             'related_items',
             'room_properties',
+            'room_type_formulas',
             'is_active'
         )
 

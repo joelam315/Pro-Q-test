@@ -101,7 +101,7 @@ class ItemFormula(models.Model):
 	formula=models.TextField()
 	is_active=models.BooleanField(default=True)
 
-	def cal(self,value,rfps,vbp):
+	def cal(self,value,rfps,vbp,mvbp):
 		cal_formula=self.formula
 		params=[ip.as_json() for ip in self.item.item_properties.all()]
 		#params.sort(key=len_symbol,reverse=True)
@@ -114,6 +114,8 @@ class ItemFormula(models.Model):
 			cal_formula=cal_formula.replace("\'"+key+"\'",str(rfps[key]))
 		cal_formula=cal_formula.replace("\"value_based_price\"",str(vbp))
 		cal_formula=cal_formula.replace("\'value_based_price\'",str(vbp))
+		cal_formula=cal_formula.replace("\"material.value_based_price\"",str(mvbp))
+		cal_formula=cal_formula.replace("\'material.value_based_price\'",str(mvbp))
 		#return (cal_formula)
 		return ne.evaluate(cal_formula)
 

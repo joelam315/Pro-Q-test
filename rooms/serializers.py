@@ -208,16 +208,25 @@ class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 			user = request.user
 
 		if validated_data["room"].related_project.company.owner==user:
-			if not validated_data.get("material") or validated_data.get("material").item_type==validated_data["item"].item_type:
-				formulas=ItemFormula.objects.filter(item=validated_data["item"])
-				rfps={rfp.name:rfp.cal(validated_data["room"].value) for rfp in RoomTypeFormula.objects.filter(room_type=validated_data["room"].room_type)}
-				vbp=validated_data.get("material").value_based_price if validated_data.get("material") and validated_data.get("material").value_based_price else (validated_data["item"].value_based_price if validated_data["item"].value_based_price else 0)
-				ret={}
-				for formula in formulas:
-					ret[formula.name]=formula.cal(value=validated_data["value"],rfps=rfps,vbp=vbp)
-				return ret
-			else:
-				raise ValidationError("Material not match to this item.")
+			cur_material=None
+			if validated_data.get("material"):
+				for material in validated_data["item"].item_type.item_type_materials:
+					if material["name"]==validated_data.get("material"):
+						cur_material=material
+						break
+				if cur_material==None:
+					raise ValidationError("Material not match to this item.")
+			
+			formulas=ItemFormula.objects.filter(item=validated_data["item"])
+			rfps=validated_data["room"].room_type.cal_formulas(validated_data["room"].value)
+			#rfps={rfp.name:rfp.cal(validated_data["room"].value) for rfp in RoomTypeFormula.objects.filter(room_type=validated_data["room"].room_type)}
+			mvbp=cur_material["value_based_price"] if cur_material!=None and cur_material["value_based_price"] else 0
+			vbp= validated_data["item"].value_based_price if validated_data["item"].value_based_price else 0
+			ret={}
+			for formula in formulas:
+				ret[formula.name]=formula.cal(value=validated_data["value"],rfps=rfps,vbp=vbp,mvbp=mvbp)
+			return ret
+
 		else:
 			raise PermissionDenied
 
