@@ -65,7 +65,7 @@ class ItemForm(forms.ModelForm):
         for key, value in self.fields.items():
             value.widget.attrs['placeholder'] = value.label
 
-        self.fields['item_properties'].required=True
+        #self.fields['item_properties'].required=False
 
     class Meta:
         model=Item
@@ -74,7 +74,8 @@ class ItemForm(forms.ModelForm):
             'item_properties',
             'item_type',
             'value_based_price',
-            'is_active'
+            'is_active',
+            'item_formulas'
         )
 
 class ItemPropertyForm(forms.ModelForm):

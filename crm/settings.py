@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'subscription_plans',
     'braintree',
     'colorfield',
+    'cryptography'
 ]
 
 MIDDLEWARE = [
@@ -450,3 +451,6 @@ GATEWAY = braintree.BraintreeGateway(
     )
 )
 
+DEFF_PASSWORD="e8wKqaABew?+z=1wNBHyZ=69Rf2QW(Ke"
+DEFF_SALT="qhTlqu3(wB"
+DEFF_FETCH_URL_NAME="private"

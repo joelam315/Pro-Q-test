@@ -124,7 +124,7 @@ class CreateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateVie
 class ItemTypeDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView):
 	model = ItemType
 	context_object_name = "item_type_record"
-	template_name = "view_item_type.html"
+	template_name = " item_type.html"
 
 	def get_queryset(self):
 		queryset = super(ItemTypeDetailView, self).get_queryset()
@@ -513,20 +513,20 @@ class UpdateItemView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateView):
 	def get_context_data(self, **kwargs):
 		context = super(UpdateItemView, self).get_context_data(**kwargs)
 		context["item_obj"] = self.object
-		context["item_formula_objs"]=self.object.item_formulas.all()
+		#context["item_formula_objs"]=self.object.item_formulas.all()
 		context["item_properties"]=ItemProperty.objects.all()
 		if (self.request.user.role != "ADMIN" and not self.request.user.is_superuser):
 			raise PermissionDenied
 
 		#context["address_obj"] = self.object.address
 		context["item_form"] = context["form"]
-		if "item_formula_form" in kwargs:
+		'''if "item_formula_form" in kwargs:
 			context["item_formula_form"] = kwargs["item_formula_form"]
 		else:
 			if self.request.POST:
 				context["item_formula_form"] = ItemFormulaForm(self.request.POST)
 			else:
-				context["item_formula_form"] = ItemFormulaForm()
+				context["item_formula_form"] = ItemFormulaForm()'''
 
 		if "item_property_form" in kwargs:
 			context["item_property_form"] = kwargs["item_property_form"]
@@ -555,7 +555,7 @@ class RemoveItemView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 			self.object.delete()
 			if self.request.is_ajax():
 				return JsonResponse({'error': False})
-			return redirect("project_items:list_item")
+			return redirect("project_items:list_items")
 
 class CreateItemFormulaView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView):
 	model = ItemFormula

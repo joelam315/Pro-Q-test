@@ -212,7 +212,7 @@
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
-                <div class="col-md-4">
+                <div class="col-md-8">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
@@ -278,7 +278,7 @@
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
-                <div class="col-md-4">
+                <div class="col-md-8">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
@@ -455,11 +455,11 @@
   }
 
   function updateRTFTable(){
-    console.log(rtf.str);
+    console.log(rtf);
     var tbody=$("#table_room_type_formula tbody");
     var content="";
     if(Object.keys(rtf).length==0){
-      tbody.html("<td colspan='4'>There is no room type formula</td>");
+      tbody.html("<td colspan='5'>There is no room type formula</td>");
     }
     else{
       for(i in rtf){
@@ -468,7 +468,7 @@
                     "<td>"+rtf[i].name+"</td>"+
                     "<td>"+rtf[i].formula+"</td>"+
                     "<td>"+rtf[i].is_active+"</td>"+
-                    "<td><button type=\"button\" class=\"btn btn-success edit\" title=\"Edit\" id=\"editId_"+i+"\" data-toggle=\"modal\" data-target=\"#editModal\" data-editid=\""+i+"\" data-editname=\""+rtf[i].name+"\" data-editformula=\""+rtf[i].formula+"\" data-editisactive=\""+rtf[i].is_active+"\"><i class=\"fas fa-pencil-alt\"></i></button> <button type=\"button\" class=\"btn btn-danger\" style=\"font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;\" id=\"removeId_"+i+"\" data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+i+"\"><i class=\"fas fa-trash-alt\"></i></button></td>"+
+                    "<td><button type=\"button\" class=\"btn btn-success edit\" title=\"Edit\" id=\"editId_"+i+"\" data-toggle=\"modal\" data-target=\"#editModal\" data-editid=\""+i+"\" data-editname=\""+rtf[i].name+"\" data-editformula='"+rtf[i].formula+"' data-editisactive=\""+rtf[i].is_active+"\"><i class=\"fas fa-pencil-alt\"></i></button> <button type=\"button\" class=\"btn btn-danger\" style=\"font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;\" id=\"removeId_"+i+"\" data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+i+"\"><i class=\"fas fa-trash-alt\"></i></button></td>"+
                   "</tr>";
       }
       tbody.html(content);
@@ -742,9 +742,9 @@ function updateRelatedItemsValue(){
   }
 
   function clearRoomTypeFormula(){
-    $('#add_room_type_material_name').val('');
-    $('#add_room_type_material_formula').val('');
-    $('#add_room_type_material_is_active').prop('checked', true);
+    $('#add_room_type_formula_name').val('');
+    $('#add_room_type_formula_formula').val('');
+    $('#add_room_type_formula_is_active').prop('checked', true);
   }
 
   $('#removeModalCenter').on('show.bs.modal', function (event) {

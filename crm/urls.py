@@ -21,6 +21,8 @@ from common.access_decorators_mixins import admin_login_required, app_login_requ
 from django.http import HttpResponse
 import json
 from companies.models import Company
+from common.constants import FETCH_URL_NAME
+from common.views import FetchView
 app_name = 'crm'
 
 logger = logging.getLogger(__name__)
@@ -96,9 +98,11 @@ urlpatterns = [
     # path('planner/', include('planner.urls', namespace="planner")),
     path('logout/', views.LogoutView, {'next_page': '/login/'}, name="logout"),
     path('api/',include('api.urls',namespace="api")),
-    url(r'^%s(?P<path>.*)$' % settings.MEDIA_URL[1:], admin_serve, {'document_root': settings.MEDIA_ROOT}),
+    #url(r'^%s(?P<path>.*)$' % settings.MEDIA_URL[1:], admin_serve, {'document_root': settings.MEDIA_ROOT}),
+    url(r'^%s/(?P<path>.*)$' % FETCH_URL_NAME,FetchView.as_view(),name=FETCH_URL_NAME),
     url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
-    url(r'^api/%s(?P<path>.*)$' % settings.MEDIA_URL[1:], protected_serve, {'document_root': settings.MEDIA_ROOT}),
+    #url(r'^api/%s(?P<path>.*)$' % settings.MEDIA_URL[1:], protected_serve, {'document_root': settings.MEDIA_ROOT}),
+    
     
 
 ]#+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

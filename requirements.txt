@@ -33,3 +33,4 @@ Pillow
 numexpr
 braintree
 colorfield
+cryptography

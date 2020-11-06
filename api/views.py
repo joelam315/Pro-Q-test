@@ -4,13 +4,14 @@ import os
 import pdfkit
 import braintree
 import logging
-
+import re
 
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.template.loader import render_to_string
 from django.http.response import HttpResponse, JsonResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
+from django.core.validators import URLValidator
 from django.db.models import Q
 
 from common.models import User
@@ -184,12 +185,81 @@ from rest_framework import serializers
 from django.views.generic import (CreateView, DeleteView, DetailView,
 	TemplateView, UpdateView, View)
 
+import magic
+from common.crypt import Cryptographer 
+
 logger = logging.getLogger(__name__)
 
 token_param=openapi.Parameter(name='Authorization',in_=openapi.IN_HEADER,description="Bearer token required", type=openapi.TYPE_STRING)
 
 default_param = openapi.Response(name='result', in_=openapi.IN_BODY,description="Return True if there is no internal error", type=openapi.TYPE_BOOLEAN)
 
+
+#Fetch Encrypted File
+class APIFetchView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+
+	def get(self,request,*args,**kwargs):
+
+		user=request.user
+		path=request.path
+		if not path:
+			raise PermissionDenied
+		_none,_api,_private,path=path.split('/',3)
+		#return Response(path)
+		_media,_type,_identity,_param=path.split('/',3)
+		if _type=="companies":
+			try:
+				company=Company.objects.get(id=_identity)
+				if company.owner==request.user:
+					if self._is_url(path):
+
+						content = requests.get(path, stream=True).raw.read()
+
+					else:
+
+						# Normalise the path to strip out naughty attempts
+						path = os.path.normpath(path).replace(
+							settings.MEDIA_URL, settings.MEDIA_ROOT, 1
+						)
+
+						# Evil path request!
+						'''if not path.startswith(settings.MEDIA_ROOT):
+							return HttpResponse(
+								"evil", content_type="application/json"
+							)
+							raise Http404'''
+
+						# The file requested doesn't exist locally.  A legit 404
+						if not os.path.exists(path):
+							return HttpResponse(
+								"not exist", content_type="application/json"
+							)
+							raise Http404
+
+						with open(path, "rb") as f:
+							content = f.read()
+					content = Cryptographer.decrypted(content)
+					return HttpResponse(
+						content, content_type=magic.Magic(mime=True).from_buffer(content)
+					)
+					
+				else:
+					raise PermissionDenied
+			except ObjectDoesNotExist:
+				raise PermissionDenied
+
+		raise PermissionDenied
+
+	@staticmethod
+	def _is_url(path):
+		try:
+			URLValidator()(path)
+			return True
+		except ValidationError:
+			return False
 
 #User
 
@@ -1595,6 +1665,7 @@ class GenerateProjectQuotation(APIView):
 	)
 
 	def post(self,request,*args,**kwargs):
+
 		ret={}
 		ret["result"]=True
 		data = request.data
@@ -1613,6 +1684,24 @@ class GenerateProjectQuotation(APIView):
 		
 		context={}
 		context["company"]=project.company
+		#return Response(context["company"].logo_pic.path)
+		with open(context["company"].logo_pic.path, "rb") as f:
+			logo_pic = f.read()
+		with open(context["company"].sign.path, "rb") as f:
+			sign = f.read()
+		logo_pic = Cryptographer.decrypted(logo_pic)
+		sign=Cryptographer.decrypted(sign)
+		#return Response(logo_pic_data)
+		company_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/"
+		os.makedirs(os.path.dirname(company_path), exist_ok=True)
+		with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
+			static_file.write(logo_pic)
+		with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
+			static_file.write(sign)
+		context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
+		context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
+
+		#return HttpResponse(context["logo_pic"],content_type="image/png")
 		context["project"]=project
 		context["items"]=project.all_items()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
@@ -1624,6 +1713,7 @@ class GenerateProjectQuotation(APIView):
 		footer=render_to_string('quotation_footer.html',context=context)
 		header=render_to_string('quotation_header.html',context=context,request=request)
 		#return HttpResponse(html)
+		#return HttpResponse(header)
 		doc_header_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/doc_header.html"
 		os.makedirs(os.path.dirname(doc_header_path), exist_ok=True)
 		with open(doc_header_path, 'w') as static_file:
@@ -1642,17 +1732,21 @@ class GenerateProjectQuotation(APIView):
 			'footer-font-name':'Arial,serif',
 			'footer-font-size':'12'
 		}
-		pdfkit.from_string(html, 'out.pdf', options=options)
+		filename= project.company.name.replace(" ","_").replace(".","").replace(",","")+"_project_"+context["quotation_no"]+"_quotation"+str(context["date"]).replace(" ","_")+".pdf"
+		
+		pdfkit.from_string(html, company_path+filename, options=options)
 		'''options = {
 			'quiet': ''
 		}
 
 		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
-		pdf = open("out.pdf", 'rb')
+		pdf = open(company_path+filename, 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
-		response['Content-Disposition'] = 'attachment; filename='+project.company.name.replace(" ","_")+"_project_"+context["quotation_no"]+'_quotation'+str(context["date"]).replace(" ","_")+'.pdf'
+		response['Content-Disposition'] = 'attachment; filename='+filename
 		pdf.close()
-		os.remove("out.pdf")
+		os.remove(company_path+filename)
+		os.remove(context["company"].logo_pic.path)
+		os.remove(context["company"].sign.path)
 		#os.remove(doc_header_path)
 		if not project.quotation_generated_on or project.updated_on>project.quotation_generated_on:
 			project.quotation_generated_on=datetime.datetime.now()
@@ -1830,6 +1924,21 @@ class GenerateProjectInvoice(APIView):
 		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
+		with open(context["company"].logo_pic.path, "rb") as f:
+			logo_pic = f.read()
+		with open(context["company"].sign.path, "rb") as f:
+			sign = f.read()
+		logo_pic = Cryptographer.decrypted(logo_pic)
+		sign=Cryptographer.decrypted(sign)
+		#return Response(logo_pic_data)
+		company_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/"
+		os.makedirs(os.path.dirname(company_path), exist_ok=True)
+		with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
+			static_file.write(logo_pic)
+		with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
+			static_file.write(sign)
+		context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
+		context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
 		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
@@ -1857,17 +1966,22 @@ class GenerateProjectInvoice(APIView):
 			'encoding': "UTF-8",
 			'header-html': doc_header_path
 		}
-		pdfkit.from_string(html, 'out.pdf', options=options)
+
+		filename= project.company.name.replace(" ","_").replace(".","").replace(",","")+"_project_"+context["quotation_no"]+"_invoice_"+context["invoice_no"]+"_"+str(context["date"]).replace(" ","_")+".pdf"
+		pdfkit.from_string(html, company_path+filename, options=options)
 		'''options = {
 			'quiet': ''
 		}
 
 		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
-		pdf = open("out.pdf", 'rb')
+		#filename=project.company.name.replace(" ","_")+"_project_"+context["quotation_no"]+'_invoice'+str(context["date"]).replace(" ","_")+'.pdf'
+		pdf = open(company_path+filename, 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
-		response['Content-Disposition'] = 'attachment; filename='+project.company.name.replace(" ","_")+"_project_"+context["quotation_no"]+'_invoice'+str(context["date"]).replace(" ","_")+'.pdf'
+		response['Content-Disposition'] = 'attachment; filename='+filename
 		pdf.close()
-		os.remove("out.pdf")
+		os.remove(company_path+filename)
+		os.remove(context["company"].logo_pic.path)
+		os.remove(context["company"].sign.path)
 		#os.remove(doc_header_path)
 		ProjectInvoice.objects.get_or_create(project=project,invoice_id=charging_stage_id)
 		return response
@@ -2049,6 +2163,21 @@ class GenerateProjectReceipt(APIView):
 		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
+		with open(context["company"].logo_pic.path, "rb") as f:
+			logo_pic = f.read()
+		with open(context["company"].sign.path, "rb") as f:
+			sign = f.read()
+		logo_pic = Cryptographer.decrypted(logo_pic)
+		sign=Cryptographer.decrypted(sign)
+		#return Response(logo_pic_data)
+		company_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/"
+		os.makedirs(os.path.dirname(company_path), exist_ok=True)
+		with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
+			static_file.write(logo_pic)
+		with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
+			static_file.write(sign)
+		context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
+		context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
 		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
@@ -2078,17 +2207,21 @@ class GenerateProjectReceipt(APIView):
 			'encoding': "UTF-8",
 			'header-html': doc_header_path
 		}
-		pdfkit.from_string(html, 'out.pdf', options=options)
+		
+		filename= project.company.name.replace(" ","_").replace(".","").replace(",","")+"_project_"+context["quotation_no"]+"_receipt_"+context["receipt_no"]+"_"+str(context["date"]).replace(" ","_")+".pdf"
+		pdfkit.from_string(html, company_path+filename, options=options)
 		'''options = {
 			'quiet': ''
 		}
 
 		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
-		pdf = open("out.pdf", 'rb')
+		pdf = open(company_path+filename, 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
-		response['Content-Disposition'] = 'attachment; filename='+project.company.name.replace(" ","_")+"_project_"+context["quotation_no"]+'_receipt'+str(context["date"]).replace(" ","_")+'.pdf'
+		response['Content-Disposition'] = 'attachment; filename='+filename
 		pdf.close()
-		os.remove("out.pdf")
+		os.remove(company_path+filename)
+		os.remove(context["company"].logo_pic.path)
+		os.remove(context["company"].sign.path)
 		#os.remove(doc_header_path)
 		ProjectReceipt.objects.get_or_create(project=project,receipt_id=charging_stage_id)
 		
@@ -3011,6 +3144,7 @@ class CreateProjectMilestoneView(APIView):
 			ret["result"]=False
 			ret["reason"]="Project not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		ret["project_milestone_id"]=project_milestone.id
 		return Response(ret,status=status.HTTP_200_OK)
 
 class UpdateProjectMilestoneView(APIView):

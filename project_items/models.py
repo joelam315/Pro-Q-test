@@ -63,7 +63,7 @@ class Item(models.Model):
 	is_active=models.BooleanField(default=True)
 	value_based_price=models.DecimalField(
         max_digits=12, decimal_places=2)
-
+	item_formulas=JSONField(null=True,blank=True)
 
 	def __str__(self):
 		return self.name
@@ -89,15 +89,41 @@ class Item(models.Model):
 			value_based_price=self.value_based_price
 		)
 
+	def cal_formulas(self,value,rfps,vbp,mvbp):
+
+		cal_formulas_obj=self.item_formulas
+		all_ret={}
+		if cal_formulas_obj!=None and cal_formulas_obj!="":
+			for cal_formula_obj in cal_formulas_obj:
+				cal_formula=cal_formula_obj["formula"]
+				params=[ip.as_json() for ip in self.item_properties.all()]
+				#params.sort(key=len_symbol,reverse=True)
+				#return params
+				for param in params:
+					cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["symbol"],0)))
+					cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["symbol"],0)))
+				for key in rfps.keys():
+					cal_formula=cal_formula.replace("\""+key+"\"",str(rfps[key]))
+					cal_formula=cal_formula.replace("\'"+key+"\'",str(rfps[key]))
+				cal_formula=cal_formula.replace("\"value_based_price\"",str(vbp))
+				cal_formula=cal_formula.replace("\'value_based_price\'",str(vbp))
+				cal_formula=cal_formula.replace("\"material.value_based_price\"",str(mvbp))
+				cal_formula=cal_formula.replace("\'material.value_based_price\'",str(mvbp))
+				#return (cal_formula)
+				ret=ne.evaluate(cal_formula)
+				ret=ret if str(ret)!="[]" else 0
+				all_ret[cal_formula_obj["name"]]=ret
+		return all_ret
+
 	class Meta:
 
 		verbose_name= 'Item'
 		verbose_name_plural= 'Items'
-		#ordering = ['item_type']
+		ordering = ['-id']
 
 class ItemFormula(models.Model):
 	name=models.CharField(max_length=50)
-	item=models.ForeignKey(Item,related_name="item_formulas",on_delete=models.PROTECT)
+	item=models.ForeignKey(Item,related_name="item_formulas_s",on_delete=models.PROTECT)
 	formula=models.TextField()
 	is_active=models.BooleanField(default=True)
 
@@ -107,8 +133,8 @@ class ItemFormula(models.Model):
 		#params.sort(key=len_symbol,reverse=True)
 		#return params
 		for param in params:
-			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["name"],0)))
-			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["name"],0)))
+			cal_formula=cal_formula.replace("\""+param["symbol"]+"\"",str(value.get(param["symbol"],0)))
+			cal_formula=cal_formula.replace("\'"+param["symbol"]+"\'",str(value.get(param["symbol"],0)))
 		for key in rfps.keys():
 			cal_formula=cal_formula.replace("\""+key+"\"",str(rfps[key]))
 			cal_formula=cal_formula.replace("\'"+key+"\'",str(rfps[key]))

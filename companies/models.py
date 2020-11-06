@@ -8,11 +8,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 from common.models import User
 from common.utils import INDCHOICES, COUNTRIES
+from common.fields import  EncryptedImageField
+from common.constants import FETCH_URL_NAME
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils.text import slugify
 from contacts.models import Contact
 from teams.models import Teams
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES, PROJECT_LOWER_CHOICES
+
 
 class Tags(models.Model):
     name = models.CharField(max_length=20)
@@ -83,12 +86,26 @@ class Company(models.Model):
         'leads.Lead', related_name="company_leads",
         on_delete=models.SET_NULL, null=True)'''
     owner =models.OneToOneField(User,related_name='owned_company',on_delete=models.CASCADE)
-    logo_pic = models.FileField(
-        max_length=1000, upload_to=logo_url, null=True, blank=True)
-    br_pic = models.FileField(
-        max_length=1000, upload_to=br_url, null=True, blank=True)
-    sign = models.FileField(
-        max_length=1000, upload_to=sign_url, null=True, blank=True)
+    #logo_pic = models.FileField(
+    #    max_length=1000, upload_to=logo_url, null=True, blank=True)
+
+    logo_pic=EncryptedImageField(upload_to=logo_url,width_field="logo_pic_width",height_field="logo_pic_height",null=True,blank=True)
+    logo_pic_width = models.PositiveIntegerField(default=1)
+    logo_pic_height = models.PositiveIntegerField(default=1)
+    
+    #br_pic = models.FileField(
+    #    max_length=1000, upload_to=br_url, null=True, blank=True)
+
+    br_pic=EncryptedImageField(upload_to=br_url,width_field="br_pic_width",height_field="br_pic_height",null=True,blank=True)
+    br_pic_width = models.PositiveIntegerField(default=1)
+    br_pic_height = models.PositiveIntegerField(default=1)
+    
+    #sign = models.FileField(
+    #    max_length=1000, upload_to=sign_url, null=True, blank=True)
+
+    sign=EncryptedImageField(upload_to=sign_url,width_field="sign_width",height_field="sign_height",null=True,blank=True)
+    sign_width = models.PositiveIntegerField(default=1)
+    sign_height = models.PositiveIntegerField(default=1)
 
     def __str__(self):
         return self.name
@@ -96,7 +113,7 @@ class Company(models.Model):
     def as_json(self):
         return dict(
             name=self.name,
-            logo_path="api/media/"+str(self.logo_pic),
+            logo_path="api/"+FETCH_URL_NAME+"/media/"+str(self.logo_pic),
             owner=self.owner.display_name
         )
 

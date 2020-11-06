@@ -95,7 +95,7 @@
                     </td>
                     <td>
                       {% if company.sign %}
-                          {% thumbnail company.sign "125x125" as im %}
+                          {% thumbnail company.sign "125x125" format="PNG" as im %}
                           <img src="\app/{{ im.url }}">
                           {% endthumbnail %}
                       {% endif %}

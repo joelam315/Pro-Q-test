@@ -17,7 +17,7 @@
 {% endblock extralinks %}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
-    <li class="breadcrumb-item"> <a href="{% url 'project_items:list_item_types' %}">Item Types</a></li>
+    <li class="breadcrumb-item"> <a href="{% url 'project_items:list_items' %}">Items</a></li>
   </ol>
 </nav>
 {% endblock %}
@@ -38,7 +38,7 @@
                   <button class="btn primary_btn dropdown-toggle" type="button" data-toggle="dropdown">Actions
                     <span class="caret"></span></button>
                   <ul class="dropdown-menu" style="width:fit-content; min-width:-webkit-fill-available; margin-top: 0;">
-                    <li><a href="{% url 'project_items:edit_item_type' item_type_record.id %}"
+                    <li><a href="{% url 'project_items:edit_item' item_record.id %}"
                         style="background:#17a2b8; color: white; font-weight: 600;">Edit</a></li>
                   </ul>
                 </div>
@@ -47,17 +47,31 @@
           </div>
 
           <div class="row marl">
-            <div class="col-md-4">
+            <div class="col-md-6">
               <div class="filter_col col-md-12" id="iname">
                 <div class="form-group">
-                  <label class="item_type_field_label" for="id_name" data-name="name">Name</label>
-                  <div class="item_type_field" id="item_type_name" data-name="name">{{ item_type_record.name }}</div>
+                  <label class="item_field_label" for="id_name" data-name="name">Name</label>
+                  <div class="item_field" id="item_name" data-name="name">{{ item_record.name }}</div>
                 </div>
               </div>
               <div class="filter_col col-md-12">
                 <div class="form-group">
-                  <label class="item_type_field_label" for="id_type" data-name="name">Active</label>
-                  <div class="item_type_field" id="item_type_type" data-name="name">{{ item_type_record.is_active }}</div>
+                  <label class="item_field_label" for="id_value_based_price" data-name="name">Value Based Price</label>
+                  <div class="item_field" id="item_value_based_price" data-name="name">{{ item_record.value_based_price }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12" id="iname">
+                <div class="form-group">
+                  <label class="item_field_label" for="id_type" data-name="name">Type</label>
+                  <div class="item_field" id="item_type" data-name="name">{{ item_record.type }}</div>
+                </div>
+              </div>
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="item_field_label" for="id_is_active" data-name="name">Active</label>
+                  <div class="item_field" id="item_is_active" data-name="name">{{ item_record.is_active }}</div>
                 </div>
               </div>
             </div>

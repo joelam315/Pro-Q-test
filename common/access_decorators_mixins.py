@@ -9,6 +9,8 @@ from rest_framework_simplejwt.state import token_backend
 from rest_framework_simplejwt.exceptions import TokenBackendError
 from common.models import User
 
+from django.http import (Http404,)
+
 
 
 def sales_access_required(function):

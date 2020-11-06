@@ -15,8 +15,8 @@
 		<tr>
 			<td rowspan="6">
 				{% if company.logo_pic %}
-                   	{% thumbnail company.logo_pic "125x125" as im %}
-                    <img src="\app/{{ im.url }}">
+                   	{% thumbnail company.logo_pic "125x125" format="PNG" as im %}
+                    <img src="\app{{ im.url }}">
                     {% endthumbnail %}
                 {% endif %}
             </td>

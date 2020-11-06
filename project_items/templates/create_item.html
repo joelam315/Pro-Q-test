@@ -124,15 +124,17 @@
               
 
             </div>
-            {% if item_obj %}
+
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
                 <div class="filter_col col-md-12">
-                  <div class="form-group">
+                  <div class="form-group" style="text-align: left!Important;">
                     <label for="exampleInputEmail1" class="required">Item Formula</label>
+                  </div>
+                  <div clss="form-group">
                     <div class="row">
                       <div class="filter_col col-md-12">
-                        <table class="table table-hover" id="table_item_formula" {% if item_formula_objs|length <= 0 %}style="display:none"{% endif %}>
+                        <table class="table table-hover" id="table_item_formula" {% if item_objs.item_formula == "{}" %}style="display:none"{% endif %}>
                           <thead>
                             <tr>
                               <th scope="col" width="10%">#</th>
@@ -143,18 +145,9 @@
                             </tr>
                           </thead>
                           <tbody>
-                            {% for item_formula_obj in item_formula_objs %}
-                            <tr id="row_{{ item_formula_obj.id }}">
-                              <th scope='row'>{{forloop.counter}}</th>
-                              <td>{{item_formula_obj.name}}</td>
-                              <td>{{item_formula_obj.formula}}</td>
-                              <td>{{item_formula_obj.is_active}}</td>
-                              <td><button type="button" class="btn btn-success edit" title="Edit" id="editId_{{ item_formula_obj.id }}" data-toggle="modal" data-target="#editModal" data-editid="{{item_formula_obj.id}}" data-editname="{{item_formula_obj.name}}" data-editformula="{{item_formula_obj.formula}}" data-editisactive="{{item_formula_obj.is_active}}"><i
-                        class="fas fa-pencil-alt"></i></button> <button type="button" class="btn btn-danger" style="font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;" id="removeId_{{ item_formula_obj.id }}" data-toggle="modal" data-target="#removeModalCenter" data-removeid="{{item_formula_obj.id}}"><i class="fas fa-trash-alt"></i></button></td>
-                            </tr>
-                            {% endfor %}
                           </tbody>
                         </table>
+                        <input id="id_item_formulas" type="hidden" name="item_formulas">
                       </div>
                     </div>
                     <div class="row">
@@ -168,7 +161,7 @@
                 </div>
               </div>
             </div>
-            {% endif %}
+  
             <input type="hidden" id="save_new_form" name="savenewform">
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
@@ -187,7 +180,7 @@
 
   </div>
 </form>
-{% if item_obj %}
+
 <!-- Add Formula Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -198,19 +191,18 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="item_formula_form" method="POST" action='{% url 'project_items:add_item_formula' %}'>
+      <form id="add_item_formula_form">
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
-                <div class="col-md-4">
+                <div class="col-md-8">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Name{% if item_formula_form.name.field.required %}<span
-                              class="error">*</span>{% endif %}</label>
-                          {{ item_formula_form.name }}
-                          <span class="error">{{ item_formula_form.name.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Name<span class="error">*</span></label>
+                          <input type="text" name="name" class="form-control" placeholder="Name" required="" id="add_item_formula_name">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -221,11 +213,9 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Is Active{% if item_formula_form.is_active.field.required %}<span
-                                    class="error">*</span>{% endif %}</label>
-                          {{ item_formula_form.is_active }}
-                          <input type="hidden" value={{ item_obj.id }} name="item">
-                          <span class="error">{{ item_formula_form.is_active.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Is Active</label>
+                          <input type="checkbox" name="is_active" class="form-control" style="width:auto;" placeholder="Is active" id="add_item_formula_is_active" checked="">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -236,10 +226,9 @@
                 <div class="col-md-12">
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
-                    <label for="inputZip">Formula{% if item_formula_form.formula.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ item_formula_form.formula }}
-                    <span class="error" id="id__price">{{ item_formula_form.formula.errors }}</span>
+                    <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
+                    <textarea name="formula" class="form-control" placeholder="Formula" required="" id="add_item_forumla_formula"></textarea>
+                    <span class="error" id="id__price"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
@@ -267,19 +256,18 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form id="edit_item_formula_form" method="POST" action="/project_items/item_formula/edit/">
+      <form id="edit_item_formula_form">
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
-                <div class="col-md-4">
+                <div class="col-md-8">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Name{% if item_formula_form.name.field.required %}<span
-                              class="error">*</span>{% endif %}</label>
-                          {{ item_formula_form.name }}
-                          <span class="error">{{ item_formula_form.name.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Name<span class="error">*</span></label>
+                          <input type="text" name="name" class="form-control" placeholder="Name" required="" id="edit_item_formula_name">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -290,11 +278,9 @@
                     <div class="form-group">
                       <div class="row">
                         <div class="filter_col col-md-12">
-                          <label for="exampleInputEmail1" class="required">Is Active{% if item_formula_form.is_active.field.required %}<span
-                                    class="error">*</span>{% endif %}</label>
-                          {{ item_formula_form.is_active }}
-                          <input type="hidden" value={{ item_obj.id }} name="item">
-                          <span class="error">{{ item_formula_form.is_active.errors }}</span>
+                          <label for="exampleInputEmail1" class="required">Is Active</label>
+                          <input type="checkbox" name="is_active" class="form-control" style="width:auto;" placeholder="Is active" id="edit_item_formula_is_active" checked="">
+                          <span class="error"></span>
                         </div>
                       </div>
                     </div>
@@ -305,10 +291,9 @@
                 <div class="col-md-12">
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
-                    <label for="inputZip">Formula{% if item_formula_form.formula.field.required %}<span
-                        class="error_marker" style="color:red"> * </span>{% endif %}</label>
-                    {{ item_formula_form.formula }}
-                    <span class="error" id="id__price">{{ item_formula_form.formula.errors }}</span>
+                    <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
+                    <textarea name="formula" class="form-control" placeholder="Formula" required="" id="edit_item_formula_formula"></textarea>
+                    <span class="error" id="id__price"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
@@ -346,7 +331,7 @@
     </div>
   </div>
 </div>
-{% endif %}
+
 {% endblock %}
 {% block js_block %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
@@ -361,6 +346,10 @@
   var ip_all=[]; // all item properties
 
   var ipSet=new Set(); //check item properties duplication
+
+  var if_str=decode("{{item_obj.item_formulas}}").replaceAll("'",'"');
+  $('#id_item_formulas').val(if_str);
+  var _if;
 
   //init
 
@@ -406,7 +395,26 @@
     $('#select_item_properties').select2();
     initIPChoice();
     initIPTable();
+    initIF();
+    updateIFTable();
   });
+
+  function decode(str) {
+    str=str.replace(/&#(\d+);/g, function(match, dec) {
+      return String.fromCharCode(dec);
+    });
+    return str.replace(/&quot;/g, '\\"');
+  }
+
+  function initIF(){
+    if(if_str=="None" || if_str==""){
+      _if=[]
+    }
+    else{
+      _if=JSON.parse(if_str);
+      console.log(_if);
+    }
+  }
 
   function initIPChoice(){
     //item properties loop
@@ -445,6 +453,28 @@
       
       updateItemPropertiesValue();
     }
+
+  function updateIFTable(){
+    console.log(_if);
+    var tbody=$("#table_item_formula tbody");
+    var content="";
+    if(Object.keys(_if).length==0){
+      tbody.html("<td colspan='5'>There is no room type formula</td>");
+    }
+    else{
+      for(i in _if){
+        content+="<tr id=\"row_"+(parseInt(i)+1)+"\">"+
+                    "<th scope='row'>"+(parseInt(i)+1)+"</th>"+
+                    "<td>"+_if[i].name+"</td>"+
+                    "<td>"+_if[i].formula+"</td>"+
+                    "<td>"+_if[i].is_active+"</td>"+
+                    "<td><button type=\"button\" class=\"btn btn-success edit\" title=\"Edit\" id=\"editId_"+i+"\" data-toggle=\"modal\" data-target=\"#editModal\" data-editid=\""+i+"\" data-editname=\""+_if[i].name+"\" data-editformula='"+_if[i].formula+"' data-editisactive=\""+_if[i].is_active+"\"><i class=\"fas fa-pencil-alt\"></i></button> <button type=\"button\" class=\"btn btn-danger\" style=\"font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;\" id=\"removeId_"+i+"\" data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+i+"\"><i class=\"fas fa-trash-alt\"></i></button></td>"+
+                  "</tr>"
+      }
+      tbody.html(content);
+    }
+    console.log(tbody);
+  }
 
 //Item Properties Function Start
 
@@ -510,8 +540,8 @@ function updateItemPropertiesValue(){
 //Item Properties Function End
 
 
-    $('#item_formula_form').submit(function() { // catch the form's submit event
-      $.ajax({ // create an AJAX call...
+    $('#add_item_formula_form').submit(function() { // catch the form's submit event
+      /*$.ajax({ // create an AJAX call...
           data: $(this).serialize(), // get the form data
           type: $(this).attr('method'), // GET or POST
           url: $(this).attr('action'), // the file to call
@@ -519,12 +549,13 @@ function updateItemPropertiesValue(){
             console.log(response);
             addItemFormula(response.id);
           }
-      });
+      });*/
+      addItemFormula();
       return false;
   });
 
   $('#edit_item_formula_form').submit(function() { // catch the form's submit event
-      $.ajax({ // create an AJAX call...
+      /*$.ajax({ // create an AJAX call...
           data: $(this).serialize(), // get the form data
           type: $(this).attr('method'), // GET or POST
           url: $(this).attr('action')+curId, // the file to call
@@ -532,7 +563,8 @@ function updateItemPropertiesValue(){
             console.log(response);
             updateItemFormula(response.id);
           }
-      });
+      });*/
+      updateItemFormula(curId);
       return false;
   });
 
@@ -541,15 +573,13 @@ function updateItemPropertiesValue(){
   function addItemFormula(id){
 
     document.getElementById("table_item_formula").removeAttribute("style");
-    document.getElementById("table_item_formula").getElementsByTagName("tbody")[0].innerHTML+=
-    "<tr id='row_"+id+"'>"+
-      "<th scope='row'>"+$('#table_item_formula tr').length+"</th>"+
-      "<td>"+$('#item_formula_form #id_name').val()+"</td>"+
-      "<td>"+$('#item_formula_form #id_formula').val()+"</td>"+
-      "<td>"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#item_formula_form #id_name').val()+"' data-editformula='"+$('#item_formula_form #id_formula').val()+"' data-editisactive='"+($('#item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"+
-    "</tr>";
+    var name=$('#add_item_formula_name').val();
+    var formula=$('#add_item_forumla_formula').val();
+    var is_active=$('#add_item_formula_is_active').is(':checked');
+    _if.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
     clearItemFormula();
+    $("#id_item_formulas").val(JSON.stringify(_if));
+    updateIFTable();
     $('#addModal').modal('hide');
   }
 
@@ -564,28 +594,26 @@ function updateItemPropertiesValue(){
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
     curId=id
-    modal.find('#id_name').val(name)
-    modal.find('#id_formula').val(formula)
-    modal.find('#id_is_active').prop('checked', is_active=="True"?true:false);
-    modal.find('.btn-primary').attr('onclick','updateItemFormula('+id+')')
+    modal.find('#edit_item_formula_name').val(name)
+    modal.find('#edit_item_formula_formula').val(formula)
+    modal.find('#edit_item_formula_is_active').prop('checked', is_active=="True"?true:false);
+    //modal.find('.btn-primary').attr('onclick','updateItemFormula('+id+')')
   })
 
 
   function updateItemFormula(id){
-    console.log($('#table_item_formula #row_'+id).html(
-      "<th scope='row'>"+$('#table_item_formula #row_'+id+' th').html()+"</th>"+
-      "<td>"+$('#edit_item_formula_form #id_name').val()+"</td>"+
-      "<td>"+$('#edit_item_formula_form #id_formula').val()+"</td>"+
-      "<td>"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"</td>"+
-      "<td><button type='button' class='btn btn-success edit' title='Edit' id='editId_"+id+"' data-toggle='modal' data-target='#editModal' data-editid='"+id+"' data-editname='"+$('#edit_item_formula_form #id_name').val()+"' data-editformula='"+$('#edit_item_formula_form #id_formula').val()+"' data-editisactive='"+($('#edit_item_formula_form #id_is_active').is(":checked")?"True":"False")+"'><i class='fas fa-pencil-alt'></i></button> <button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+id+"' data-toggle=\"modal\" data-target=\"#removeModalCenter\" data-removeid=\""+id+"\"><i class='fas fa-trash-alt'></i></button></td>"
-    ));
+    var name=$("#edit_item_formula_name").val();
+    var formula=$("#edit_item_formula_formula").val();
+    var is_active=$("#edit_item_formula_is_active").is(':checked');
+    _if[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    updateIFTable();
     $('#editModal').modal('hide');
   }
 
   function clearItemFormula(){
-    $('#item_formula_form #id_name').val('');
-    $('#item_formula_form #id_formula').val('');
-    $('#item_formula_form #id_is_active').prop('checked', true);
+    $('#add_item_formula_name').val('');
+    $('#add_item_forumla_formula').val('');
+    $('#add_item_formula_is_active').prop('checked', true);
   }
 
   $('#removeModalCenter').on('show.bs.modal', function (event) {
@@ -599,22 +627,15 @@ function updateItemPropertiesValue(){
 
   function removeItemFormula(id){
       console.log(id);
-      $.ajax({ // create an AJAX call...
-          data: {"pk":id}, // get the form data
-          type: "POST", // GET or POST
-          url: "{% url 'project_items:remove_item_formula' %}", // the file to call
-          success: function(response) { // on success..
-            console.log(response);
-            var tbody=$("#table_item_formula tbody #row_"+id).parent();
-            $("#table_item_formula tbody #row_"+id).remove();
-            console.log(tbody.children().length);
-            if(tbody.children().length<=0){
-
-              tbody.parent().attr("style","display:none");
-            }
-            $('#removeModalCenter').modal('hide');
-          }
-      });
+      var tbody=$("#table_item_formula tbody").parent();
+      _if.splice(id,1);
+      $("#id_item_formulas").val(JSON.stringify(_if));
+      updateIFTable();
+      console.log(tbody.children().length);
+      if(tbody.children().length<=0){
+        tbody.parent().attr("style","display:none");
+      }
+      $('#removeModalCenter').modal('hide');
     }
 
 //Item Formula End

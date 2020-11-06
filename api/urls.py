@@ -4,6 +4,7 @@ from django.contrib.auth import views
 from django.conf.urls import url
 from django.urls import include, path
 from common.views import handler404, handler500
+from common.constants import FETCH_URL_NAME
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -102,7 +103,8 @@ from api.views import (
 	GetBraintreeClientTokenView,
 	SubsribePlanView,
 	CancelSubsriptionView,
-	UserTokenRefreshView
+	UserTokenRefreshView,
+	APIFetchView,
 )
 
 
@@ -111,6 +113,7 @@ app_name = 'api'
 urlpatterns = [
 	#path('register/',UserRegisterView.as_view(),name='user_register'),
 	#path('login/',UserLoginView.as_view(),name='user_login'),
+	url(r'^%s/(?P<path>.*)$' % FETCH_URL_NAME,APIFetchView.as_view(),name="api_"+FETCH_URL_NAME),
 	path('login/',UserRegisterOrLoginView.as_view(),name="user_login"),
 	path('check/', TokenVerifyView.as_view(), name='token_check'),
 	path('profile/',GetUserInfoView.as_view(),name="get_user_info"),

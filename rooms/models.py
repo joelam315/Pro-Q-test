@@ -212,8 +212,8 @@ class Room(models.Model):
 			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()]
 		)
 		ret["properties"]=dict()
-		formulas=self.room_type.cal_formulas()
-		for name in Object.keys(formulas):
+		formulas=self.room_type.cal_formulas(self.value)
+		for name in formulas:
 			ret["properties"][name]=formulas[name]
 		'''formulas=RoomTypeFormula.objects.filter(room_type=self.room_type)
 		for formula in formulas:
@@ -263,24 +263,27 @@ class RoomItem(models.Model):
 		)
 		if self.material:
 			ret["material"]=self.material
-		formulas=ItemFormula.objects.filter(item=self.item)
-		rfps={rfp.name:rfp.cal(self.value) for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
+		#formulas=ItemFormula.objects.filter(item=self.item)
+		#rfps={rfp.name:rfp.cal(self.value) for rfp in RoomTypeFormula.objects.filter(room_type=self.room.room_type)}
+		rfps=self.room.room_type.cal_formulas(self.room.value)
 		
 		#set vbp
 		vbp=self.item.value_based_price
+		mvbp=0
 		if self.material!=None and self.material!="":
 			itm=self.item.item_type.item_type_materials
 			if itm!=None and itm!=dict():
 				for material in itm:
 					if material["name"]==self.material:
 						if material["value_based_price"]!=None and material["value_based_price"]!="" and int(material["value_based_price"])>0:
-							vbp=material["value_based_price"]
+							mvbp=material["value_based_price"]
 						break
 		#vbp=self.material.value_based_price if self.material!=None and self.material.value_based_price!=None else self.item.value_based_price 
 		#//
 
-		for formula in formulas:
-			ret[formula.name]=formula.cal(self.value,rfps,vbp)
+		#for formula in formulas:
+		#	ret[formula.name]=formula.cal(self.value,rfps,vbp,mvbp)
+		ret.update(self.item.cal_formulas(self.value,rfps,vbp,mvbp))
 		return ret
 
 	class Meta:
