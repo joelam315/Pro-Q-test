@@ -1,5 +1,5 @@
 from django.contrib import admin
-from projects.models import Project, ProjectHistory, ProjectInvoice, ProjectReceipt
+from projects.models import Project, ProjectHistory, ProjectInvoice, ProjectReceipt, ProjectImage,ProjectImageSet
 from django.template.defaultfilters import escape
 from django.urls import reverse
 from django.utils.html import format_html
@@ -17,3 +17,5 @@ class Project(admin.ModelAdmin):
 admin.site.register(ProjectHistory)
 admin.site.register(ProjectInvoice)
 admin.site.register(ProjectReceipt)
+admin.site.register(ProjectImage)
+admin.site.register(ProjectImageSet)

@@ -2,6 +2,7 @@ from datetime import datetime
 from .models import ProjectWork, ProjectMilestone
 from companies.models import Company
 from projects.models import Project
+from projects.serializers import ProjectImageSetSerializer, ImageSetControlSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
@@ -57,8 +58,7 @@ class UpdateProjectWorkSerializer(serializers.ModelSerializer):
 		if user==project_work.project.company.owner:
 			if validated_data.get("name"):
 				project_work.name=validated_data["name"]
-			if validated_data.get("pic"):
-				project_work.pic=validated_data["pic"]
+			project_work.pic=validated_data["pic"]
 			if validated_data.get("start_date"):
 				project_work.start_date=validated_data["start_date"]
 			if validated_data.get("end_date"):
@@ -76,12 +76,11 @@ class GetProjectMilestoneRequestSerializer(serializers.ModelSerializer):
 		fields=("id",)
 
 class CreateProjectMilestoneSerializer(serializers.ModelSerializer):
-	img=Base64ImageField(
-		max_length=None, use_url=True,required=False,allow_null=True
-	)
+	imgs=serializers.ListField(child=Base64ImageField(max_length=None, use_url=True,required=False,allow_null=True))
+	
 	class Meta:
 		model=ProjectMilestone
-		fields=("name","project","pic","date","remind","description", "img")
+		fields=("name","project","pic","date","remind","description", "imgs")
 
 	def create(self,validated_data):
 		user = None
@@ -95,22 +94,21 @@ class CreateProjectMilestoneSerializer(serializers.ModelSerializer):
 		project=validated_data["project"]
 
 		if user==project.company.owner:
-			project_milestone=ProjectMilestone.objects.create(**validated_data)
-			if validated_data.get("img",False)!=False:
-				project_milestone.img_upload_date=datetime.now()
-				project_milestone.save()
+			project_milestone=ProjectMilestone.objects.create(**{x: validated_data[x] for x in validated_data if x not in {"imgs"}})
+			if validated_data.get("imgs",False)!=False:
+				serialized=ProjectImageSetSerializer(data={"project_milestone":project_milestone.id,"imgs":validated_data["imgs"]},context={'request':request})
+				serialized.is_valid(raise_exception=True)
+				pis=serialized.save()
 			return project_milestone
 		else:
 			raise PermissionDenied
 
 class UpdateProjectMilestoneSerializer(serializers.ModelSerializer):
 	project_milestone=serializers.IntegerField(required=True)
-	img=Base64ImageField(
-		max_length=None, use_url=True,required=False,allow_null=True
-	)
+	img_control=ImageSetControlSerializer(required=False)
 	class Meta:
 		model=ProjectMilestone
-		fields=("project_milestone","name","pic","date","remind","description", "img")
+		fields=("project_milestone","name","pic","date","remind","description", "img_control")
 
 	def update(self,instance,validated_data):
 		user = None
@@ -126,19 +124,17 @@ class UpdateProjectMilestoneSerializer(serializers.ModelSerializer):
 		if user==project_milestone.project.company.owner:
 			if validated_data.get("name"):
 				project_milestone.name=validated_data["name"]
-			if validated_data.get("pic"):
-				project_milestone.pic=validated_data["pic"]
+			project_milestone.pic=validated_data["pic"]
 			if validated_data.get("date"):
 				project_milestone.date=validated_data["date"]
 			if validated_data.get("remind"):
 				project_milestone.remind=validated_data["remind"]
 			if validated_data.get("description"):
 				project_milestone.description=validated_data["description"]
-			if validated_data.get("img",False)!=False:
-				project_milestone.img=validated_data["img"]
-				project_milestone.img_upload_date=datetime.now()
-			elif validated_data.get("img")==None:
-				project_milestone.img_upload_date=None
+			if validated_data.get("img_control",False)!=False:
+				serialized=ProjectImageSetSerializer(instance=project_milestone.project_milestone_img_set,data={"img_control":validated_data["img_control"]},context={'request':request})
+				serialized.is_valid(raise_exception=True)
+				pis=serialized.save()
 			project_milestone.save()
 			return project_milestone
 		else:

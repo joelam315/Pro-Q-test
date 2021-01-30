@@ -27,8 +27,15 @@ class ItemProperty(models.Model):
 
 class ItemType(models.Model):
 	name=models.CharField(max_length=50)
-	item_type_materials=JSONField(null=True,blank=True)
+	item_type_materials=JSONField(null=True,blank=True,default=list)
 	is_active=models.BooleanField(default=True)
+
+	class Meta:
+		ordering = ['-id']
+
+	def clean(self):
+		if self.name:
+			self.name=self.name.strip()
 
 	def __str__(self):
 		return self.name
@@ -46,13 +53,17 @@ class ItemTypeMaterial(models.Model):
         max_digits=12, decimal_places=2)
 	is_active=models.BooleanField(default=True)
 
+	class Meta:
+		ordering = ['-id']
+
 	def  __str__(self):
 		return str(self.item_type)+": "+self.name
 
 	def as_json(self):
 		return dict(
 			id=self.id,
-			name=self.name
+			name=self.name,
+			suggested_value_based_price=self.value_based_price
 		)
 
 class Item(models.Model):
@@ -63,7 +74,7 @@ class Item(models.Model):
 	is_active=models.BooleanField(default=True)
 	value_based_price=models.DecimalField(
         max_digits=12, decimal_places=2)
-	item_formulas=JSONField(null=True,blank=True)
+	item_formulas=JSONField(null=True,blank=True,default=list)
 
 	def __str__(self):
 		return self.name

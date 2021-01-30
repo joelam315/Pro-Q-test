@@ -445,9 +445,12 @@ CACHES = {
 GATEWAY = braintree.BraintreeGateway(
     braintree.Configuration(
         braintree.Environment.Sandbox,
-        merchant_id="s2w9gn7svv8ff7j2",
-        public_key="xqhbcwp2yy2drjtm",
-        private_key="d1e00e88d22bfa38b6b693d1b8d51b62"
+        merchant_id="sht42bzjdcymmdhq",
+        public_key="n2my6vc49xxnftyd",
+        private_key="ede7040c9a162c4d344f3bae73319df3"
+        #merchant_id="s2w9gn7svv8ff7j2",
+        #public_key="xqhbcwp2yy2drjtm",
+        #private_key="d1e00e88d22bfa38b6b693d1b8d51b62"
     )
 )
 

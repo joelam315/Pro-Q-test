@@ -568,6 +568,18 @@ CURRENCY_CODES = (
     ('ZWL', _('ZWL, Dollar')),
 )
 
+MEASURE_QUANTIFIERS=(
+    ('mm','mm'),
+    ('m','m'),
+    ('ft','ft')
+
+)
+
+ITEM_QUANTIFIERS=(
+    (_('單'),_('單')),
+    (_('個'),_('個'))
+)
+
 
 def return_complete_address(self):
     address = ""

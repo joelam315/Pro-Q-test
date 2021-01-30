@@ -14,7 +14,7 @@ from project_expenses.models import ExpenseType
 from project_expenses.forms import ExpenseTypeForm
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
+from django.db.models import Q, ProtectedError
 from django.db import IntegrityError
 from common.access_decorators_mixins import (
 	sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin, AdminAccessRequiredMixin)
@@ -51,6 +51,9 @@ class ExpenseTypeListView(AdminAccessRequiredMixin,LoginRequiredMixin,TemplateVi
 		context = super(ExpenseTypeListView, self).get_context_data(**kwargs)
 		context["expense_type_list"] = self.get_queryset()
 		context["per_page"] = self.request.POST.get('per_page')
+		if self.request.session.get("protectedError",False):
+			context["protected_error"]=True
+			self.request.session["protectedError"]=False
 		#context["users"] = User.objects.filter(is_active=True).order_by('email')
 		search = False
 		if (
@@ -205,7 +208,11 @@ class RemoveExpenseTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 			self.request.user.is_superuser):
 			raise PermissionDenied
 		else:
-			self.object.delete()
+			try:
+				self.object.delete()
+			except ProtectedError:
+				request.session["protectedError"]=True
+				return redirect("project_expenses:list_expense_types")
 			if self.request.is_ajax():
 				return JsonResponse({'error': False})
 			return redirect("project_expenses:list_expense_types")

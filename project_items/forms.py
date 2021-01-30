@@ -44,6 +44,9 @@ class ItemTypeMaterialForm(forms.ModelForm):
         for key, value in self.fields.items():
             value.widget.attrs['placeholder'] = value.label
 
+    def clean_name(self):
+        return self.cleaned_data.get("name","").strip()
+
     class Meta:
         model=ItemTypeMaterial
         fields=(

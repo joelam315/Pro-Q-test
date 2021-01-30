@@ -39,16 +39,30 @@
               <div class="row marl">
                 <div class="filter_col col-md-2">
                   <div class="form-group">
-                    <label for="exampleInputEmail1">Name</label>
+                    <label for="exampleInputEmail1">Company Name</label>
                     <input type="text" class="form-control" placeholder="Company Name" name="name" {% if request.POST %}
                       value="{{request.POST.name}}" {%endif%} />
                   </div>
                 </div>
                 <div class="filter_col col-md-2">
                   <div class="form-group">
-                    <label for="exampleInputEmail1">Owner Username</label>
-                    <input type="text" class="form-control" placeholder="Owner Username" name="owner" {% if request.POST %}
-                      value="{{request.POST.owner}}" {%endif%} />
+                    <label for="exampleInputEmail1">Owner Name</label>
+                    <input type="text" class="form-control" placeholder="Owner Name" name="owner_name" {% if request.POST %}
+                      value="{{request.POST.owner_name}}" {%endif%} />
+                  </div>
+                </div>
+                <div class="filter_col col-md-2">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Owner Phone</label>
+                    <input type="text" class="form-control" placeholder="Phone" name="owner_phone" {% if request.POST %}
+                      value="{{request.POST.owner_phone}}" {%endif%} />
+                  </div>
+                </div>
+                <div class="filter_col col-md-2">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Company Email</label>
+                    <input type="text" class="form-control" placeholder="Email" name="company_email" {% if request.POST %}
+                      value="{{request.POST.company_email}}" {%endif%} />
                   </div>
                 </div>
                 <div class="filter_col col-md-2">
@@ -105,9 +119,11 @@
                         {% if open_companies|length > 0 %}
                         <tr>
                           <th width="5%">ID</th>
-                          <th width="17%">Name</th>
-                          <th width="13%">Owner</th>
-                          <th width="10">BR Approved</th>
+                          <th width="15%">Conmpany Name</th>
+                          <th width="15%">Owner Name</th>
+                          <th width="15%">Owner Phone</th>
+                          <th width="20%">Company Email</th>
+                          <th width="10%">BR Approved</th>
                           <th width="10%">Created On</th>
                           <th width="10%">Actions</th>
                         </tr>
@@ -130,7 +146,13 @@
                               href="#">{{ each_company.name }}</a>{% endif %}
                           </td>
                           <td>
-                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.username}}</a>
+                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.display_name}}</a>
+                          </td>
+                          <td>
+                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.phone}}</a>
+                          </td>
+                          <td>
+                            {{each_company.company_doc_header.email}}
                           </td>
                           <td title="{{each_company.created_on}}">{{ each_company.br_approved }}</td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
@@ -179,8 +201,10 @@
                         {% if close_companies|length > 0 %}
                         <tr>
                           <th width="5%">ID</th>
-                          <th width="31%">Name</th>
-                          <th width="26%">Owner</th>
+                          <th width="31%">Comapny Name</th>
+                          <th width="26%">Owner Name</th>
+                          <th width="10%">Owner Phone</th>
+                          <th width="10%">Comnpany Email</th>
                           <th width="16%">Created On</th>
                           <th width="15%">Actions</th>
                         </tr>
@@ -199,7 +223,13 @@
                               data-target="#exampleModalCenter_company{{each_company.id}}">{{ each_company.name }}</a>{% endif %}
                           </td>
                           <td>
-                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.username}}</a>
+                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.display_name}}</a>
+                          </td>
+                          <td>
+                            <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.phone}}</a>
+                          </td>
+                          <td>
+                            {{each_company.company_doc_header.email}}
                           </td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
                           <td class="actions">
@@ -288,6 +318,20 @@
                         <div class="form-group">
                           <label class="acc_field_label" for="id_owner" data-name="name">Owner</label>
                           <div class="account_field" id="company_owner" data-name="name">{{ company_record.owner.display_name }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="filter_col col-md-12">
+                        <div class="form-group">
+                          <label class="acc_field_label" for="id_owner" data-name="name">Phone</label>
+                          <div class="account_field" id="company_owner" data-name="name">{{ company_record.owner.phone }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="filter_col col-md-12">
+                        <div class="form-group">
+                          <label class="acc_field_label" for="id_owner" data-name="name">Company Email</label>
+                          <div class="account_field" id="company_owner" data-name="name">{{ company_record.company_doc_header.email }}
                           </div>
                         </div>
                       </div>

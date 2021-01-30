@@ -1,3 +1,4 @@
+from datetime import datetime
 from django import forms
 from projects.models import Project
 from project_items.models import ItemFormula
@@ -17,7 +18,7 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model=Room
-		fields=("name","room_type","value","related_project")
+		fields=("name","room_type","value","related_project","measure_quantifier")
 
 	def create(self, validated_data):
 		user = None
@@ -54,7 +55,7 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 	room_id=serializers.IntegerField()
 	class Meta:
 		model=Room
-		fields=("room_id","name","room_type","value")
+		fields=("room_id","name","room_type","value","measure_quantifier")
 
 	def create(self, validated_data):
 		user = None
@@ -82,7 +83,7 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 			room.value=_value if validated_data.get("value") else room.value
 			room.name=validated_data.get("name",room.name)
 			room.room_type=validated_data.get("room_type",room.room_type)
-
+			room.measure_quantifier=validated_data.get("measure_quantifier",room.measure_quantifier)
 			room.save()
 			return room
 		else:
@@ -92,7 +93,7 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 	room_item_id=serializers.IntegerField(required=False)
 	class Meta:
 		model=RoomItem
-		fields=("room_item_id","item","room","material","unit_price","value","quantity","remark")
+		fields=("room_item_id","item","room","material","material_value_based_price","unit_price","value","quantity","remark","measure_quantifier","item_quantifier")
 
 	def create(self,validated_data):
 		user = None
@@ -105,6 +106,7 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 		#project=Project.objects.get(id=validated_data["related_project"].id)
 		if user==validated_data["room"].related_project.company.owner:
 			data={}
+			data["material_value_based_price"]=validated_data["material_value_based_price"]
 			data["unit_price"]=validated_data["unit_price"]
 			_value={}
 			if validated_data["value"]:
@@ -115,9 +117,14 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 						raise ValidationError("Item value missing: "+item_property.symbol)
 			#data["value"]=_value
 			data["quantity"]=validated_data["quantity"]
+			data["measure_quantifier"]=validated_data["measure_quantifier"]
+			data["item_quantifier"]=validated_data["item_quantifier"]
 			if validated_data.get("remark"):
 				data["remark"]=validated_data["remark"]
 			room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],material=validated_data["material"],value=_value, defaults=data)
+			project=room_item[0].room.related_project
+			project.updated_on=datetime.now()
+			project.save()
 			return room_item[0]
 		else:
 			raise PermissionDenied
@@ -133,7 +140,8 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 		#project=Project.objects.get(id=validated_data["related_project"].id)
 		if user==validated_data["room"].related_project.company.owner:
 			room_item=instance
-
+			room_item.material_value_based_price=validated_data["material_value_based_price"]
+			
 			room_item.unit_price=validated_data["unit_price"]
 			_value={}
 			input_value=json.loads(validated_data["value"])
@@ -153,9 +161,13 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 				room_item.remark=""
 			room_item.material=validated_data["material"]
 			room_item.item=validated_data["item"]
+			room_item.measure_quantifier=validated_data["measure_quantifier"]
 			#room_item=RoomItem.objects.update_or_create(item=validated_data["item"],room=validated_data["room"],defaults=data)
 			
 			room_item.save()
+			project=room_item.room.related_project
+			project.updated_on=datetime.now()
+			project.save()
 			return room_item
 		else:
 			raise PermissionDenied
@@ -212,10 +224,11 @@ class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 			if validated_data.get("material"):
 				if validated_data["item"].item_type.item_type_materials:
 					for material in validated_data["item"].item_type.item_type_materials:
-						if material["name"]==validated_data.get("material"):
+						if material["name"].strip()==validated_data.get("material").strip():
 							cur_material=material
 							break
 				if cur_material==None:
+					#raise ValidationError(validated_data["item"].item_type.item_type_materials[0]["name"]+":"+validated_data.get("material"))
 					raise ValidationError("Material not match to this item.")
 			
 			#formulas=ItemFormula.objects.filter(item=validated_data["item"])
@@ -248,11 +261,17 @@ class ProjectRoomItemJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
 	name=serializers.CharField()
 	item_type=serializers.CharField()
+	material_value_based_price=serializers.FloatField()
 	unit_price=serializers.FloatField()
 	room=serializers.CharField()
-	quantity=serializers.IntegerField()
+	quantity=serializers.FloatField()
 	value=serializers.DictField(child=serializers.FloatField())
+	measure_quantifier=serializers.CharField()
+	item_quantifier=serializers.CharField()
 	remark=serializers.CharField()
+	measure_quantifier=serializers.CharField()
+	item_quantifier=serializers.CharField()
+	value_based_price=serializers.FloatField()
 
 class ProjectRoomJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()
@@ -269,6 +288,7 @@ class ProjectRoomDetailsSerializer(serializers.Serializer):
 	value=serializers.DictField(child=serializers.FloatField())
 	room_type=serializers.CharField()
 	room_project_items=ProjectRoomItemJsonSerializer(many=True)
+	measure_quantifier=serializers.CharField()
 	properties=serializers.DictField(child=serializers.FloatField())
 
 class GetProjectRoomDetailsResponseSerializer(serializers.Serializer):

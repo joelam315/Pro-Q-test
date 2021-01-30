@@ -362,7 +362,7 @@
   function addItemTypeMaterial(id){
 
     document.getElementById("table_item_type_material").removeAttribute("style");
-    var name=$('#add_item_type_material_name').val();
+    var name=$('#add_item_type_material_name').val().trim();
     var value_based_price=$('#add_item_type_material_value_based_price').val();
     var is_active=$('#add_item_type_material_is_active').is(':checked');
     itm.push({"name":name,"value_based_price":value_based_price,"is_active":is_active?"True":"False"});
@@ -392,7 +392,7 @@
 
   function updateItemTypeMaterial(id){
     
-    var name=$('#edit_item_type_material_name').val();
+    var name=$('#edit_item_type_material_name').val().trim();
     var value_based_price=$('#edit_item_type_material_value_based_price').val();
     var is_active=$('#edit_item_type_material_is_active').is(':checked');
     itm[id]={"name":name,"value_based_price":value_based_price,"is_active":is_active?"True":"False"};

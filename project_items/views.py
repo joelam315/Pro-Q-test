@@ -17,7 +17,7 @@ from project_items.forms import ItemTypeForm, ItemTypeMaterialForm, ItemForm, It
 from project_items.utils import PROJECT_TYPE, PROJECT_STATUS
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
+from django.db.models import Q, ProtectedError
 from django.db import IntegrityError
 from common.access_decorators_mixins import (
 	sales_access_required, marketing_access_required, SalesAccessRequiredMixin, MarketingAccessRequiredMixin, AdminAccessRequiredMixin)
@@ -55,6 +55,9 @@ class ItemTypesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
 		context = super(ItemTypesListView, self).get_context_data(**kwargs)
 		context["item_type_list"] = self.get_queryset()
 		context["per_page"] = self.request.POST.get('per_page')
+		if self.request.session.get("protectedError",False):
+			context["protected_error"]=True
+			self.request.session["protectedError"]=False
 		#context["users"] = User.objects.filter(is_active=True).order_by('email')
 		search = False
 		if (
@@ -88,7 +91,7 @@ class CreateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateVie
 		if form.is_valid():
 
 			item_type_obj = form.save(commit=False)
-
+			item_type_obj.full_clean()
 			item_type_obj.save()
 
 			return self.form_valid(form)
@@ -162,6 +165,7 @@ class UpdateItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateVie
 			
 			#origin_status=self.object.status
 			item_type_obj = form.save(commit=False)
+			item_type_obj.full_clean()
 			item_type_obj.save()
 			return self.form_valid(form)
 		return self.form_invalid(form)
@@ -220,7 +224,11 @@ class RemoveItemTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 			self.request.user.is_superuser):
 			raise PermissionDenied
 		else:
-			self.object.delete()
+			try:
+				self.object.delete()
+			except ProtectedError:
+				request.session["protectedError"]=True
+				return redirect("project_items:list_item_types")
 			if self.request.is_ajax():
 				return JsonResponse({'error': False})
 			return redirect("project_items:list_item_types")
@@ -378,6 +386,9 @@ class ItemsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 		context = super(ItemsListView, self).get_context_data(**kwargs)
 		context["item_list"] = self.get_queryset()
 		context["per_page"] = self.request.POST.get('per_page')
+		if self.request.session.get("protectedError",False):
+			context["protected_error"]=True
+			self.request.session["protectedError"]=False
 		#context["users"] = User.objects.filter(is_active=True).order_by('email')
 		search = False
 		if (
@@ -552,7 +563,11 @@ class RemoveItemView(AdminAccessRequiredMixin, LoginRequiredMixin, View):
 			self.request.user.is_superuser):
 			raise PermissionDenied
 		else:
-			self.object.delete()
+			try:
+				self.object.delete()
+			except ProtectedError:
+				request.session["protectedError"]=True
+				return redirect("project_items:list_items")
 			if self.request.is_ajax():
 				return JsonResponse({'error': False})
 			return redirect("project_items:list_items")

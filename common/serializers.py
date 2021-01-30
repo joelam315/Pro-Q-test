@@ -163,4 +163,16 @@ class ListDistrictResponseSerializer(serializers.Serializer):
 	result=serializers.BooleanField()
 	districts=DistrictJsonSerializer()
 
+class MeasureQuantifierJsonSerializer(serializers.Serializer):
+	measure_quantifier=serializers.ListField(child=serializers.CharField())
 
+class ListMeasureQuantifierResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	measure_quantifiers=MeasureQuantifierJsonSerializer()
+
+class ItemQuantifierJsonSerializer(serializers.Serializer):
+	item_quantifier=serializers.ListField(child=serializers.CharField())
+
+class ListItemQuantifierResponseSerializer(serializers.Serializer):
+	result=serializers.BooleanField()
+	item_quantifiers=ItemQuantifierJsonSerializer()

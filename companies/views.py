@@ -50,9 +50,15 @@ class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
             if request_post.get('name'):
                 queryset = queryset.filter(
                     name__icontains=request_post.get('name'))
-            if request_post.get('owner'):
+            if request_post.get('owner_name'):
                 queryset=queryset.filter(
-                    owner__username__icontains=request_post.get('owner'))
+                    owner__display_name__icontains=request_post.get('owner_name'))
+            if request_post.get('owner_phone'):
+                queryset=queryset.filter(
+                    owner__phone__icontains=request_post.get('owner_phone'))
+            if request_post.get('company_email'):
+                queryset=queryset.filter(
+                    company_doc_header__email__icontains=request_post.get('company_email'))
             if request_post.get('br_approved'):
                 queryset=queryset.filter(
                     br_approved__icontains=request_post.get('br_approved'))

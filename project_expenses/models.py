@@ -1,6 +1,9 @@
+import os
 import arrow
 import time
+import datetime
 from django.db import models
+from django.dispatch import receiver
 from projects.models import Project
 from django.utils.translation import ugettext_lazy as _
 from common.fields import EncryptedImageField
@@ -14,6 +17,9 @@ def expense_img_url(self, filename):
 class ExpenseType(models.Model):
 	name=models.CharField(max_length=50)
 	is_active=models.BooleanField(default=True)
+
+	class Meta:
+		ordering=['-id']
 
 	def __str__(self):
 		return self.name
@@ -40,7 +46,10 @@ class ProjectExpense(models.Model):
 	img=EncryptedImageField(upload_to=expense_img_url,width_field="img_width",height_field="img_height",null=True,blank=True)
 	img_width = models.PositiveIntegerField(default=1)
 	img_height = models.PositiveIntegerField(default=1)
-	img_upload_date=models.DateField(null=True)
+	img_upload_date=models.DateField(default=datetime.date.today,null=True)
+
+	class Meta:
+		ordering = ['-id']
 
 	def __str__(self):
 		return str(self.project)+" expense: "+self.name
@@ -52,7 +61,7 @@ class ProjectExpense(models.Model):
 			expense_type=self.expense_type.as_json(),
 			price=self.price,
 			pic=self.pic,
-			remark=self.remark if self.remark else "",
+			remark=self.remark if self.remark!=None and self.remark!="null" else "",
 			pay_date=str(self.pay_date)
 
 		)
@@ -67,3 +76,12 @@ class ProjectExpense(models.Model):
 			ret["date"]=self.img_upload_date
 		return ret
 
+@receiver(models.signals.post_delete, sender=ProjectExpense)
+def auto_delete_img_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `ProjectExpense` object is deleted.
+    """
+    if instance.img:
+        if os.path.isfile(instance.img.path):
+            os.remove(instance.img.path)

@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from projects.models import Project, CompanyProjectComparison
+from projects.models import Project, CompanyProjectComparison,ProjectImage,ProjectImageSet
 from datetime import datetime
 from companies.models import Company
 from companies.serializers import GeneralRemarkJsonSerializer, SetChargingStagesSerializer,SetQuotationGeneralRemarkSerializer,SetInvoiceGeneralRemarkSerializer,SetReceiptGeneralRemarkSerializer
@@ -7,8 +7,10 @@ from customers.models import Customer
 from customers.serializers import CustomerJsonSerializer
 from rooms.serializers import RoomItemJsonSerializer,ProjectItemByRoomJsonSerializer
 from project_expenses.serializers import ProjectExpenseJsonSerializer
+from project_timetable.models import ProjectMilestone
 from rest_framework import serializers
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist, ValidationError
+from common.fields import Base64ImageField
 
 class CreateProjectSerializer(serializers.ModelSerializer):
 
@@ -59,7 +61,7 @@ class CreateProjectSerializer(serializers.ModelSerializer):
 			charging_stages=cs,
 			document_format=df,
 			created_by=user,
-			job_no=company.job_no,
+			job_no=company.job_no+int(cdf.project_based_number),
 			quotation_remarks=company.get_quotation_general_remarks_json(),
 			invoice_remarks=company.get_invoice_general_remarks_json(),
 			receipt_remarks=company.get_receipt_general_remarks_json()
@@ -242,6 +244,98 @@ class SetProjectReceiptRemarksSerializer(serializers.Serializer):
 			project.receipt_remarks=validated_data["receipt_remarks"]
 			project.save()
 			return project
+
+class CreateProjectImageSetRequestSerializer(serializers.Serializer):
+	related_project=serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
+	project_milestone=serializers.PrimaryKeyRelatedField(queryset=ProjectMilestone.objects.all())
+	imgs=serializers.ListField(child=Base64ImageField(max_length=None, use_url=True,required=False,allow_null=True))
+
+class GetProjectImageSetRequestSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+
+class GetProjectImageRequestSerializer(serializers.Serializer):
+	id=serializers.IntegerField()
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=ProjectImage
+		fields=("img")
+
+class ImageSetControlSerializer(serializers.Serializer):
+	remove=serializers.ListField(child=serializers.IntegerField())
+	add=serializers.ListField(child=Base64ImageField(max_length=None, use_url=True,required=False,allow_null=True))
+
+
+class ProjectImageSetSerializer(serializers.ModelSerializer):
+	img_control=ImageSetControlSerializer(required=False)
+	imgs=serializers.ListField(required=False,child=Base64ImageField(max_length=None, use_url=True,required=False,allow_null=True))
+	class Meta:
+		model=ProjectImageSet
+		fields=("imgs","related_project","project_milestone","img_control")
+
+	def create(self,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+
+		if validated_data.get("related_project"):
+			project=validated_data["related_project"]
+
+		elif validated_data.get("project_milestone"):
+			project=validated_data["project_milestone"].project
+
+		else:
+			raise ValidationError("You must assign a related object to the image set.")
+
+		#project=get_object_or_404(Project,id=project_id)
+		_imgs=[]
+		if project.company.owner==user:
+			
+			if len(validated_data["imgs"])>5:
+				raise ValidationError("You can't assign more than 5 images")
+			for img in validated_data["imgs"]:
+				_img=ProjectImage.objects.create(related_project=project,img=img)
+				_imgs.append(_img)
+
+			if validated_data.get("related_project"):
+				ret=ProjectImageSet.objects.create(related_project=validated_data["related_project"])
+				ret.imgs.set(_imgs)
+
+			elif validated_data.get("project_milestone"):
+				ret=ProjectImageSet.objects.create(project_milestone=validated_data["project_milestone"])
+				ret.imgs.set(_imgs)
+			return ret
+
+		raise PermissionDenied
+
+	def update(self,instance,validated_data):
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+		company=Company.objects.get(owner=user)
+		if not company:
+			raise ValidationError("You must create a company first.")
+		project=instance.related_project if instance.related_project!=None else instance.project_milestone.project
+		_imgs=[]
+		if project.company.owner==user:
+			
+			if instance.imgs.count()-len(validated_data["img_control"]["remove"])+len(validated_data["img_control"]["add"])>5:
+				raise ValidationError("You can't assign more than 5 images")
+			ProjectImage.objects.filter(pk__in=validated_data["img_control"]["remove"]).delete()
+			if instance.imgs.count()+len(validated_data["img_control"]["add"])>5:
+				raise ValidationError("You can't assign more than 5 images")
+			for img in validated_data["img_control"]["add"]:
+				_img=ProjectImage.objects.create(related_project=project,img=img)
+				_imgs.append(_img)
+			instance.imgs.add(*_imgs)
+		return instance
+
+
 
 class ProjectJsonSerializer(serializers.Serializer):
 	id=serializers.IntegerField()

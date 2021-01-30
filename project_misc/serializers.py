@@ -1,3 +1,4 @@
+from datetime import datetime
 from django import forms
 from rest_framework import serializers
 from companies.models import Company
@@ -24,6 +25,9 @@ class SetProjectMiscSerializer(serializers.ModelSerializer):
 			if validated_data.get("remark"):
 				data["remark"]=validated_data["remark"]
 			project_misc=ProjectMisc.objects.update_or_create(project=validated_data["project"],misc=validated_data["misc"],defaults=data)
+			project=project_misc[0].project
+			project.updated_on=datetime.now()
+			project.save()
 			return project_misc[0]
 		else:
 			raise PermissionDenied
@@ -40,9 +44,13 @@ class SetProjectMiscSerializer(serializers.ModelSerializer):
 			project_misc=instance
 			project_misc.unit_price=validated_data["unit_price"]
 			project_misc.quantity=validated_data["quantity"]
+			project_misc.misc=validated_data["misc"]
 			if validated_data.get("remark"):
 				project_misc.remark=validated_data["remark"]
 			project_misc.save()
+			project=project_misc.project;
+			project.updated_on=datetime.now()
+			project.save()
 			return project_misc
 		else:
 			raise PermissionDenied

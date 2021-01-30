@@ -183,7 +183,7 @@
 
 <!-- Add Formula Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addModalLabel">Add Item Formula</h5>
@@ -192,8 +192,8 @@
         </button>
       </div>
       <form id="add_item_formula_form">
-        <div class="modal-body">
-            <div class="col-md-12">
+        <div class="modal-body" style="display: flex;">
+            <div class="col-md-7">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-8">
                   <div class="filter_col col-md-12">
@@ -227,11 +227,41 @@
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
                     <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
-                    <textarea name="formula" class="form-control" placeholder="Formula" required="" id="add_item_forumla_formula"></textarea>
-                    <span class="error" id="id__price"></span>
+                    <textarea name="formula" class="form-control" placeholder="Formula" required="" id="add_item_formula_formula"></textarea>
+                    <span class="error" id="id__item_formula_formula"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-12">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required"><i><b>Formula Hints</b></i></label>
+                          <p style="word-break:break-all;">
+                            <b><u>Variable List</u></b><br/>
+                            <span id="var_list"></span>
+                            <a style="color: blue;text-decoration: underline;" onClick="insertVarToFormula('add_item_formula_formula','value_based_price')">"value_based_price"</a><br/>
+                            <a style="color: blue;text-decoration: underline;" onClick="insertVarToFormula('add_item_formula_formula','material.value_based_price')">"material.value_based_price"</a><br/>
+                          </p>
+                          <span style="color:red;"><i><u>*Please usa a double quote(") to quote the variable symbol in formula</u></i></span>
+                          <table>
+                            <tr><td><b><u>Operator</u></b><br/></td><td></td></tr>
+                            <tr><td>Add:</td><td>+</td></tr>
+                            <tr><td>Minus:</td><td>-</td></tr>
+                            <tr><td>Multiply:</td><td>*</td></tr>
+                            <tr><td>Divide:</td><td>/</td></tr>
+                            <tr><td>Exponent:</td><td>^</td></tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -248,7 +278,7 @@
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="editModalLabel">Edit Item Formula</h5>
@@ -257,8 +287,8 @@
         </button>
       </div>
       <form id="edit_item_formula_form">
-        <div class="modal-body">
-            <div class="col-md-12">
+        <div class="modal-body" style="display:flex;">
+            <div class="col-md-7">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-8">
                   <div class="filter_col col-md-12">
@@ -287,16 +317,46 @@
                   </div>
                 </div>
               </div>
-              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
+              <div class="row marl no-gutters justify-content" style="margin-top: 10px;">
                 <div class="col-md-12">
                   {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                   <div class="form-group col-md-12">
                     <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
                     <textarea name="formula" class="form-control" placeholder="Formula" required="" id="edit_item_formula_formula"></textarea>
-                    <span class="error" id="id__price"></span>
+                    <span class="error" id="id__edit_item_formula_formula"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-12">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required"><i><b>Formula Hints</b></i></label>
+                          <p style="word-break:break-all;">
+                            <b><u>Variable List</u></b><br/>
+                            <span id="edit_var_list"></span>
+                            <a style="color: blue;text-decoration: underline;" onClick="insertVarToFormula('edit_item_formula_formula','value_based_price')">"value_based_price"</a><br/>
+                            <a style="color: blue;text-decoration: underline;" onClick="insertVarToFormula('edit_item_formula_formula','material.value_based_price')">"material.value_based_price"</a><br/>
+                          </p>
+                          <span style="color:red;"><i><u>*Please usa a double quote(") to quote the variable symbol in formula</u></i></span>
+                          <table>
+                            <tr><td><b><u>Operator</u></b><br/></td><td></td></tr>
+                            <tr><td>Add:</td><td>+</td></tr>
+                            <tr><td>Minus:</td><td>-</td></tr>
+                            <tr><td>Multiply:</td><td>*</td></tr>
+                            <tr><td>Divide:</td><td>/</td></tr>
+                            <tr><td>Exponent:</td><td>^</td></tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -382,6 +442,26 @@
       }
     });*/
 
+  function insertVarToFormula(myField, myValue) {
+    //IE support
+    if (document.selection) {
+        document.getElementById(myField).focus();
+        sel = document.selection.createRange();
+        document.execCommand("insertText", false, "\""+myValue+"\"");
+        //sel.text = "\""+myValue+"\"";
+    }
+    //MOZILLA and others
+    /*else if (document.getElementById(myField).selectionStart || document.getElementById(myField).selectionStart == '0') {
+        var startPos = document.getElementById(myField).selectionStart;
+        var endPos = document.getElementById(myField).selectionEnd;
+        document.getElementById(myField).value = document.getElementById(myField).value.substring(0, startPos)
+            + "\""+myValue+"\""
+            + document.getElementById(myField).value.substring(endPos, document.getElementById(myField).value.length);
+    }*/ else {
+        document.getElementById(myField).focus();
+        document.execCommand("insertText", false, "\""+myValue+"\"");
+    }
+  }
 
 
   $(".savenew").on('click', function (e) {
@@ -406,6 +486,39 @@
     return str.replace(/&quot;/g, '\\"');
   }
 
+  function formulaChecker(text){
+    //text="{\"formula\":\""+(text.replaceAll("\"","\\\""))+"\"}";
+    console.log(text);
+    if(text.includes("Value_Based_Price")){
+      return false;
+    }
+    text=text.replace(/".*?"/g,0);
+    //text=text.replace(/'.*?'/g,0);
+    console.log(text);
+    try{
+      if(isNaN(parseInt(eval(text))))
+          return false;
+      else 
+        return true;
+    }
+    catch(e){
+        console.log("error");
+        return false;
+    }
+   // return false;
+    /*if (/^[\],:{}\s]*$/.test(text.replace(/\\["\\\/bfnrtu]/g, '@').
+      replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').
+      replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+
+        return true;
+
+      }else{
+
+        //the json is not ok
+        return false;
+      }*/
+  }
+
   function initIF(){
     if(if_str=="None" || if_str==""){
       _if=[]
@@ -414,6 +527,10 @@
       _if=JSON.parse(if_str);
       console.log(_if);
     }
+    {% if not item_obj %}
+    _if=[{"name": "Suggested Unit Price", "formula": "0", "is_active": "True"},{"name": "Suggested Quantity", "formula": "1", "is_active": "True"}]
+    $("#id_item_formulas").val(JSON.stringify(_if));
+    {% endif %}
   }
 
   function initIPChoice(){
@@ -459,7 +576,7 @@
     var tbody=$("#table_item_formula tbody");
     var content="";
     if(Object.keys(_if).length==0){
-      tbody.html("<td colspan='5'>There is no room type formula</td>");
+      tbody.html("<td colspan='5'>There is no item formula</td>");
     }
     else{
       for(i in _if){
@@ -532,6 +649,14 @@ function updateItemPropertiesValue(){
     $("#id__item_properties").html("");
   }
   $("#id_item_properties").val([...ipSet]);
+  var var_list="";
+  var edit_var_list="";
+  for (const [key, value] of Object.entries(ip_data)){
+      var_list+="<a style=\"color: blue;text-decoration: underline;\" onClick=\"insertVarToFormula('add_item_formula_formula','"+value.symbol+"')\">"+"\""+value.symbol+"\"</a><br/>";
+      edit_var_list+="<a style=\"color: blue;text-decoration: underline;\" onClick=\"insertVarToFormula('edit_item_formula_formula','"+value.symbol+"')\">"+"\""+value.symbol+"\"</a><br/>";
+  }
+  $("#var_list").html(var_list);
+  $("#edit_var_list").html(edit_var_list);
   console.log("item_properties_value: "+$("#id_item_properties").val());
   console.log([...ipSet]);
 }
@@ -574,7 +699,14 @@ function updateItemPropertiesValue(){
 
     document.getElementById("table_item_formula").removeAttribute("style");
     var name=$('#add_item_formula_name').val();
-    var formula=$('#add_item_forumla_formula').val();
+    var formula=$('#add_item_formula_formula').val();
+    if (!formulaChecker(formula)){
+        $('#id__item_formula_formula').html("There is error(s) in formula.");
+        return;
+    }
+    else{
+      $('#id__item_formula_formula').html("");
+    }
     var is_active=$('#add_item_formula_is_active').is(':checked');
     _if.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
     clearItemFormula();
@@ -605,14 +737,22 @@ function updateItemPropertiesValue(){
     var name=$("#edit_item_formula_name").val();
     var formula=$("#edit_item_formula_formula").val();
     var is_active=$("#edit_item_formula_is_active").is(':checked');
+    if (!formulaChecker(formula)){
+        $('#id__edit_item_formula_formula').html("There is error(s) in formula.");
+        return;
+    }
+    else{
+      $('#id__edit_item_formula_formula').html("");
+    }
     _if[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    $("#id_item_formulas").val(JSON.stringify(_if));
     updateIFTable();
     $('#editModal').modal('hide');
   }
 
   function clearItemFormula(){
     $('#add_item_formula_name').val('');
-    $('#add_item_forumla_formula').val('');
+    $('#add_item_formula_formula').val('');
     $('#add_item_formula_is_active').prop('checked', true);
   }
 

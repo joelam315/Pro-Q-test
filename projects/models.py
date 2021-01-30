@@ -1,20 +1,31 @@
+import sys
+import os
 import arrow
 import math
 import decimal
+import time
+import datetime
 from decimal import Decimal
 from django.db import models
+from django.db.models.signals import m2m_changed
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.postgres.fields import JSONField,ArrayField
+from django.dispatch import receiver
 from common.models import Address, User
 from common.utils import CURRENCY_CODES,HK_DISTRICT
 from companies.models import Company
 from companies.utils import *
+from common.fields import EncryptedImageField
+from common.constants import FETCH_URL_NAME
 from phonenumber_field.modelfields import PhoneNumberField
 from teams.models import Teams
 from projects.utils import PROJECT_STATUS
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
 
+def project_img_url(self, filename):
+    hash_ = int(time.time())
+    return "%s/%s/%s/%s" % ("companies",str(self.related_project.company.id), self.image_prepend,filename)
 
 def number2alphabet(number):
     str=""
@@ -39,6 +50,7 @@ class Project(models.Model):
         on_delete=models.SET_NULL, null=True)
     updated_on = models.DateTimeField(auto_now_add=True)
     quotation_generated_on = models.DateTimeField(blank=True,null=True)
+    quotation_version=models.PositiveIntegerField(default=0)
     amount_due = models.DecimalField(
         blank=True, null=True, max_digits=12, decimal_places=2)
     amount_paid = models.DecimalField(
@@ -117,7 +129,7 @@ class Project(models.Model):
             id=self.id,
             project_number=self.project_number,
             project_title=self.project_title,
-            status=self.status,
+            status=(self.status,dict(PROJECT_STATUS)[self.status]),
 
         )
     def as_json(self):
@@ -126,8 +138,8 @@ class Project(models.Model):
             id=self.id,
             job_no=self.document_format["project_upper_format"],
             project_title=self.project_title,
-            status=self.status,
-            district=self.district,
+            status=(self.status,dict(PROJECT_STATUS)[self.status]),
+            district=(self.district,dict(HK_DISTRICT)[self.district]),
             details=self.details,
             work_location=self.work_location,
             start_date=str(self.start_date),
@@ -208,6 +220,12 @@ class Project(models.Model):
             receipt_middle_format=self.document_format["receipt_middle_format"],
             receipt_lower_format=self.document_format["receipt_lower_format"]
         )
+    def generate_job_no(self):
+        _job_no=self.document_format["project_upper_format"]
+        if self.document_format["project_lower_format"]=="Number":
+            _job_no=_job_no+format(self.job_no, "04")
+        return _job_no
+
     def generate_quot_no(self):
         quot_no=""
         quot_format=self.quot_format()
@@ -465,3 +483,110 @@ class ProjectReceipt(models.Model):
 
     def __str__(self):
         return str(self.project) +" stage "+str(self.receipt_id)
+
+class ProjectImage(models.Model):
+    image_prepend = "images"
+    display_id=models.IntegerField(default=1)
+    related_project = models.ForeignKey(Project,related_name='project_images',on_delete=models.CASCADE)
+    img=EncryptedImageField(upload_to=project_img_url,width_field="img_width",height_field="img_height")
+    img_width = models.PositiveIntegerField(default=1)
+    img_height = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return str(self.related_project)+" image ("+str(self.display_id)+")" 
+
+    def save(self, *args, **kwargs):
+        # This means that the model isn't saved to the database yet
+        if self._state.adding:
+            # Get the maximum display_id value from the database
+            last_id = ProjectImage.objects.filter(related_project=self.related_project).aggregate(largest=models.Max('display_id'))['largest']
+
+            # aggregate can return None! Check it first.
+            # If it isn't none, just use the last ID specified (which should be the greatest) and add one to it
+            if last_id is not None:
+                self.display_id = last_id + 1
+
+        super(ProjectImage, self).save(*args, **kwargs)
+
+    def img_record(self):
+        ret=dict(
+            img_id=self.id,
+        )
+        if self.img:
+            ret["img_path"]="api/"+FETCH_URL_NAME+"/media/"+str(self.img)
+        return ret
+
+
+class ProjectImageSet(models.Model):
+    display_id=models.IntegerField(default=1)
+    imgs=models.ManyToManyField(ProjectImage)
+
+    upload_date=models.DateField(default=datetime.date.today)
+
+    related_project=models.ForeignKey(
+        Project,related_name='project_img_set', null=True,
+        blank=True,on_delete=models.CASCADE)
+    project_milestone = models.OneToOneField(
+        'project_timetable.ProjectMilestone', null=True,
+        blank=True, related_name='project_milestone_img_set',
+        on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ['-id']
+
+    def __str__(self):
+        return (str(self.related_project) if self.related_project!=None else str(self.project_milestone))+" image set ("+str(self.display_id)+")" 
+
+    def save(self, *args, **kwargs):
+        # This means that the model isn't saved to the database yet
+        if self._state.adding:
+            # Get the maximum display_id value from the database
+            if self.related_project!=None:
+                last_id = ProjectImageSet.objects.filter(related_project=self.related_project).aggregate(largest=models.Max('display_id'))['largest']
+            elif self.project_milestone!=None:
+                last_id = ProjectImageSet.objects.filter(project_milestone=self.project_milestone).aggregate(largest=models.Max('display_id'))['largest']
+            # aggregate can return None! Check it first.
+            # If it isn't none, just use the last ID specified (which should be the greatest) and add one to it
+            if last_id is not None:
+                self.display_id = last_id + 1
+        super(ProjectImageSet, self).save(*args, **kwargs)
+
+    def img_record(self):
+        ret=dict(
+            set_id=self.id,
+            imgs=[img.img_record() for img in self.imgs.all()],
+            date=self.upload_date
+        )
+
+        return ret
+
+
+
+
+def project_image_set_changed(sender, **kwargs):
+    if kwargs['instance'].imgs.count() > 5:
+        ProjectImage.objects.filter(pk__in=[pi.id for pi in kwargs['instance'].imgs.all()]).delete()
+        raise ValidationError("You can't assign more than 5 images")
+
+m2m_changed.connect(project_image_set_changed, sender=ProjectImageSet.imgs.through)
+
+@receiver(models.signals.post_delete, sender=ProjectImage)
+def auto_delete_img_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `ProjectImage` object is deleted.
+    """
+    if instance.img:
+        if os.path.isfile(instance.img.path):
+            os.remove(instance.img.path)
+
+@receiver(models.signals.pre_delete, sender=ProjectImageSet)
+def auto_delete_img_set_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `ProjectImageSet` object is deleted.
+    """
+    ProjectImage.objects.filter(pk__in=[pi.id for pi in instance.imgs.all()]).delete()

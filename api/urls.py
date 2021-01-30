@@ -105,6 +105,11 @@ from api.views import (
 	CancelSubsriptionView,
 	UserTokenRefreshView,
 	APIFetchView,
+	ListMeasureQuantifiersView,
+	ListItemQuantifiersView,
+	CreateProjectImageSetView,
+	RemoveProjectImageSetView,
+	RemoveProjectImageView
 )
 
 
@@ -186,9 +191,14 @@ urlpatterns = [
 	path('project/expense/create/',CreateProjectExpenseView.as_view(),name="create_project_expense"),
 	path('project/expense/update/',UpdateProjectExpenseView.as_view(),name="update_project_expense"),
 	path('project/expense/remove/',RemoveProjectExpenseView.as_view(),name="remove_project_expense"),
+	path('project/image_set/create/',CreateProjectImageSetView.as_view(),name="create_project_image_set"),
+	path('project/image_set/remove/',RemoveProjectImageSetView.as_view(),name="remove_project_image_set"),
+	path('project/image/remove/',RemoveProjectImageView.as_view(),name="remove_project_image"),
 	path('project/profit/analysis/get/',GetProjectProfitAnalysisView.as_view(),name="get_project_profit_analysis"),
 	path('project_status/get/',GetProjectStatusListView.as_view(),name="get_project_status_list"),
 	path('districts/get/',GetDistrictListView.as_view(),name="get_districts"),
+	path('measure_quantifier/list/',ListMeasureQuantifiersView.as_view(),name="list_measure_quantifiers"),
+	path('item_quantifier/list/',ListItemQuantifiersView.as_view(),name="list_item_quantifier"),
 	path('room_types/get/',GetRoomTypeListView.as_view(),name="get_room_types"),
 	path('room_type/related_items/get/',GetRoomRelatedItemListView.as_view(),name="get_room_type_related_items"),
 	path('room_type/formula/get/',GetRoomTypeFormulaListView.as_view(),name="get_room_types"),

@@ -8,6 +8,7 @@ import numexpr as ne
 from django.contrib.postgres.fields import JSONField
 from project_items.models import Item, ItemFormula,ItemTypeMaterial
 from rooms.utils import DATA_TYPE
+from common.utils import MEASURE_QUANTIFIERS,ITEM_QUANTIFIERS
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist,ValidationError
 
 class RoomProperty(models.Model):
@@ -82,7 +83,10 @@ class RoomType(models.Model):
 												current_property_formula=current_property_formula.replace("\'"+custom_property["symbol"]+"\'",str(custom_property_values.get(custom_property["symbol"],0)))
 												
 											#return current_property_formula
-											arr.append(ne.evaluate(current_property_formula))
+											try:
+												arr.append(ne.evaluate(current_property_formula))
+											except:
+												arr.append(0)
 									var[param["symbol"]+"_"+property_formula["name"]]=np.array(arr)
 									cal_formula=cal_formula.replace("\""+param["symbol"]+"."+property_formula["name"]+"\"",param["symbol"]+"_"+property_formula["name"])
 									cal_formula=cal_formula.replace("\'"+param["symbol"]+"."+property_formula["name"]+"\'",param["symbol"]+"_"+property_formula["name"])
@@ -98,7 +102,10 @@ class RoomType(models.Model):
 			#a=
 			#return ne.evaluate('sum(array([1,2]))')
 			#return var
-				ret=ne.evaluate(cal_formula,var)
+				try:
+					ret=ne.evaluate(cal_formula,var)
+				except:
+					ret=0
 				ret=ret if str(ret)!="[]" else 0
 				all_ret[cal_formula_obj["name"]]=ret
 		return all_ret
@@ -188,6 +195,10 @@ class Room(models.Model):
 	room_type=models.ForeignKey(RoomType,on_delete=models.PROTECT)
 	value=JSONField(null=True,blank=True)
 	related_project=models.ForeignKey(Project,related_name='project_rooms',on_delete=models.CASCADE)
+	measure_quantifier=models.CharField(choices=MEASURE_QUANTIFIERS,max_length=20)
+
+	class Meta:
+		ordering = ['id']
 
 	def __str__(self):
 		return self.related_project.project_title+": "+self.name
@@ -198,7 +209,9 @@ class Room(models.Model):
 		ret=dict(
 			id=self.id,
 			name=self.name,
-			room_project_items_count=len(rpis)
+			room_project_items_count=len(rpis),
+			room_type_id=self.room_type.id,
+			#measure_quantifier=self.measure_quantifier
 			#room_project_items_price_sum=rpis
 		)
 		ret["sum_price"]=sum((rpi["unit_price"]*rpi["quantity"]) for rpi in rpis)
@@ -209,7 +222,8 @@ class Room(models.Model):
 			name=self.name,
 			value=self.value,
 			room_type=(self.room_type.id,str(self.room_type)),
-			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()]
+			room_project_items=[rpi.as_json() for rpi in self.room_project_items.all()],
+			measure_quantifier=self.measure_quantifier
 		)
 		ret["properties"]=dict()
 		formulas=self.room_type.cal_formulas(self.value)
@@ -228,12 +242,20 @@ class RoomItem(models.Model):
 	item=models.ForeignKey(Item,related_name="related_project_items",on_delete=models.PROTECT)
 	room=models.ForeignKey(Room,related_name="room_project_items",on_delete=models.CASCADE)
 	material=models.TextField(null=True,blank=True)
+	material_value_based_price= models.DecimalField(
+        max_digits=12, decimal_places=2)
 	#material=models.ForeignKey(ItemTypeMaterial,related_name="material_related_project_items",on_delete=models.PROTECT,null=True,blank=True)
 	unit_price = models.DecimalField(
         max_digits=12, decimal_places=2)
 	value=JSONField(null=True,blank=True)
-	quantity=models.PositiveIntegerField()
+	quantity=models.DecimalField(
+        max_digits=12, decimal_places=2)
 	remark=models.TextField(blank=True,null=True)
+	measure_quantifier=models.CharField(choices=MEASURE_QUANTIFIERS,max_length=20)
+	item_quantifier=models.CharField(choices=ITEM_QUANTIFIERS,max_length=20)
+
+	class Meta:
+		ordering = ['id']
 
 	def __str__(self):
 		return str(self.room)+": "+str(self.item)
@@ -255,11 +277,15 @@ class RoomItem(models.Model):
 			id=self.id,
 			name=self.item.name,
 			item_type=(self.item.item_type.id,self.item.item_type.name),
+			material_value_based_price=float(self.material_value_based_price),
 			unit_price=float(self.unit_price),
 			room=self.room.name,
-			quantity=self.quantity,
+			quantity=float(self.quantity),
 			value=self.value,
-			remark=self.remark if self.remark!=None else ""
+			remark=self.remark if self.remark!=None else "",
+			measure_quantifier=self.measure_quantifier,
+			item_quantifier=self.item_quantifier,
+			value_based_price=self.item.value_based_price
 		)
 		if self.material:
 			ret["material"]=self.material
@@ -273,11 +299,12 @@ class RoomItem(models.Model):
 		if self.material!=None and self.material!="":
 			itm=self.item.item_type.item_type_materials
 			if itm!=None and itm!=dict():
-				for material in itm:
-					if material["name"]==self.material:
+				mvbp=self.material_value_based_price
+				'''for material in itm:
+					if material["name"].strip()==self.material.strip():
 						if material["value_based_price"]!=None and material["value_based_price"]!="" and int(material["value_based_price"])>0:
 							mvbp=material["value_based_price"]
-						break
+						break'''
 		#vbp=self.material.value_based_price if self.material!=None and self.material.value_based_price!=None else self.item.value_based_price 
 		#//
 

@@ -1230,7 +1230,7 @@ def change_passsword_by_admin(request):
                 request.POST.get("new_passwoord") + "</i><br></p>"
             email = EmailMessage(mail_subject, message, to=[user.email])
             email.content_subtype = "html"
-            email.send()
+            #email.send()
             return HttpResponseRedirect('/users/list/')
     raise PermissionDenied
 

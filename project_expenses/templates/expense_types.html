@@ -204,6 +204,9 @@
 {%endblock%}
 {% block js_block %}
 <script type="text/javascript">
+  {% if protected_error %}
+      alert("The selected item is using by the end user and cannot be deleted. If you want to hide the option, please uncheck the \"Is Active\" box in edit.");
+  {% endif %}
   $(document).ready(function () {
     $('.assigned_users').select2();
     $(".filter_toggle").click(function () {

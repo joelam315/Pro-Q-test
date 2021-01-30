@@ -32,8 +32,9 @@
                   <td>
                     <table style="margin-left: 0; margin-right: auto;">
                     <tr> <td class="first_td">No.</td><td>{{quotation_no}}</td></tr>
-                    <tr><td class="first_td">Co</td><td>:</td></tr>
+                    <tr><td class="first_td">Co</td><td>: {% if project.customer.company_name %}{{project.customer.company_name}}{% endif %}</td></tr>
                     <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
+                    <tr><td class="first_td">Tel</td><td>: {% if project.customer.phone %}{{project.customer.phone}}{% endif %}</td></tr>
                     <tr><td class="first_td">From</td><td>: {{company.owner.display_name}}</td></tr>
                     <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
@@ -42,7 +43,8 @@
                     <table style="margin-right: 0; margin-left: auto;">
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">Date</td><td>: {{date}}</td></tr>
-                      <tr><td class="first_td">Job No</td><td id="job_no_content"></td></tr>
+                      <tr><td class="first_td">Job No</td><td id="job_no_content">{{job_no}}</td></tr>
+                      <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                       <tr><td class="first_td">&nbsp;</td></tr>
                     </table>
@@ -111,7 +113,7 @@
               </tbody>
             </table>
             <br>
-            <div>
+            <div id="general_remarks_content_div">
               <span style="white-space: pre-line;" id="general_remarks_content">
               </span>
             </div>
@@ -196,6 +198,12 @@
   </table>
 </body>
 <script>
+  function formatQuantity(x){
+    if (x % 1 == 0){
+      x=parseInt(x);
+    }
+    return x
+  }
   function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
@@ -230,7 +238,7 @@
         var unit_price={{item.unit_price}}
         var quantity={{item.quantity}}
 
-        items_content+='<tr><td class="item_index">'+i+'.{{ forloop.counter }}</td><td class="item_name">{{item.name}}{% if item.room %}({{item.room}}){% endif %}</td><td  class="item_value">{{item.quantity}} job</td><td class="item_value">'+unit_price.toString()+'</td><td class="item_value">'+numberWithCommas(unit_price*quantity)+'</td></tr>';
+        items_content+='<tr><td class="item_index">'+i+'.{{ forloop.counter }}</td><td class="item_name">{{item.name}}{% if item.material and item.material != "null" %}({{item.material}}){% endif %}{% if item.room %} - {{item.room}}{% endif %}{% if item.remark %}<br> - {{item.remark|linebreaksbr}}{% endif %}</td><td  class="item_value">'+formatQuantity({{item.quantity}})+' {{item.item_quantifier}}</td><td class="item_value">'+unit_price.toString()+'</td><td class="item_value">'+numberWithCommas(unit_price*quantity)+'</td></tr>';
       {% endfor %}
 
       items_content+='<tr style=""><td colspan="3"></td><td colspan="2"><div style="border-top:1px solid;border-bottom:1px solid;width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td>Sub Total: </td><td style="text-align: right;">'+numberWithCommas({{arr.sum_price}})+'</td></tr></table></div><div style="margin-top:2px;border-top:1px solid;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>';
@@ -260,11 +268,15 @@
 
     {% endfor %}
 
-    var job_no_content=": J"+prependZero(4,{{project.job_no}});
+    //var job_no_content=": {{job_no}}";
 
-    document.getElementById("job_no_content").innerHTML=job_no_content;
+    //document.getElementById("job_no_content").innerHTML=job_no_content;
     document.getElementById("items_content").innerHTML=items_content;
     document.getElementById("general_remarks_content").innerHTML=general_remarks_content;
+    if(general_remarks_content!="備註:\n"){
+      document.getElementById("general_remarks_content_div").setAttribute("style","page-break-before: always;!important")
+    }
+    
     document.getElementById("charging_stages_content").innerHTML=charging_stages_content;
   })();
 
@@ -276,6 +288,10 @@
 
 .page {
   page-break-after: always;
+}
+
+.new-page {
+  page-break-before: always;
 }
 
 tr{

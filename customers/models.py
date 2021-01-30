@@ -20,7 +20,7 @@ class Customer(models.Model):
     email = models.EmailField(blank=True,null=True)
     phone = PhoneNumberField(blank=True,null=True)
     address = models.CharField(
-        _("Contact Address"), max_length=1024, default="Pending")
+        _("Contact Address"), max_length=1024, default="Pending", blank=True, null=True)
     project=models.OneToOneField(Project,on_delete=models.CASCADE)
     created_on = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -35,7 +35,7 @@ class Customer(models.Model):
             name = self.name,
             company_name = self.company_name,
             email=self.email,
-            phone=str(self.phone),
+            phone=str(self.phone) if str(self.phone)!="None" else "",
             address=self.address,
         )
 

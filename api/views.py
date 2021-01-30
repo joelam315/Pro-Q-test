@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
 from django.core.validators import URLValidator
 from django.db.models import Q
+from django.utils.encoding import escape_uri_path
 
 from common.models import User
 from common.serializers import (
@@ -28,9 +29,11 @@ from common.serializers import (
 	UpdateUserUsernameAndPhoneRequestSerializer,
 	VerifyNewUserUsernameAndPhoneSerializer,
 	RefreshTokenRequestSerializer,
-	GetUserInfoResponseSerializer
+	GetUserInfoResponseSerializer,
+	ListMeasureQuantifierResponseSerializer,
+	ListItemQuantifierResponseSerializer
 )
-from common.utils import HK_DISTRICT
+from common.utils import HK_DISTRICT,MEASURE_QUANTIFIERS, ITEM_QUANTIFIERS
 from companies.models import Company,DocumentFormat,DocumentHeaderInformation,ChargingStages,QuotationGeneralRemark,InvoiceGeneralRemark,ReceiptGeneralRemark
 from companies.serializers import (
 	SetCompanySerializer, 
@@ -55,7 +58,7 @@ from companies.serializers import (
 	GetGeneralRemarksSerializer
 )
 from companies.utils import UPPER_CHOICES,MIDDLE_CHOICES,LOWER_CHOICES,PROJECT_LOWER_CHOICES
-from projects.models import Project, ProjectInvoice, ProjectReceipt,CompanyProjectComparison
+from projects.models import Project, ProjectInvoice, ProjectReceipt,CompanyProjectComparison,ProjectImage,ProjectImageSet
 from projects.utils import ROOM_TYPE, PROJECT_STATUS
 from projects.serializers import (
 	CreateProjectSerializer, 
@@ -79,7 +82,11 @@ from projects.serializers import (
 	SetProjectReceiptRemarksSerializer,
 	SetCompanyProjectComparisonSerializer,
 	GetCompanyProjectComparisonResponseSerializer,
-	ListCompanyProjectComparisonSelectionsResponseSerializer
+	ListCompanyProjectComparisonSelectionsResponseSerializer,
+	ProjectImageSetSerializer,
+	CreateProjectImageSetRequestSerializer,
+	GetProjectImageSetRequestSerializer,
+	GetProjectImageRequestSerializer
 )
 from rooms.models import Room, RoomType, RoomItem,RoomTypeFormula
 from rooms.serializers import (
@@ -164,6 +171,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings as simplejwt_api_settings
 from rest_framework_simplejwt.state import token_backend
 from rest_framework_simplejwt.utils import datetime_from_epoch
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import (IsAuthenticated,AllowAny,)
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -509,7 +517,12 @@ class UserTokenRefreshView(APIView):
 		ret["result"]=True
 		data=request.data
 		if data.get("refresh"):
-			refresh = RefreshToken(data['refresh'])
+			try:
+				refresh = RefreshToken(data['refresh'])
+			except TokenError as err:
+				ret["result"]=False
+				ret["reason"]="Token is invalid or expired"
+				return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 			ret["access"] = str(refresh.access_token)
 
 			if simplejwt_api_settings.ROTATE_REFRESH_TOKENS:
@@ -680,42 +693,55 @@ class CheckReadyToCreateProjectView(APIView):
 		user = request.user
 		try:
 			company=Company.objects.get(owner=user)
+			ret["company"]=True
 		except ObjectDoesNotExist:
 			ret["result"]=False
-			ret["reason"]="You must create a company first."
-			return Response(ret,status=status.HTTP_200_OK)
+			#ret["reason"]="You must create a company first."
+			#return Response(ret,status=status.HTTP_200_OK)
+			ret["company"]=False
 		try:
+			ret["charging_stages"]=True
 			if company.company_charging_stages is None:
 				ret["result"]=False
-				ret["reason"]="You must create company's charging stages first."
-				return Response(ret,status=status.HTTP_200_OK)
+				#ret["reason"]="You must create company's charging stages first."
+				#return Response(ret,status=status.HTTP_200_OK)
+				ret["charging_stages"]=False
 		except ChargingStages.DoesNotExist:
 			ret["result"]=False
-			ret["reason"]="You must create company's charging stages first."
-			return Response(ret,status=status.HTTP_200_OK)
+			#ret["reason"]="You must create company's charging stages first."
+			#return Response(ret,status=status.HTTP_200_OK)
+			ret["charging_stages"]=False
 		try:
+			ret["document_format"]=True
 			if company.company_doc_format is None:
 				ret["result"]=False
-				ret["reason"]="You must create company's document format first."
-				return Response(ret,status=status.HTTP_200_OK)
+				#ret["reason"]="You must create company's document format first."
+				#return Response(ret,status=status.HTTP_200_OK)
+				ret["document_format"]=False
 		except DocumentFormat.DoesNotExist:
 			ret["result"]=False
-			ret["reason"]="You must create company's document format first."
-			return Response(ret,status=status.HTTP_200_OK)
+			#ret["reason"]="You must create company's document format first."
+			#return Response(ret,status=status.HTTP_200_OK)
+			ret["document_format"]=False
 		try:
+			ret["document_header"]=True
 			if company.company_doc_header is None:
 				ret["result"]=False
-				ret["reason"]="You must create company's document header first."
-				return Response(ret,status=status.HTTP_200_OK)
+				#ret["reason"]="You must create company's document header first."
+				#return Response(ret,status=status.HTTP_200_OK)
+				ret["document_header"]=False
 		except DocumentHeaderInformation.DoesNotExist:
 			ret["result"]=False
-			ret["reason"]="You must create company's document header first."
-			return Response(ret,status=status.HTTP_200_OK)
+			#ret["reason"]="You must create company's document header first."
+			#return Response(ret,status=status.HTTP_200_OK)
+			ret["document_header"]=False
 
+		ret["br_approved"]=True
 		if not company.br_approved:
 			ret["result"]=False
-			ret["reason"]="The BR is not yet approved."
-			return Response(ret,status=status.HTTP_200_OK)
+			#ret["reason"]="The BR is not yet approved."
+			#return Response(ret,status=status.HTTP_200_OK)
+			ret["br_approved"]=False
 		return Response(ret,status=status.HTTP_200_OK)
 
 class ListCompanyProjectComparisonSelectionView(APIView):
@@ -888,9 +914,16 @@ class GetDocumentFormatView(APIView):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		doc_format=DocumentFormat.objects.get(company=company)
-		ret["doc_format"]=doc_format.as_json()
-		return Response(ret, status=status.HTTP_200_OK)
+		try:
+			doc_format=DocumentFormat.objects.get(company=company)
+			ret["doc_format"]=doc_format.as_json()
+			return Response(ret, status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+
+			#return Response(ret, status=status.HTTP_200_OK)
+			ret["result"]=False
+			#ret["reason"]="DocumentFormat not found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 
 #charging stage
 class SetChargingStagesView(APIView):
@@ -953,8 +986,16 @@ class GetChargingStagesView(APIView):
 			ret["result"]=False
 			ret["reason"]="Please create company first."
 			return Response(ret, status=status.HTTP_404_NOT_FOUND)
-		ret["charging_stages"]=company.get_charging_stages_json()
-		return Response(ret, status=status.HTTP_200_OK)
+		try:
+			ret["charging_stages"]=company.get_charging_stages_json()
+			return Response(ret, status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+
+			#return Response(ret, status=status.HTTP_200_OK)
+			ret["result"]=False
+			#ret["reason"]="ChargingStages not found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+
 
 #doc_header
 class SetDocHeaderView(APIView):
@@ -1010,9 +1051,17 @@ class GetDocHeaderView(APIView):
 		ret={}
 		ret["result"]=True
 		company=Company.objects.get(owner=request.user)
-		doc_header=DocumentHeaderInformation.objects.get(company=company)
-		ret["doc_header"]=doc_header.as_json()
-		return Response(ret, status=status.HTTP_200_OK)
+		try:
+			doc_header=DocumentHeaderInformation.objects.get(company=company)
+			ret["doc_header"]=doc_header.as_json()
+			return Response(ret, status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+
+			#return Response(ret, status=status.HTTP_200_OK)
+			ret["result"]=False
+			#ret["reason"]="DocumentHeaderInformation not found"
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+
 
 #general remarks
 class SetQuotationGeneralRemarksView(APIView):
@@ -1685,21 +1734,30 @@ class GenerateProjectQuotation(APIView):
 		context={}
 		context["company"]=project.company
 		#return Response(context["company"].logo_pic.path)
-		with open(context["company"].logo_pic.path, "rb") as f:
-			logo_pic = f.read()
-		with open(context["company"].sign.path, "rb") as f:
-			sign = f.read()
-		logo_pic = Cryptographer.decrypted(logo_pic)
-		sign=Cryptographer.decrypted(sign)
-		#return Response(logo_pic_data)
 		company_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/"
-		os.makedirs(os.path.dirname(company_path), exist_ok=True)
-		with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
-			static_file.write(logo_pic)
-		with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
-			static_file.write(sign)
-		context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
-		context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
+		if context["company"].logo_pic!=None:
+
+			with open(context["company"].logo_pic.path, "rb") as f:
+				logo_pic = f.read()
+
+			logo_pic = Cryptographer.decrypted(logo_pic)
+			
+			with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
+				static_file.write(logo_pic)
+
+			context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
+		
+		if context["company"].sign!=None:
+
+			with open(context["company"].sign.path, "rb") as f:
+				sign = f.read()
+			
+			sign=Cryptographer.decrypted(sign)
+
+			os.makedirs(os.path.dirname(company_path), exist_ok=True)
+			with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
+				static_file.write(sign)
+			context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
 
 		#return HttpResponse(context["logo_pic"],content_type="image/png")
 		context["project"]=project
@@ -1709,6 +1767,13 @@ class GenerateProjectQuotation(APIView):
 		context["charging_stages"]=project.charging_stages
 		context["quotation_no"]=project.generate_quot_no()
 		context["doc_header"]=project.company.company_doc_header
+		context["job_no"]=project.generate_job_no()
+
+		if not project.quotation_generated_on or project.updated_on>project.quotation_generated_on:
+			project.quotation_generated_on=datetime.datetime.now()
+			project.quotation_version=project.quotation_version+1
+			project.save()
+
 		html = render_to_string('project_quotation_pdf.html', context=context)
 		footer=render_to_string('quotation_footer.html',context=context)
 		header=render_to_string('quotation_header.html',context=context,request=request)
@@ -1742,15 +1807,13 @@ class GenerateProjectQuotation(APIView):
 		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
 		pdf = open(company_path+filename, 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
-		response['Content-Disposition'] = 'attachment; filename='+filename
+		response['Content-Disposition'] = "attachment; filename={}".format(escape_uri_path(filename))+"; filename*=UTF-8''{}".format(escape_uri_path(filename))
 		pdf.close()
 		os.remove(company_path+filename)
 		os.remove(context["company"].logo_pic.path)
 		os.remove(context["company"].sign.path)
-		#os.remove(doc_header_path)
-		if not project.quotation_generated_on or project.updated_on>project.quotation_generated_on:
-			project.quotation_generated_on=datetime.datetime.now()
-			project.save()
+		os.remove(doc_header_path)
+		
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
@@ -1924,21 +1987,31 @@ class GenerateProjectInvoice(APIView):
 		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
-		with open(context["company"].logo_pic.path, "rb") as f:
-			logo_pic = f.read()
-		with open(context["company"].sign.path, "rb") as f:
-			sign = f.read()
-		logo_pic = Cryptographer.decrypted(logo_pic)
-		sign=Cryptographer.decrypted(sign)
-		#return Response(logo_pic_data)
 		company_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/"
-		os.makedirs(os.path.dirname(company_path), exist_ok=True)
-		with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
-			static_file.write(logo_pic)
-		with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
-			static_file.write(sign)
-		context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
-		context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
+		if context["company"].logo_pic!=None:
+
+			with open(context["company"].logo_pic.path, "rb") as f:
+				logo_pic = f.read()
+
+			logo_pic = Cryptographer.decrypted(logo_pic)
+			
+			with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
+				static_file.write(logo_pic)
+
+			context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
+		
+		if context["company"].sign!=None:
+
+			with open(context["company"].sign.path, "rb") as f:
+				sign = f.read()
+			
+			sign=Cryptographer.decrypted(sign)
+
+			os.makedirs(os.path.dirname(company_path), exist_ok=True)
+			with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
+				static_file.write(sign)
+			context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
+
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
 		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
@@ -1947,6 +2020,7 @@ class GenerateProjectInvoice(APIView):
 		context["quotation_no"]=project.generate_quot_no()
 		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
 		context["invoice_no"]=project.generate_invoice_no()
+		context["job_no"]=project.generate_job_no()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		context["doc_header"]=project.company.company_doc_header
 		html = render_to_string('project_invoice_pdf.html', context=context)
@@ -1977,7 +2051,7 @@ class GenerateProjectInvoice(APIView):
 		#filename=project.company.name.replace(" ","_")+"_project_"+context["quotation_no"]+'_invoice'+str(context["date"]).replace(" ","_")+'.pdf'
 		pdf = open(company_path+filename, 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
-		response['Content-Disposition'] = 'attachment; filename='+filename
+		response['Content-Disposition'] = "attachment; filename={}".format(escape_uri_path(filename))+"; filename*=UTF-8''{}".format(escape_uri_path(filename))
 		pdf.close()
 		os.remove(company_path+filename)
 		os.remove(context["company"].logo_pic.path)
@@ -2163,21 +2237,32 @@ class GenerateProjectReceipt(APIView):
 		charging_stage_id=data.get("charging_stage")
 		context={}
 		context["company"]=project.company
-		with open(context["company"].logo_pic.path, "rb") as f:
-			logo_pic = f.read()
-		with open(context["company"].sign.path, "rb") as f:
-			sign = f.read()
-		logo_pic = Cryptographer.decrypted(logo_pic)
-		sign=Cryptographer.decrypted(sign)
-		#return Response(logo_pic_data)
 		company_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/"
-		os.makedirs(os.path.dirname(company_path), exist_ok=True)
-		with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
-			static_file.write(logo_pic)
-		with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
-			static_file.write(sign)
-		context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
-		context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
+		
+		if context["company"].logo_pic!=None:
+
+			with open(context["company"].logo_pic.path, "rb") as f:
+				logo_pic = f.read()
+
+			logo_pic = Cryptographer.decrypted(logo_pic)
+			
+			with open(company_path+context["company"].logo_pic.path.split("/")[-1], 'wb') as static_file:
+				static_file.write(logo_pic)
+
+			context["company"].logo_pic=company_path+context["company"].logo_pic.path.split("/")[-1]
+		
+		if context["company"].sign!=None:
+
+			with open(context["company"].sign.path, "rb") as f:
+				sign = f.read()
+			
+			sign=Cryptographer.decrypted(sign)
+
+			os.makedirs(os.path.dirname(company_path), exist_ok=True)
+			with open(company_path+context["company"].sign.path.split("/")[-1], 'wb') as static_file:
+				static_file.write(sign)
+			context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
+		
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
 		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
@@ -2188,6 +2273,7 @@ class GenerateProjectReceipt(APIView):
 		context["invoice_no"]=project.generate_invoice_no()
 		context["invoice_date"]=project_invoice.generated_on.strftime("%d-%B-%Y")
 		context["receipt_no"]=project.generate_receipt_no()
+		context["job_no"]=project.generate_job_no()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		context["doc_header"]=project.company.company_doc_header
 		html = render_to_string('project_receipt_pdf.html', context=context)
@@ -2217,7 +2303,7 @@ class GenerateProjectReceipt(APIView):
 		pdfkit.from_url('https://wkhtmltopdf.org/downloads.html', 'out.pdf', options=options)'''
 		pdf = open(company_path+filename, 'rb')
 		response = HttpResponse(pdf.read(), content_type='application/pdf')
-		response['Content-Disposition'] = 'attachment; filename='+filename
+		response['Content-Disposition'] = "attachment; filename={}".format(escape_uri_path(filename))+"; filename*=UTF-8''{}".format(escape_uri_path(filename))
 		pdf.close()
 		os.remove(company_path+filename)
 		os.remove(context["company"].logo_pic.path)
@@ -2260,13 +2346,17 @@ class GetProjectImageRecordsView(APIView):
 				ret["reason"]="Project not found"
 				return Response(ret,status=status.HTTP_404_NOT_FOUND)
 			ret["images"]=dict()
+			ret["images"]["項目相片"]=[]
 			ret["images"]["工程相片"]=[]
 			ret["images"]["收據相片"]=[]
-			for project_milestone in project.project_milestones.exclude(img_upload_date=None).order_by('-img_upload_date'):
-				img=project_milestone.img_record()
-				if img!={}:
-					ret["images"]["工程相片"].append(img)
-			for project_expense in project.project_expense.exclude(img_upload_date=None).order_by('-img_upload_date'):
+			for project_image_set in project.project_img_set.all().order_by('-upload_date','-id'):
+				img_set=project_image_set.img_record()
+				ret["images"]["項目相片"].append(img_set)
+			for project_milestone in project.project_milestones.exclude(img_upload_date=None).order_by('-img_upload_date','-id'):
+				if hasattr(project_milestone,"project_milestone_img_set"):
+					img_set=project_milestone.img_record()
+					ret["images"]["工程相片"].append(img_set)
+			for project_expense in project.project_expense.exclude(img_upload_date=None).order_by('-img_upload_date','-id'):
 				img=project_expense.img_record()
 				if img!={}:
 					ret["images"]["收據相片"].append(img)
@@ -2325,6 +2415,25 @@ class SetProjectCustomerView(APIView):
 		return Response(ret,status=status.HTTP_200_OK)
 
 #project-room
+
+class ListMeasureQuantifiersView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+	@swagger_auto_schema(
+		operation_description="List all measure quantifier.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListMeasureQuantifierResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		ret["measure_quantifier"]=[MEASURE_QUANTIFIER[0] for MEASURE_QUANTIFIER in MEASURE_QUANTIFIERS]
+		return Response(ret,status=status.HTTP_200_OK)
 
 class CreateProjectRoomView(APIView):
 	permission_classes = [IsAuthenticated]
@@ -2532,6 +2641,25 @@ class GetProjectRoomDetailsView(APIView):
 #project-item
 
 #project-room-item
+class ListItemQuantifiersView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	renderer_classes=[APIRenderer]
+	@swagger_auto_schema(
+		operation_description="List all item quantifier.", 
+		security=[{'Bearer': []}],
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: ListItemQuantifierResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer()
+		}
+	)
+	def post(self,request, *args, **kwargs):
+		ret={}
+		ret["result"]=True
+		ret["item_quantifier"]=[ITEM_QUANTIFIER[0] for ITEM_QUANTIFIER in ITEM_QUANTIFIERS]
+		return Response(ret,status=status.HTTP_200_OK)
+
 class GetProjectAllItemView(APIView):
 	permission_classes = [IsAuthenticated]
 	authentication_classes = [authentication.JWTAuthentication]
@@ -2832,7 +2960,8 @@ class SetProjectMiscView(APIView):
 		ret["result"]=True
 		data=request.data
 		try:
-			instance=ProjectMisc.objects.get(misc=data.get("misc"),project=data.get("project"))
+			instance=ProjectMisc.objects.get(id=data.get("id"))
+			#instance=ProjectMisc.objects.get(misc=data.get("misc"),project=data.get("project"))
 			serialized=SetProjectMiscSerializer(instance=instance,data=data,context={'request':request})
 		except ObjectDoesNotExist:
 			serialized=SetProjectMiscSerializer(data=data,context={'request':request})
@@ -2939,6 +3068,133 @@ class GetAllProjectMiscView(APIView):
 		ret["project_misc"]=[project_misc.as_json() for project_misc in project.project_misc.all()]
 		
 		return Response(ret,status=status.HTTP_200_OK)
+
+#project-image_set
+class CreateProjectImageSetView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectWork
+	serializer_class=ProjectImageSetSerializer
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Create a image set for project", 
+		security=[{'Bearer': []}],
+		request_body=CreateProjectImageSetRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: GetProjectTimetableResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret["result"]=True
+		data=request.data
+		serialized=ProjectImageSetSerializer(data=data,context={'request':request})
+		serialized.is_valid(raise_exception=True)
+		try:
+			pis=serialized.save()
+		except ValidationError as err:
+			ret["result"]=False
+			ret["reason"]=err.messages[0]
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		except PermissionDenied:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		ret["project_image_set_id"]=pis.id
+		return Response(ret,status=status.HTTP_200_OK)
+		return ret
+
+class RemoveProjectImageSetView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectImageSet
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project image set", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectImageSetRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			pis=ProjectImageSet.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project image set not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if pis.related_project.company.owner==request.user:
+			pis.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
+
+class RemoveProjectImageView(APIView):
+	permission_classes = [IsAuthenticated]
+	authentication_classes = [authentication.JWTAuthentication]
+	model=ProjectImage
+	renderer_classes=[APIRenderer]
+
+	@swagger_auto_schema(
+		operation_description="Remove a project image set", 
+		security=[{'Bearer': []}],
+		request_body=GetProjectImageRequestSerializer,
+		manual_parameters=[token_param],
+		responses={
+			status.HTTP_200_OK: CommonTrueResponseSerializer(),
+			status.HTTP_400_BAD_REQUEST: CommonFalseResponseSerializer(),
+			status.HTTP_401_UNAUTHORIZED: CommonFalseResponseSerializer(),
+			status.HTTP_404_NOT_FOUND: CommonFalseResponseSerializer()
+		}
+	)
+
+	def post(self,request,*args,**kwargs):
+		ret={}
+		ret['result']=True
+		data=request.data
+		if data.get("id")==None:
+			ret["result"]=False
+			ret["reason"]="Missing id"
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
+		try:
+			pi=ProjectImage.objects.get(id=data["id"])
+		except ObjectDoesNotExist:
+			ret["result"]=False
+			ret["reason"]="Project image not found."
+			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		if pi.related_project.company.owner==request.user:
+			pi.delete()
+			return Response(ret, status=status.HTTP_200_OK)
+		else:
+			ret["result"]=False
+			ret["reason"]="Permission Denied"
+			return Response(ret,status=status.HTTP_401_UNAUTHORIZED)
 
 #project-project_timetable
 

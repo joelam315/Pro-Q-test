@@ -1,8 +1,11 @@
+import os
 import arrow
 import time
+import datetime
 from django.db import models
 from projects.models import Project
 from django.utils.translation import ugettext_lazy as _
+from django.dispatch import receiver
 from common.fields import  EncryptedImageField
 from common.constants import FETCH_URL_NAME
 
@@ -17,6 +20,9 @@ class ProjectWork(models.Model):
 	start_date=models.DateField()
 	end_date=models.DateField()
 	description=models.TextField(blank=True,null=True)
+
+	class Meta:
+		ordering = ['id']
 
 	def __str__(self):
 		return str(self.project)+" work "+str(self.id) +" "+self.name
@@ -45,7 +51,10 @@ class ProjectMilestone(models.Model):
 	img=EncryptedImageField(upload_to=milestone_img_url,width_field="img_width",height_field="img_height",null=True,blank=True)
 	img_width = models.PositiveIntegerField(default=1)
 	img_height = models.PositiveIntegerField(default=1)
-	img_upload_date=models.DateField(null=True)
+	img_upload_date=models.DateField(default=datetime.date.today,null=True)
+
+	class Meta:
+		ordering = ['id']
 
 	def __str__(self):
 		return str(self.project)+" milestone "+str(self.id) +" "+self.name
@@ -61,13 +70,22 @@ class ProjectMilestone(models.Model):
 			description=self.description if self.description else "",
 
 		)
-		if self.img:
-			ret["img_path"]="api/"+FETCH_URL_NAME+"/media/"+str(self.img)
+		if hasattr(self,"project_milestone_img_set"):
+			ret["img_set"]=self.project_milestone_img_set.img_record()
 		return ret
 
 	def img_record(self):
 		ret=dict()
-		if self.img:
-			ret["img_path"]="api/"+FETCH_URL_NAME+"/media/"+str(self.img)
-			ret["date"]=self.img_upload_date
+		if hasattr(self,"project_milestone_img_set"):
+			ret=self.project_milestone_img_set.img_record()
 		return ret
+
+@receiver(models.signals.post_delete, sender=ProjectMilestone)
+def auto_delete_img_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `ProjectMilestone` object is deleted.
+    """
+    if instance.img:
+        if os.path.isfile(instance.img.path):
+            os.remove(instance.img.path)

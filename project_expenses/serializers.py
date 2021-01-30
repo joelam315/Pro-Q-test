@@ -94,12 +94,11 @@ class UpdateProjectExpenseSerializer(serializers.ModelSerializer):
 				project_expense.price=validated_data["price"]
 			if validated_data.get("pay_date"):
 				project_expense.pay_date=validated_data["pay_date"]
-			if validated_data.get("remark"):
-				project_expense.remark=validated_data["remark"]
+			project_expense.remark=validated_data["remark"]
 			if validated_data.get("img",False)!=False:
 				project_expense.img=validated_data["img"]
 				project_expense.img_upload_date=datetime.now()
-			elif validated_data.get("img")==None:
+			elif validated_data.get("img",False)==None:
 				project_expense.img_upload_date=None
 			project_expense.save()
 			return project_expense

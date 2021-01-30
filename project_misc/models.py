@@ -23,7 +23,7 @@ class Misc(models.Model):
 
 		verbose_name= 'Misc'
 		verbose_name_plural= 'Misc'
-		#ordering = ['item_type']
+		ordering = ['-id']
 
 class ProjectMisc(models.Model):
 	project=models.ForeignKey(Project,related_name="project_misc",on_delete=models.CASCADE)
@@ -38,7 +38,8 @@ class ProjectMisc(models.Model):
 
 	def as_json(self):
 		ret= dict(
-			id=self.misc.id,
+			id=self.id,
+			misc_id=self.misc.id,
 			name=self.misc.name,
 			unit_price=float(self.unit_price),
 			quantity=self.quantity,
@@ -51,5 +52,5 @@ class ProjectMisc(models.Model):
 		unique_together = (("misc", "project"),)
 		verbose_name= 'Project Misc'
 		verbose_name_plural= 'Project Misc'
-		#ordering = ['created_on']
+		ordering = ['id']
 

@@ -200,7 +200,7 @@
 {% if room_type_obj %}
 <!-- Add Formula Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addModalLabel">Add Room Formula</h5>
@@ -209,8 +209,8 @@
         </button>
       </div>
       <form id="add_room_type_formula_form">
-        <div class="modal-body">
-            <div class="col-md-12">
+        <div class="modal-body" style="display: flex;">
+            <div class="col-md-7">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-8">
                   <div class="filter_col col-md-12">
@@ -246,10 +246,38 @@
                   <div class="form-group col-md-12">
                     <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
                     <textarea name="formula" class="form-control" placeholder="Formula" required="" id="add_room_type_formula_formula"></textarea>
-                    <span class="error" id="id__price"></span>
+                    <span class="error" id="id__room_type_formula_formula"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-12">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required"><i><b>Formula Hints</b></i></label>
+                          <p style="word-break:break-all;">
+                            <b><u>Variable List</u></b><br/>
+                            <span id="var_list"></span>
+                          </p>
+                          <span style="color:red;"><i><u>*Please usa a double quote(") to quote the variable symbol in formula</u></i></span>
+                          <table>
+                            <tr><td><b><u>Operator</u></b><br/></td><td></td></tr>
+                            <tr><td>Add:</td><td>+</td></tr>
+                            <tr><td>Minus:</td><td>-</td></tr>
+                            <tr><td>Multiply:</td><td>*</td></tr>
+                            <tr><td>Divide:</td><td>/</td></tr>
+                            <tr><td>Exponent:</td><td>^</td></tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -266,7 +294,7 @@
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="editModalLabel">Edit Room Formula</h5>
@@ -275,8 +303,8 @@
         </button>
       </div>
       <form id="edit_room_type_formula_form">
-        <div class="modal-body">
-            <div class="col-md-12">
+        <div class="modal-body" style="display: flex;">
+            <div class="col-md-7">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-8">
                   <div class="filter_col col-md-12">
@@ -312,10 +340,38 @@
                   <div class="form-group col-md-12">
                     <label for="inputZip">Formula<span class="error_marker" style="color:red"> * </span></label>
                     <textarea name="formula" class="form-control" placeholder="Formula" required="" id="edit_room_type_formula_formula"></textarea>
-                    <span class="error" id="id__price"></span>
+                    <span class="error" id="id__edit_room_type_formula_formula"></span>
                     <!-- <input type="text" class="form-control" id="inputZip" placeholder="5:31"> -->
                   </div>
                   {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-12">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required"><i><b>Formula Hints</b></i></label>
+                          <p style="word-break:break-all;">
+                            <b><u>Variable List</u></b><br/>
+                            <span id="edit_var_list"></span>
+                          </p>
+                          <span style="color:red;"><i><u>*Please usa a double quote(") to quote the variable symbol in formula</u></i></span>
+                          <table>
+                            <tr><td><b><u>Operator</u></b><br/></td><td></td></tr>
+                            <tr><td>Add:</td><td>+</td></tr>
+                            <tr><td>Minus:</td><td>-</td></tr>
+                            <tr><td>Multiply:</td><td>*</td></tr>
+                            <tr><td>Divide:</td><td>/</td></tr>
+                            <tr><td>Exponent:</td><td>^</td></tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -407,6 +463,26 @@
       }
     });*/
 
+  function insertVarToFormula(myField, myValue) {
+    //IE support
+    if (document.selection) {
+        document.getElementById(myField).focus();
+        sel = document.selection.createRange();
+        document.execCommand("insertText", false, "\""+myValue+"\"");
+        //sel.text = "\""+myValue+"\"";
+    }
+    //MOZILLA and others
+    /*else if (document.getElementById(myField).selectionStart || document.getElementById(myField).selectionStart == '0') {
+        var startPos = document.getElementById(myField).selectionStart;
+        var endPos = document.getElementById(myField).selectionEnd;
+        document.getElementById(myField).value = document.getElementById(myField).value.substring(0, startPos)
+            + "\""+myValue+"\""
+            + document.getElementById(myField).value.substring(endPos, document.getElementById(myField).value.length);
+    }*/ else {
+        document.getElementById(myField).focus();
+        document.execCommand("insertText", false, "\""+myValue+"\"");
+    }
+  }
 
 
   $(".savenew").on('click', function (e) {
@@ -433,6 +509,23 @@
       return String.fromCharCode(dec);
     });
     return str.replace(/&quot;/g, '\\"');
+  }
+
+  function formulaChecker(text){
+    console.log(text);
+    text=text.replace(/".*?"/g,0);
+    //text=text.replace(/'.*?'/g,0);
+    console.log(text);
+    try{
+      if(isNaN(parseInt(eval(text))))
+          return false;
+      else 
+        return true;
+    }
+    catch(e){
+        console.log("error");
+        return false;
+    }
   }
 
   function initRTF(){
@@ -599,6 +692,14 @@ function updateRoomPropertiesValue(){
     $("#id__room_properties").html("");
   }
   $("#id_room_properties").val([...rpSet]);
+  var var_list="";
+  var edit_var_list="";
+  for (const [key, value] of Object.entries(rp_data)){
+      var_list+="<a style=\"color: blue;text-decoration: underline;\" onClick=\"insertVarToFormula('add_room_type_formula_formula','"+value.symbol+"')\">"+"\""+value.symbol+"\"<br/>";
+      edit_var_list+="<a style=\"color: blue;text-decoration: underline;\" onClick=\"insertVarToFormula('edit_room_type_formula_formula','"+value.symbol+"')\">"+"\""+value.symbol+"\"<br/>";
+  }
+  $("#var_list").html(var_list);
+  $("#edit_var_list").html(edit_var_list);
   console.log("room_properties_value: "+$("#id_room_properties").val());
   console.log([...rpSet]);
 }
@@ -704,6 +805,13 @@ function updateRelatedItemsValue(){
     document.getElementById("table_room_type_formula").removeAttribute("style");
     var name=$('#add_room_type_formula_name').val();
     var formula=$('#add_room_type_formula_formula').val();
+    if (!formulaChecker(formula)){
+        $('#id__room_type_formula_formula').html("There is error(s) in formula.");
+        return;
+    }
+    else{
+      $('#id__room_type_formula_formula').html("");
+    }
     var is_active=$('#add_room_type_formula_is_active').is(':checked');
     rtf.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
     clearRoomTypeFormula();
@@ -734,6 +842,13 @@ function updateRelatedItemsValue(){
   function updateRoomTypeFormula(id){
     var name=$('#edit_room_type_formula_name').val();
     var formula=$('#edit_room_type_formula_formula').val();
+    if (!formulaChecker(formula)){
+        $('#id__edit_room_type_formula_formula').html("There is error(s) in formula.");
+        return;
+    }
+    else{
+      $('#id__edit_room_type_formula_formula').html("");
+    }
     var is_active=$('#edit_room_type_formula_is_active').is(':checked');
     rtf[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
     $("#id_room_type_formulas").val(JSON.stringify(rtf));
