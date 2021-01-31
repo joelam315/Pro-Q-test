@@ -528,7 +528,7 @@
       console.log(_if);
     }
     {% if not item_obj %}
-    _if=[{"name": "Suggested Unit Price", "formula": "0", "is_active": "True"},{"name": "Suggested Quantity", "formula": "1", "is_active": "True"}]
+    _if=[{"name": "Suggested Unit Price", "formula": "\"value_based_price\"+\"material.value_based_price\"", "is_active": "True"},{"name": "Suggested Quantity", "formula": "1", "is_active": "True"}]
     $("#id_item_formulas").val(JSON.stringify(_if));
     {% endif %}
   }
