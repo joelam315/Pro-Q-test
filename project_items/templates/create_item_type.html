@@ -59,7 +59,6 @@
                 </div>
               </div>
             </div>-->
-            {% if item_type_obj %}
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
                 <div class="filter_col col-md-12-p-0">
@@ -98,7 +97,6 @@
                 </div>
               </div>
             </div>
-            {% endif %}
             <input type="hidden" id="save_new_form" name="savenewform">
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
@@ -117,7 +115,6 @@
 
   </div>
 </form>
-{% if item_type_obj %}
 <!-- Add Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -132,7 +129,7 @@
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
@@ -154,7 +151,7 @@
                   </div>
                   {% endif %}
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
@@ -195,7 +192,7 @@
         <div class="modal-body">
             <div class="col-md-12">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;">
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
@@ -215,7 +212,7 @@
                   </div>
                   {% endif %}
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <div class="filter_col col-md-12">
                     <div class="form-group">
                       <div class="row">
@@ -262,7 +259,6 @@
     </div>
   </div>
 </div>
-{% endif %}
 {% endblock %}
 {% block js_block %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>

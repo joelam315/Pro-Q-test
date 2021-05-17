@@ -40,15 +40,12 @@
                 <div class="filter_col col-md-3">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Item Type</label>
-                    <input type="text" class="form-control" placeholder="Item Type" name="item_type"
-                      value="{{request.POST.item_type}}">
-                  </div>
-                </div>
-                <div class="filter_col col-md-3">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1">Value Based Price</label>
-                    <input type="text" class="form-control" placeholder="Value Based Price" name="value_based_price"
-                      value="{{request.POST.value_based_price}}">
+                    <select id="item_item_type" class="assigned_users form-control col-md-3" class="form-control" placeholder="Item Type" name="item_type">
+                        <option value="blank">------------</option>
+                      {% for obj in item_type %}
+                        <option value="{{obj}}" {% if obj == request.POST.item_type %} selected="selected" {% endif %}>{{obj}}</option>
+                      {% endfor %}
+                    </select>
                   </div>
                 </div>
                 <div class="filter_col col-md-3">
@@ -110,14 +107,11 @@
                 {% for item in item_list %}
                 <tr style="text-align:center;">
                   <td scope="row">{{ forloop.counter }}</td>
-                  <td><a href="#" data-toggle="modal"
-                      data-target="#exampleModalCenter_item{{item.id}}">{{item.name}}</a></td>
+                  <td><a href="{% url 'project_items:edit_item' item.id%}">{{item.name}}</a></td>
                   <td>{{item.item_type}}</td>
                   <td>{{item.value_based_price}}</td>
                   <td>{{item.is_active}}</td>
                   <td class="actions">
-                    <a href="{% url 'project_items:view_item' item.id %}" class="btn btn-info view" title="View" ><i
-                        class="fas fa-eye"></i></a>
                     {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                     <a href="{% url 'project_items:edit_item' item.id%}" class="btn btn-success edit" title="Edit"><i
                         class="fas fa-pencil-alt"></i></a>

@@ -29,7 +29,7 @@
       </div>
      <div class="col-md-3">
         <div class="item sky_blue">
-          <a href="{% url 'companies:list'%}">
+          <a href="{% url 'companies:list'%}?br_approved=False">
             <div class="title">Companies need BR Approval</div>
             <div class="count">{{companies_need_approve|length}}</div>
             <!-- <div class="more"><a href="#">Go Live</a></div> -->
@@ -47,12 +47,17 @@
             </div>
             <div class="table-responsive">
               {% if users %}
-              <table class="table">
+              <table class="table" style="table-layout: fixed;">
+                <colgroup>
+                  <col style="width:30%">
+                  <col style="width:30%">
+                  <col style="width:40%">
+                </colgroup>
                 <thead>
                   <tr>
-                    <th width="30%">Username</th>
-                    <th width="30%">Display Name</th>
-                    <th width="40%">Date Joined</th>
+                    <th>Username</th>
+                    <th>Display Name</th>
+                    <th>Date Joined</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -89,7 +94,13 @@
             </div>
             <div class="table-responsive">
               {% if companies %}
-              <table class="table">
+              <table class="table" style="table-layout: fixed;">
+                <colgroup>
+                  <col style="width:20%">
+                  <col style="width:20%">
+                  <col style="width:20%">
+                  <col style="width:40%">
+                </colgroup>
                 <thead>
                   <tr>
                     <th width="30%">Name</th>

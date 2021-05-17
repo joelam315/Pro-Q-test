@@ -43,16 +43,27 @@
               </div>
               <span class="error_ajax" id="id_username" style="color:red">{{ errors.username }}</span>
             </div>
-            {% if not user_obj %}
             <div class="filter_col col-md-6">
               <div class="form-group">
-                <label for="exampleInputEmail1">Password{% if user_form.password.field.required %}<span
+                <label for="id_phone">Phone{% if user_form.phone.field.required %}<span
                     class="error">*</span>{% endif %}</label>
-                <input type="password" class="form-control" name="password" value="{{request.POST.password}}"
-                  placeholder="Password">
+                <input type="text" class="form-control" name="phone"
+                  value="{% if user_obj %}{{ user_obj.phone }}{% else %}{{request.POST.phone}}{% endif %}"
+                  placeholder="Phone">
               </div>
-              <span class="error_ajax" id="id_password" style="color:red">{{ errors.password }}</span>
+              <span class="error_ajax" id="id_phone" style="color:red">{{ errors.phone }}</span>
             </div>
+            <div class="filter_col col-md-6">
+              <div class="form-group">
+                <label for="id_is_active">Is Active{% if user_form.is_active.field.required %}<span
+                    class="error">*</span>{% endif %}</label>
+                <br>
+                {{user_form.is_active}}
+              </div>
+              <span class="error_ajax" id="id_is_active" style="color:red">{{ errors.is_active }}</span>
+            </div>
+            {% if not user_obj %}
+            <input type="hidden" class="form-control" name="password" value="1234" placeholder="Password">
             {% endif %}
             
           </div>

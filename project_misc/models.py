@@ -41,9 +41,9 @@ class ProjectMisc(models.Model):
 			id=self.id,
 			misc_id=self.misc.id,
 			name=self.misc.name,
-			unit_price=float(self.unit_price),
+			unit_price=round(float(self.unit_price),2),
 			quantity=self.quantity,
-			remark=self.remark
+			remark=self.remark if self.remark!=None else ""
 		)
 
 		return ret

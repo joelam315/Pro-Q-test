@@ -47,18 +47,25 @@
             <div class="card-body">
               <div class="card-title">Filters</div>
               <div class="row marl">
-                <div class="filter_col col-md-2">
+                <div class="filter_col col-md-3">
                   <div class="form-group">
-                    <label for="exampleInputEmail1">Name</label>
+                    <label for="exampleInputEmail1">Username</label>
                     <input type="text" class="form-control" placeholder="Username" name="username" {% if request.POST %}
                       value="{{request.POST.username}}" {%endif%} />
                   </div>
                 </div>
-                <div class="filter_col col-md-2">
+                <div class="filter_col col-md-3">
                   <div class="form-group">
-                    <label for="exampleInputEmail1">Email</label>
-                    <input type="text" class="form-control" placeholder="email" name="email" {% if request.POST %}
-                      value="{{request.POST.email}}" {%endif%} minlength="2"/>
+                    <label for="exampleInputEmail1">Display Name</label>
+                    <input type="text" class="form-control" placeholder="Display Name" name="display_name" {% if request.POST %}
+                      value="{{request.POST.display_name}}" {%endif%} />
+                  </div>
+                </div>
+                <div class="filter_col col-md-3">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Phone</label>
+                    <input type="text" class="form-control" placeholder="Phone" name="phone" {% if request.POST %}
+                      value="{{request.POST.phone}}" {%endif%} />
                   </div>
                 </div>
                 <input type="hidden" name="tab_status" id="tab_status">
@@ -87,7 +94,7 @@
                 <div class="card-body">
                   <div class="panel-heading-list card-title text-right">
                     <span class="total_count float-left">Users - {% if show_pageitems %}
-                      {% show_pageitems %}{% else %}{{active_users|length}}{% endif %}</span>
+                      {% show_pageitems %}{% else %}{{all_users|length}}{% endif %}</span>
                     <span class="filter_toggle ">
                       <a href="#" class="primary_btn"><i class="fas fa-filter"></i></a>
                     </span>
@@ -95,40 +102,52 @@
                   <div class="table-responsive">
                     <table class="table ">
                       <thead>
-                        {% if active_users|length > 0 %}
+                        {% if all_users|length > 0 %}
                         <tr>
-                          <th width="40%">Username</th>
-                          <th width="40%">Display Name</th>
+                          <th width="10%">Username</th>
+                          <th width="20%">Display Name</th>
+                          <th width="10">Phone</th>
+                          <th width="10">Is Active</th>
+                          <th width="30">Date Joined</th>
                           <th width="20%">Actions</th>
                         </tr>
                         {% endif %}
                       </thead>
                       <tbody>
                         {% if per_page %}
-                        {% paginate per_page active_users %}
+                        {% paginate per_page all_users %}
                         {% else %}
-                        {% paginate 10 active_users %}
+                        {% paginate 10 all_users %}
                         {% endif %}
-                        {% for user in active_users %}
+                        {% for user in all_users %}
                         <tr class="text-center">
                           <td><a href="{% url 'common:view_user' user.id %}">{{ user.username }}</a></td>
                           <td>{{ user.display_name }}</td>
+                          <td>{{ user.phone }}</td>
+                          <td>{{ user.is_active }}</td>
+                          <td>{{user.date_joined}}</td>
                           <td class="actions">
                             <!-- <a href="{% url 'common:view_user' user.id %}" class="btn btn-info view"><i class="fas fa-eye"></i>View</a> -->
-                            {% if user.email != admin_email  or request.user.email == admin_email %}
+
                             <a href="{% url 'common:edit_user' user.id %}" class="btn btn-success edit action"><i
                                 class="fas fa-pencil-alt"></i>Edit</a>
+                            {% if user.is_active %}
+                            <a href="{% url 'common:inactivate_user' user.id %}" class="btn btn-danger inactivate action"><i
+                                class="fas fa-user-times"></i>Inactivate</a>
+                            {% else %}
+                            <a href="{% url 'common:activate_user' user.id %}" class="btn btn-danger activate action"><i
+                                class="fas fa-user-check"></i>Activate</a>
                             {% endif %}
-                            <a href="{% url 'common:remove_user' user.id %}" class="btn btn-danger trash action"
+                            <!--<a href="{% url 'common:remove_user' user.id %}" class="btn btn-danger trash action"
                               {% if request.user.email == user.email %} style="visibility: hidden;" {% endif %}><i
-                                class="fas fa-trash-alt"></i>Delete</a>
+                                class="fas fa-trash-alt"></i>Delete</a>-->
                           </td>
                         </tr>
                         {% endfor %}
                       </tbody>
                     </table>
                   </div>
-                  {% ifequal active_users|length 0 %}
+                  {% ifequal all_users|length 0 %}
                   <h6 class="text-center">No Active Users Found</h6>
                   {% endifequal %}
                   <div class="text-center row marl">
@@ -188,10 +207,9 @@
                           </td>
                           <td class="actions">
                             <!-- <a href="{% url 'common:view_user' user.id %}" class="btn btn-info view"><i class="fas fa-eye"></i>View</a> -->
-                            {% if user.email != admin_email  or request.user.email == admin_email %}
                             <a href="{% url 'common:edit_user' user.id %}" class="btn btn-success edit action"><i
                                 class="fas fa-pencil-alt"></i>Edit</a>
-                            {% endif %}
+
                             <a href="{% url 'common:remove_user' user.id %}" class="btn btn-danger trash action"
                               {% if request.user.email == user.email %} style="visibility: hidden;" {% endif %}><i
                                 class="fas fa-trash-alt"></i>Delete</a>
@@ -221,6 +239,13 @@
 {% endblock %}
 {% block js_block %}
 <script type="text/javascript">
+
+  search = "{{search}}"
+
+  if (search == 'True') {
+    $(".list_filter_row").show();
+  }
+
   $(document).ready(function () {
     $(".filter_toggle").click(function () {
       $(".list_filter_row").toggle();
@@ -234,6 +259,20 @@
     e.preventDefault()
     url = $(this).attr('href')
     if (!confirm('Are you sure you want to delete?'))
+      return;
+    window.location = $(this).attr('href')
+  });
+  $('.inactivate').click(function (e) {
+    e.preventDefault()
+    url = $(this).attr('href')
+    if (!confirm('Are you sure you want to inactivate the user?'))
+      return;
+    window.location = $(this).attr('href')
+  });
+  $('.activate').click(function (e) {
+    e.preventDefault()
+    url = $(this).attr('href')
+    if (!confirm('Are you sure you want to activate the user?'))
       return;
     window.location = $(this).attr('href')
   });

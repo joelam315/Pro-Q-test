@@ -35,7 +35,7 @@
                     <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
                     <tr><td class="first_td">Tel</td><td>: {% if project.customer.phone %}{{project.customer.phone}}{% endif %}</td></tr>
                     <tr><td class="first_td">From</td><td>: {{company.owner.display_name}}</td></tr>
-                    <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
+                    <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location and project.work_location != "null" %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
                   </td>
                   <td>
@@ -142,12 +142,21 @@
   (function(){
     var charging_stage_content=""
     var remarks_content=""
-    var amount_content=numberWithCommas({{amount}});
-    var stage_amount_content=numberWithCommas({{amount}}*{{charging_stage.value}}/100);
+    var amount_content=numberWithCommas(({{amount}}).toFixed(2));
+    var stage_amount_content=numberWithCommas(({{stage_amount}}).toFixed(2));
+    //=numberWithCommas(({{amount}}*{{charging_stage.value}}/100).toFixed(2));
+    //stage_amount_content={{charging_stage_last}}
+    /*if({{charging_stage_last}}){
+      stage_amount_content=numberWithCommas((({{amount}}).toFixed(2)-(({{amount}}*(100-{{charging_stage.value}})/100).toFixed(2))).toFixed(2));
+    }
+    else{
+      stage_amount_content=numberWithCommas(({{amount}}*{{charging_stage.value}}/100).toFixed(2));
+      
+    }*/
     //var job_no_content=": J"+prependZero(4,{{project.job_no}});
     var general_remarks_content=""
 
-    charging_stage_content+=getGetOrdinal({{charging_stage_id}})+" Payment={{charging_stage.value}}% {{charging_stage.description}}";
+    charging_stage_content+=getGetOrdinal({{charging_stage_id}}+1)+" Payment={{charging_stage.value}}% {{charging_stage.description}}";
 
     general_remarks_content+="Remarks:\n";
 

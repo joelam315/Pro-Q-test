@@ -35,7 +35,7 @@
                     <tr><td class="first_td">To</td><td>: {{project.customer.name}}</td></tr>
                     <tr><td class="first_td">Tel</td><td>: {% if project.customer.phone %}{{project.customer.phone}}{% endif %}</td></tr>
                     <tr><td class="first_td">From</td><td>: {{company.owner.display_name}}</td></tr>
-                    <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
+                    <tr><td class="first_td">Ref</td><td>: 工程地點<br>: {% if project.work_location and project.work_location != "null" %}{{project.work_location}},&nbsp;{% endif %}{{project.get_district_display}}</td></tr>
                     </table>
                   </td>
                   <td>
@@ -53,21 +53,20 @@
             </table>
             <table class="lrborder" style="width:100%;">
               <colgroup>
-                <col span="1" style="width: 10%;">
                 <col span="1" style="width: 60%;">
-                <col span="1" style="width: 30%;">
+                <col span="1" style="width: 40%;">
               </colgroup>
               <thead>
-                <tr><td class="allborder">Date</td><td style="border-top: 3px solid;">Description</td><td class="item_value" style="border-top: 3px solid;">Amount (HK$)</td></tr>
+                <tr><td style="border-top: 3px solid;">Description</td><td class="item_value" style="border-top: 3px solid;">Amount (HK$)</td></tr>
               </thead>
               <tbody>
-                <tr><td></td><td class="item_name">Total Contract Sum</td><td class="item_value" id="amount_content"></td></tr>
+                <tr><td class="item_name">Total Contract Sum</td><td class="item_value" id="amount_content"></td></tr>
 
-                <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-                <tr><td>{{invoice_date}}</td><td class="item_name" id="charging_stage_content"></td><td class="item_value" id="stage_amount_content"></td></tr>
-                <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-                <tr><td class="first_td" style="border-bottom: 3px solid">&nbsp;</td><td style="border-bottom: 3px solid;padding-bottom: 50px"><span style="white-space: pre-line;" id="general_remarks_content"></span></td><td style="border-bottom: 3px solid">&nbsp;</td></tr>
-                <tr><td class="noborder"></td><td class="noborder"></td><td style="border-bottom: 3px solid"><div style="width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td style="border-left: none;border-right:none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;border-left: none;border-right:none;" id="stage_total_amount_content"></td></tr></table></div><div style="margin-top:2px;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
+                <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td></tr>
+                <tr><td class="item_name" id="charging_stage_content"></td><td class="item_value" id="stage_amount_content"></td></tr>
+                <tr><td class="first_td">&nbsp;</td><td>&nbsp;</td></tr>
+                <tr><td class="first_td" style="border-bottom: 3px solid;padding-bottom: 50px"><span style="white-space: pre-line;" id="general_remarks_content"></span></td><td style="border-bottom: 3px solid">&nbsp;</td></tr>
+                <tr><td class="noborder"></td><td style="border-bottom: 3px solid"><div style="width: 70%;margin-right: 0;margin-left: auto;"><table style="width:100%;"><tr><td style="border-left: none;border-right:none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total: </td><td style="text-align: right;border-left: none;border-right:none;" id="stage_total_amount_content"></td></tr></table></div><div style="margin-top:2px;width: 70%;margin-right: 0;margin-left: auto;"></div></td></tr>
               </tbody>
             </table>
             <br>
@@ -143,12 +142,20 @@
   (function(){
     var charging_stage_content="";
     var remarks_content="";
-    var amount_content=numberWithCommas({{amount}});
-    var stage_amount_content=numberWithCommas({{amount}}*{{charging_stage.value}}/100);
+    var amount_content=numberWithCommas(({{amount}}).toFixed(2));
+    var stage_amount_content=numberWithCommas(({{stage_amount}}).toFixed(2));
+
+    /*if({{charging_stage_last}}){
+      stage_amount_content=numberWithCommas((({{amount}}).toFixed(2)-(({{amount}}*(100-{{charging_stage.value}})/100).toFixed(2))).toFixed(2));
+    }
+    else{
+      stage_amount_content=numberWithCommas(({{amount}}*{{charging_stage.value}}/100).toFixed(2));
+      
+    }*/
     //var job_no_content=": J"+prependZero(4,{{project.job_no}});
     var general_remarks_content="";
 
-    charging_stage_content+=getGetOrdinal({{charging_stage_id}})+" ({{charging_stage.value}}%) Payment for {{charging_stage.description}}";
+    charging_stage_content+=getGetOrdinal({{charging_stage_id}}+1)+" ({{charging_stage.value}}%) Payment for {{invoice_no}}({{charging_stage.description}})";
 
     general_remarks_content+="Remarks:\n";
 

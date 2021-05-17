@@ -25,6 +25,8 @@ class CompanyForm(forms.ModelForm):
                 value.widget.attrs['placeholder'] = value.label
 
         self.fields['br_approved'].widget.attrs['style']="width:auto;"
+
+        self.fields['is_active'].widget.attrs['style']="width:auto;"
         
         self.fields["owner"].choices = [(user.get('id'), user.get('username')) for user in User.objects.filter(role="USER",is_superuser=False).values('id', 'username')]
         # lead is not mandatory while editing
@@ -34,7 +36,7 @@ class CompanyForm(forms.ModelForm):
 
     class Meta:
         model = Company
-        fields = ('name','owner',"br_approved","br_pic")
+        fields = ('name','owner',"br_approved","logo_pic","br_pic","is_active")
 
 
 class CompanyCommentForm(forms.ModelForm):

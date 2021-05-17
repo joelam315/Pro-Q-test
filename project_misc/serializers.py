@@ -47,6 +47,8 @@ class SetProjectMiscSerializer(serializers.ModelSerializer):
 			project_misc.misc=validated_data["misc"]
 			if validated_data.get("remark"):
 				project_misc.remark=validated_data["remark"]
+			else:
+				project_misc.remark=""
 			project_misc.save()
 			project=project_misc.project;
 			project.updated_on=datetime.now()

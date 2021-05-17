@@ -1,0 +1,22 @@
+need change
+
+class
+	-companydetails_row
+	-company_field
+	-company_XX
+	-remove_company
+
+html
+	{% if request.GET.view_company %} href="{% url 'companies:view_company' request.GET.view_company %}"
+
+	{% if request.GET.view_account %} href="{% url 'accounts:view_account' request.GET.view_account %}"
+
+remark for follow up: 
+	pro_q_backend\companies\templates\companies.html:
+		element id with company
+
+	pro_q_backend\companies\templates\view_company.html:
+		element id with company
+
+	pro_q_backend\emails\templates\mail_center.html:
+		data-name with account

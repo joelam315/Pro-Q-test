@@ -33,38 +33,12 @@
           </div>
           <div class="row ">
             <div class="col-md-6">
-              {% if user_obj.first_name %}
-              <div class="filter_col col-md-12" id="iname">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_name" data-name="name">First Name</label>
-                  <div class="account_field" id="account_name" data-name="name">{{ user_obj.first_name }}</div>
-                </div>
-              </div>
-              {% endif %}
-              {% if user_obj.last_name %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_phone" data-name="name">Last Name</label>
-                  <div class="account_field" id="account_phone" data-name="name">{{ user_obj.last_name }}</div>
-                </div>
-              </div>
-              {% endif %}
-              {% if user_obj.email %}
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <label class="acc_field_label" for="id_email" data-name="name">Email</label>
-                  <div class="account_field" id="account_email" data-name="name">{{ user_obj.email }}</div>
-                </div>
-              </div>
-              {% endif %}
-              {% if user_obj.username %}
               <div class="filter_col col-md-12">
                 <div class="form-group">
                   <label class="acc_field_label" for="id_website" data-name="name">Username</label>
                   <div class="account_field" id="account_website" data-name="name">{{ user_obj.username }}</div>
                 </div>
               </div>
-              {% endif %}
             </div>
             <div class="col-md-6">
               <div class="filter_col col-md-12">
@@ -75,18 +49,26 @@
                   </div>
                 </div>
               </div>
-              {% with teams=user_obj.user_teams.all %}
-              {% if teams %}
+            </div>
+            <div class="col-md-6">
               <div class="filter_col col-md-12">
                 <div class="form-group">
-                  <label class="acc_field_label" for="id_industry" data-name="name">Teams</label>
-                  {% for team in teams %}
-                  <div class="account_field" id="account_industry" data-name="name">{{ team }}</div>
-                  {% endfor %}
+                  <label class="acc_field_label" for="id_phone" data-name="name">Phone</label>
+                  <div class="phone" style="text-align: left;">
+                    {{user_obj.phone}}
+                  </div>
                 </div>
               </div>
-              {% endif %}
-              {% endwith %}
+            </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label class="acc_field_label" for="id_date_joined" data-name="name">Date Joined</label>
+                  <div class="date_joined" style="text-align: left;">
+                    {{user_obj.date_joined}}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -34,7 +34,7 @@ from common.access_decorators_mixins import (MarketingAccessRequiredMixin,
     SalesAccessRequiredMixin, marketing_access_required, sales_access_required,
     admin_login_required,AdminAccessRequiredMixin)
 from common.forms import (APISettingsForm, ChangePasswordForm, DocumentForm,
-    LoginForm, PasswordResetEmailForm, UserCommentForm, UserForm)
+    LoginForm, PasswordResetEmailForm, UserCommentForm, UserForm, AdminForm)
 from common.models import (APISettings, Attachments, Comment, Document, Google,
     Profile, User)
 from common.tasks import (resend_activation_link_to_user,
@@ -46,6 +46,11 @@ from leads.models import Lead
 from opportunity.models import Opportunity
 from teams.models import Teams
 from marketing.models import ContactEmailCampaign, BlockedDomain, BlockedEmail 
+
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.models import TokenUser
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 import magic
 
@@ -184,7 +189,7 @@ class ChangePasswordView(LoginRequiredMixin, TemplateView):
             #     error = "Invalid old password"
             # else:
             user.set_password(request.POST.get('Newpassword'))
-            user.is_active = True
+            #user.is_active = True
             user.save()
             return HttpResponseRedirect('/')
         else:
@@ -224,6 +229,16 @@ class LoginView(TemplateView):
         if form.is_valid():
 
             user = User.objects.filter(username=request.POST.get('username')).first()
+            if user==None:
+                return render(request, "login.html", {
+                    "ENABLE_GOOGLE_LOGIN": settings.ENABLE_GOOGLE_LOGIN,
+                    "GP_CLIENT_SECRET": settings.GP_CLIENT_SECRET,
+                    "GP_CLIENT_ID": settings.GP_CLIENT_ID,
+                    "error": True,
+                    "message":
+                    "Your username and password didn't match. \
+                    Please try again."
+                })
             if not (user.role == 'ADMIN' or user.is_superuser):
                 return render(request, "login.html", {
                     "ENABLE_GOOGLE_LOGIN": settings.ENABLE_GOOGLE_LOGIN,
@@ -336,7 +351,7 @@ class AdminsListView(AdminRequiredMixin, TemplateView):
 
 class CreateAdminView(AdminRequiredMixin, CreateView):
     model = User
-    form_class = UserForm
+    form_class = AdminForm
     template_name = "admin_create.html"
     # success_url = '/users/list/'
 
@@ -418,7 +433,7 @@ class AdminDetailView(AdminRequiredMixin, DetailView):
 
 class UpdateAdminView(LoginRequiredMixin, UpdateView):
     model = User
-    form_class = UserForm
+    form_class = AdminForm
     template_name = "admin_create.html"
 
     def form_valid(self, form):
@@ -507,27 +522,35 @@ class UsersListView(AdminRequiredMixin, TemplateView):
             if request_post.get('username'):
                 queryset = queryset.filter(
                     username__icontains=request_post.get('username'))
-            if request_post.get('email'):
+            if request_post.get('display_name'):
                 queryset = queryset.filter(
-                    email__icontains=request_post.get('email'))
-            if request_post.get('role'):
+                    display_name__icontains=request_post.get('display_name'))
+            if request_post.get('phone'):
                 queryset = queryset.filter(
-                    role=request_post.get('role'))
-            if request_post.get('status'):
-                queryset = queryset.filter(
-                    is_active=request_post.get('status'))
+                    phone__icontains=request_post.get('phone'))
 
-        return queryset.order_by('username')
+
+        return queryset.order_by('-date_joined')
 
     def get_context_data(self, **kwargs):
         context = super(UsersListView, self).get_context_data(**kwargs)
-        active_users = self.get_queryset().filter(is_active=True)
-        inactive_users = self.get_queryset().filter(is_active=False)
+        all_users=self.get_queryset()
+        active_users = all_users.filter(is_active=True)
+        inactive_users = all_users.filter(is_active=False)
+        context["all_users"]=all_users
         context["active_users"] = active_users
         context["inactive_users"] = inactive_users
         context["per_page"] = self.request.POST.get('per_page')
-        context['admin_email'] = settings.ADMIN_EMAIL
-        context['roles'] = USER_ROLES
+
+        search = False
+        if (
+            self.request.POST.get('username') or self.request.POST.get('display_name') or
+            self.request.POST.get('phone')
+        ):
+            search = True
+
+        context["search"] = search
+
         context['status'] = [('True', 'Active'), ('False', 'In Active')]
         return context
 
@@ -695,6 +718,38 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
         send_email_user_delete.delay(
             self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
         self.object.delete()
+        return redirect("common:users_list")
+
+class UserActivateView(AdminRequiredMixin, DeleteView):
+    model = User
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        #current_site = request.get_host()
+        #deleted_by = self.request.user.email
+        #send_email_user_delete.delay(
+        #    self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
+        self.object.is_active=True
+        self.object.is_set_inactive=False
+        self.object.save()
+        return redirect("common:users_list")
+
+class UserInactivateView(AdminRequiredMixin, DeleteView):
+    model = User
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        #current_site = request.get_host()
+        #deleted_by = self.request.user.email
+        #send_email_user_delete.delay(
+        #    self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
+        self.object.is_active=False
+        self.object.is_set_inactive=True
+        self.object.save()
+        ots=OutstandingToken.objects.filter(user=self.object)
+        for ot in ots:
+            if not BlacklistedToken.objects.filter(token=ot).exists():
+                BlacklistedToken.objects.create(token=ot).save()
         return redirect("common:users_list")
 
 
@@ -1231,7 +1286,7 @@ def change_passsword_by_admin(request):
             email = EmailMessage(mail_subject, message, to=[user.email])
             email.content_subtype = "html"
             #email.send()
-            return HttpResponseRedirect('/users/list/')
+            return HttpResponseRedirect('/admins/list/')
     raise PermissionDenied
 
 

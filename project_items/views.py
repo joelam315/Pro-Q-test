@@ -370,9 +370,9 @@ class ItemsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 			if request_post.get('name'):
 				queryset = queryset.filter(
 					name__icontains=request_post.get('name'))
-			if request_post.get('item_type'):
+			if request_post.get('item_type') and request_post.get('item_type')!="blank":
 				queryset = queryset.filter(
-					item_type__name__icontains=request_post.get('item_type'))
+					item_type__name=request_post.get('item_type'))
 			if request_post.get('value_based_price'):
 				queryset = queryset.filter(
 					value_based_price__icontains=request_post.get('value_based_price'))
@@ -386,6 +386,7 @@ class ItemsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 		context = super(ItemsListView, self).get_context_data(**kwargs)
 		context["item_list"] = self.get_queryset()
 		context["per_page"] = self.request.POST.get('per_page')
+		context["item_type"] = [item_type.name for item_type in ItemType.objects.all()]
 		if self.request.session.get("protectedError",False):
 			context["protected_error"]=True
 			self.request.session["protectedError"]=False
@@ -393,7 +394,7 @@ class ItemsListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
 		search = False
 		if (
 			self.request.POST.get('name') or
-			self.request.POST.get('is_active')
+			self.request.POST.get('is_active') or (self.request.POST.get('item_type') and self.request.POST.get('item_type')!="blank")
 		):
 			search = True
 		context["search"] = search

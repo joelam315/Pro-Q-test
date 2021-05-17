@@ -23,7 +23,7 @@
                   </div>
                 </span> -->
             </h5>
-            <a href="{% url 'common:edit_user' user_obj.id %}" class="btn btn-success edit">Edit</a>
+            <a href="{% url 'common:edit_admin' user_obj.id %}" class="btn btn-success edit">Edit</a>
           </div>
           <div class="row marl no-gutters">
             <div class="col-md-8">
@@ -48,7 +48,7 @@
                   <div class="contact_field" id="contact_email" data-name="name">{{ user_obj.email }}</div>
                 </div>
               </div>
-              <div class="filter_col col-md-12">
+              <!--<div class="filter_col col-md-12">
                 <div class="form-group">
                   <label class="contact_field_label" for="id_email" data-name="name">Permissions</label>
                   <div class="contact_field" id="contact_email" data-name="name">
@@ -68,7 +68,7 @@
 
                   </div>
                 </div>
-              </div>
+              </div>-->
               {% with teams=user_obj.user_teams.all %}
               {% if teams %}
               <div class="filter_col col-md-12">

@@ -72,6 +72,13 @@
                       value="{{request.POST.br_approved}}" {%endif%} />
                   </div>
                 </div>
+                <div class="filter_col col-md-2">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Is Active</label>
+                    <input type="text" class="form-control" placeholder="Is Active" name="is_active" {% if request.POST %}
+                      value="{{request.POST.is_active}}" {%endif%} />
+                  </div>
+                </div>
                 <input type="hidden" name="tab_status" id="tab_status">
                 <div class="filter_col col-lg-2">
                   <div class="form-group buttons_row">
@@ -120,10 +127,11 @@
                         <tr>
                           <th width="5%">ID</th>
                           <th width="15%">Conmpany Name</th>
-                          <th width="15%">Owner Name</th>
+                          <th width="10%">Owner Name</th>
                           <th width="15%">Owner Phone</th>
-                          <th width="20%">Company Email</th>
+                          <th width="15%">Company Email</th>
                           <th width="10%">BR Approved</th>
+                          <th width="10%">Is Active</th>
                           <th width="10%">Created On</th>
                           <th width="10%">Actions</th>
                         </tr>
@@ -141,9 +149,8 @@
                           <!-- <td>{% if each_company.name %}<a
                               href="{% url 'companies:view_company' each_company.id %}">{{ each_company.name }}</a>{% endif %}
                           </td> -->
-                          <td>{% if each_company.name %}<a data-toggle="modal"
-                              data-target="#exampleModalCenter_company{{each_company.id}}"
-                              href="#">{{ each_company.name }}</a>{% endif %}
+                          <td>{% if each_company.name %}<a 
+                              href="{% url 'companies:view_company' each_company.id %}">{{ each_company.name }}</a>{% endif %}
                           </td>
                           <td>
                             <a href="{% url 'common:view_user' each_company.owner.id%}">{{each_company.owner.display_name}}</a>
@@ -154,22 +161,26 @@
                           <td>
                             {{each_company.company_doc_header.email}}
                           </td>
-                          <td title="{{each_company.created_on}}">{{ each_company.br_approved }}</td>
+                          <td title="{{each_company.br_approved}}">{{ each_company.br_approved }}</td>
+                          <td title="{{each_company.is_active}}">{{ each_company.is_active }}</td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
                           <td class="actions">
                             {% if each_company.contacts.all %}
-                            <a href="{% url 'companies:create_mail' %}" class="btn btn-primary edit company_send_mail"
+                            <!--<a href="{% url 'companies:create_mail' %}" class="btn btn-primary edit company_send_mail"
                               data-company="{{each_company.id}}" data-company-email="{{each_company.email}}"
                               data-toggle="modal" data-target="#send_email_to_contacts" title="Send Mail"><i
                                 class="fas fa-paper-plane" ></i>
-                            </a>
+                            </a>-->
                             {% endif %}
-                            <a href="{% url 'companies:view_company' each_company.id %}" class="btn btn-info edit" title="View"><i
-                                class="fas fa-eye"></i></a>
                             <a href="{% url 'companies:edit_company' each_company.id %}" class="btn btn-success edit" title="Edit"><i
                                 class="fas fa-pencil-alt"></i></a>
-                            <a href="{% url 'companies:remove_company' each_company.id %}"
-                              class="btn btn-danger delete remove_company" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                            {% if each_company.is_active %}
+                            <a href="{% url 'companies:inactivate_company' each_company.id %}" class="btn btn-danger inactivate action"><i
+                                class="fas fa-user-times"></i></a>
+                            {% else %}
+                            <a href="{% url 'companies:activate_company' each_company.id %}" class="btn btn-danger activate action"><i
+                                class="fas fa-user-check"></i></a>
+                            {% endif %}
                           </td>
                         </tr>
                         {% endfor %}
@@ -233,12 +244,15 @@
                           </td>
                           <td title="{{each_company.created_on}}">{{ each_company.created_on_arrow }}</td>
                           <td class="actions">
-                            <a href="{% url 'companies:view_company' each_company.id %}" class="btn btn-info edit" title="View"><i
-                                class="fas fa-eye"></i></a>
                             <a href="{% url 'companies:edit_company' each_company.id %}" class="btn btn-success edit" title="Edit" ><i
                                 class="fas fa-pencil-alt"></i></a>
-                            <a href="{% url 'companies:remove_company' each_company.id %}"
-                              class="btn btn-danger delete remove_company" title="Delete" ><i class="fas fa-trash-alt"></i></a>
+                            {% if each_company.is_active %}
+                            <a href="{% url 'companies:inactivate_company' each_company.id %}" class="btn btn-danger inactivate action"><i
+                                class="fas fa-user-times"></i>Inactivate</a>
+                            {% else %}
+                            <a href="{% url 'companies:activate_company' user.id %}" class="btn btn-danger activate action"><i
+                                class="fas fa-user-check"></i>Activate</a>
+                            {% endif %}
                           </td>
                         </tr>
                         {% endfor %}
@@ -783,6 +797,25 @@
 <script type="text/javascript"
   src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.0-alpha14/js/tempusdominus-bootstrap-4.min.js"></script>
 <script type="text/javascript">
+  function removeParams(sParam)
+  {
+    var param = '?';
+
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+ 
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+        if (sParameterName!="" && sParameterName[0] != sParam) {
+            param = param + sParameterName[0] + '=' + sParameterName[1] + '&'
+        }
+    }
+    
+    return param.substring(0,param.length-1);
+  }
+
   $("#close-tab").click(function (e) {
     $("#tab_status").val('Closed');
   })
@@ -825,6 +858,8 @@
   }
 
   $(document).ready(function () {
+    window.history.replaceState({}, document.title, "/companies/" + removeParams("br_approved"));
+    
     $(".filter_toggle").click(function () {
       $(".list_filter_row").toggle();
     });
@@ -994,6 +1029,21 @@
     e.preventDefault();
     $("form#add_form_mail").submit()
   })
+
+  $('.inactivate').click(function (e) {
+    e.preventDefault()
+    url = $(this).attr('href')
+    if (!confirm('Are you sure you want to inactivate the company?'))
+      return;
+    window.location = $(this).attr('href')
+  });
+  $('.activate').click(function (e) {
+    e.preventDefault()
+    url = $(this).attr('href')
+    if (!confirm('Are you sure you want to activate the company?'))
+      return;
+    window.location = $(this).attr('href')
+  });
 
   $('form#add_form_mail').ajaxForm({
     type: 'POST',

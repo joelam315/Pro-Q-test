@@ -94,21 +94,14 @@
                 {% for item_property in item_property_list %}
                 <tr style="text-align:center;">
                   <td scope="row">{{ forloop.counter }}</td>
-                  <td><a href="#" data-toggle="modal"
-                      data-target="#exampleModalCenter_item_property{{item_property.id}}">{{item_property.name}}</a></td>
+                  <td><a href="{% url 'project_items:edit_item_property' item_property.id %}">{{item_property.name}}</a></td>
                   <td>
                     {{item_property.symbol}}
                   </td>
                   <td class="actions">
-                    <a href="{% url 'project_items:view_item_property' item_property.id %}" class="btn btn-info view" title="View" ><i
-                        class="fas fa-eye"></i></a>
                     {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                     <a href="{% url 'project_items:edit_item_property' item_property.id%}" class="btn btn-success edit" title="Edit"><i
                         class="fas fa-pencil-alt"></i></a>
-                    {% endif %}
-                    {% if request.user.role == "ADMIN" or request.user.is_superuser %}
-                    <a href="{% url 'project_items:remove_item_property' item_property.id %}"
-                      class="btn btn-danger delete remove_account" title="Delete" ><i class="fas fa-trash-alt"></i></a>
                     {% endif %}
                   </td>
                 </tr>

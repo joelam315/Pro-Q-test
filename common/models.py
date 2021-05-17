@@ -47,6 +47,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     has_marketing_access = models.BooleanField(default=False)
     new_phone= PhoneNumberField(null=True,blank=True)
     new_phone_verify_code=models.CharField(max_length=6,blank=True,null=True)
+    is_login_company_inactive=models.BooleanField(default=False)
+    is_set_inactive=models.BooleanField(default=False)
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', ]

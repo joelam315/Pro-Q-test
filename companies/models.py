@@ -1,5 +1,6 @@
 import arrow
 import time
+import datetime
 from django.db import models
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -77,15 +78,21 @@ class Company(models.Model):
         User, related_name='company_created_by',
         on_delete=models.SET_NULL, null=True)
     created_on = models.DateTimeField(_("Created on"), auto_now_add=True)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     tags = models.ManyToManyField(Tags, blank=True)
     br_approved=models.BooleanField(default=False)
+    gen_quot_date=models.DateField(default=datetime.date.today)
+    gen_quot_count=models.IntegerField(default=0)
+    gen_invoice_date=models.DateField(default=datetime.date.today)
+    gen_invoice_count=models.IntegerField(default=0)
+    gen_receipt_date=models.DateField(default=datetime.date.today)
+    gen_receipt_count=models.IntegerField(default=0)
     status = models.CharField(
         choices=COMPANY_STATUS_CHOICE, max_length=64, default='open')
     '''lead = models.ForeignKey(
         'leads.Lead', related_name="company_leads",
         on_delete=models.SET_NULL, null=True)'''
-    owner =models.OneToOneField(User,related_name='owned_company',on_delete=models.CASCADE)
+    owner =models.OneToOneField(User,related_name='owned_company',on_delete=models.PROTECT)
     #logo_pic = models.FileField(
     #    max_length=1000, upload_to=logo_url, null=True, blank=True)
 

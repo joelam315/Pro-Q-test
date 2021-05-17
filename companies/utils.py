@@ -36,7 +36,6 @@ MIDDLE_CHOICES=(
 )
 
 LOWER_CHOICES=(
-	("Date",_("日期(YYYYMMDD)")),
 	("Number",_("4位數字(0000-9999)")),
 	("Alphabet",_("英文字母(A-Z)"))
 )

@@ -15,7 +15,7 @@ from common.views import (
     change_passsword_by_admin, google_login, create_lead_from_site,
     activate_user, resend_activation_link,
     AdminsListView, CreateAdminView, AdminDetailView,UpdateAdminView,
-    AdminDeleteView
+    AdminDeleteView, UserActivateView, UserInactivateView
 )
 from django.conf.urls.static import static
 from django.conf import settings
@@ -50,7 +50,8 @@ urlpatterns = [
     path('users/<int:pk>/view/', UserDetailView.as_view(), name='view_user'),
     path('users/<int:pk>/delete/',
          UserDeleteView.as_view(), name='remove_user'),
-
+    path('users/<int:pk>/activate/', UserActivateView.as_view(),name="activate_user"),
+    path('users/<int:pk>/inactivate/', UserInactivateView.as_view(),name="inactivate_user"),
     path(
         'password-reset/', PasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(),

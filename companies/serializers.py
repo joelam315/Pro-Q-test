@@ -82,10 +82,10 @@ class SetDocumentFormatSerializer(serializers.ModelSerializer):
 			"quot_middle_format",
 			"quot_lower_format",
 			"invoice_upper_format",
-			"invoice_middle_format",
+			#"invoice_middle_format",
 			"invoice_lower_format",
 			"receipt_upper_format",
-			"receipt_middle_format",
+			#"receipt_middle_format",
 			"receipt_lower_format"
 		)
 
@@ -97,7 +97,8 @@ class SetDocumentFormatSerializer(serializers.ModelSerializer):
 		company=Company.objects.get(owner=user)
 		if not company:
 			raise serializers.ValidationError("You must create a company first.")
-		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"],'project_upper_format':validated_data["project_upper_format"],'project_lower_format':validated_data["project_lower_format"],'project_based_number':validated_data["project_based_number"]})
+		#doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["invoice_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["receipt_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"],'project_upper_format':validated_data["project_upper_format"],'project_lower_format':validated_data["project_lower_format"],'project_based_number':validated_data["project_based_number"]})
+		doc_format=DocumentFormat.objects.update_or_create (company=company,defaults={"quot_upper_format":validated_data["quot_upper_format"],"quot_middle_format":validated_data["quot_middle_format"],"quot_lower_format":validated_data["quot_lower_format"],"invoice_upper_format":validated_data["invoice_upper_format"],"invoice_middle_format":validated_data["quot_middle_format"],"invoice_lower_format":validated_data["invoice_lower_format"],"receipt_upper_format":validated_data["receipt_upper_format"],"receipt_middle_format":validated_data["quot_middle_format"],"receipt_lower_format":validated_data["receipt_lower_format"],'project_upper_format':validated_data["project_upper_format"],'project_lower_format':validated_data["project_lower_format"],'project_based_number':validated_data["project_based_number"]})
 		return doc_format[0]
 
 class DocumentFormatJsonSerializer(serializers.Serializer):

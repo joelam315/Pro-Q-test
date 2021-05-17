@@ -44,6 +44,17 @@
                       value="{{request.POST.symbol}}">
                   </div>
                 </div>
+                <div class="filter_col col-md-3">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Data Type</label>
+                    <select id="add_custom_property_data_type" class="assigned_users form-control col-md-3" class="form-control" placeholder="Data Type" name="data_type">
+                        <option value="blank">------------</option>
+                      {% for obj in data_type %}
+                        <option value="{{obj.0}}" {% if obj.0 == request.POST.data_type %} selected="selected" {% endif %}>{{obj.1}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
                 <div class="filter_col text-center col-3">
                   <div class="form-group buttons_row">
                     <button class="btn btn-primary save" type="submit">Search</button>
@@ -95,24 +106,17 @@
                 {% for room_property in room_property_list %}
                 <tr style="text-align:center;">
                   <td scope="row">{{ forloop.counter }}</td>
-                  <td><a href="#" data-toggle="modal"
-                      data-target="#exampleModalCenter_room_property{{room_property.id}}">{{room_property.name}}</a></td>
+                  <td><a href="{% url 'rooms:edit_room_property' room_property.id%}">{{room_property.name}}</a></td>
                   <td>
                     {{room_property.symbol}}
                   </td>
                   <td>
-                    {{room_property.data_type}}
+                    {{room_property.get_data_type_display}}
                   </td>
                   <td class="actions">
-                    <a href="{% url 'rooms:view_room_property' room_property.id %}" class="btn btn-info view" title="View" ><i
-                        class="fas fa-eye"></i></a>
                     {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                     <a href="{% url 'rooms:edit_room_property' room_property.id%}" class="btn btn-success edit" title="Edit"><i
                         class="fas fa-pencil-alt"></i></a>
-                    {% endif %}
-                    {% if request.user.role == "ADMIN" or request.user.is_superuser %}
-                    <a href="{% url 'rooms:remove_room_property' room_property.id %}"
-                      class="btn btn-danger delete remove_account" title="Delete" ><i class="fas fa-trash-alt"></i></a>
                     {% endif %}
                   </td>
                 </tr>

@@ -12,7 +12,7 @@
 </nav>
 {% endblock %}
 {% block content %}
-<form id="add_form" method="POST" action='' novalidate enctype="multipart/form-data">
+
   <div class="overview_form_block row marl justify-content-center">
     <div class="col-md-9">
       <div class="card">
@@ -21,83 +21,93 @@
             {% if room_property_obj %}EDIT{% else %}CREATE{% endif %} Room Property
           </div>
           <div class="row marl no-gutters justify-content-center">
-            <div class="col-md-6">
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <div class="row">
-                    <div class="filter_col col-md-12">
-                      <label for="exampleInputEmail1" class="required">Name{% if room_property_form.name.field.required %}<span
-                          class="error">*</span>{% endif %}</label>
-                      {{ room_property_form.name }}
-                      <span class="error">{{ room_property_form.name.errors }}</span>
+            <form id="add_form" method="POST" action='' novalidate enctype="multipart/form-data" class="row marl no-gutters justify-content-center" style="width: 100%;">
+              <div class="col-md-6">
+                <div class="filter_col col-md-12">
+                  <div class="form-group">
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <label for="exampleInputEmail1" class="required">Name{% if room_property_form.name.field.required %}<span
+                            class="error">*</span>{% endif %}</label>
+                        {{ room_property_form.name }}
+                        <span class="error">{{ room_property_form.name.errors }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="col-md-6">
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <div class="row">
-                    <div class="filter_col col-md-12">
-                      <label for="exampleInputEmail1" class="required">Symbol{% if room_property_form.symbol.field.required %}<span
-                                class="error">*</span>{% endif %}</label>
-                      {{ room_property_form.symbol }}
-                      <span class="error">{{ room_property_form.symbol.errors }}</span>
+              <div class="col-md-6">
+                <div class="filter_col col-md-12">
+                  <div class="form-group">
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <label for="exampleInputEmail1" class="required">Symbol{% if room_property_form.symbol.field.required %}<span
+                                  class="error">*</span>{% endif %}</label>
+                        {{ room_property_form.symbol }}
+                        <span class="error">{{ room_property_form.symbol.errors }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="col-md-6">
-              <div class="filter_col col-md-12">
-                <div class="form-group">
-                  <div class="row">
-                    <div class="filter_col col-md-12">
-                      <label for="exampleInputEmail1" class="required">Data Type{% if room_property_form.data_type.field.required %}<span
-                                class="error">*</span>{% endif %}</label>
-                      {{ room_property_form.data_type }}
-                      <span class="error">{{ room_property_form.data_type.errors }}</span>
+              <div class="col-md-6">
+                <div class="filter_col col-md-12">
+                  <div class="form-group">
+                    <div class="row">
+                      <div class="filter_col col-md-12">
+                        <label for="exampleInputEmail1" class="required">Data Type{% if room_property_form.data_type.field.required %}<span
+                                  class="error">*</span>{% endif %}</label>
+                        {{ room_property_form.data_type }}
+                        {% if room_property_obj %}
+                        <input type="hidden" value="{{room_property_obj.data_type}}" id="id_data_type" name="data_type">
+                        {% endif %}
+                        <span class="error">{{ room_property_form.data_type.errors }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+              <input id="id_custom_properties" type="hidden" name="custom_properties">
+              <input id="id_custom_property_formulas" type="hidden" name="custom_property_formulas">
+              <input type="hidden" id="save_new_form" name="savenewform">
+            </form>
             <div id="div_custom_properties" class="col-md-12" style="display:{% ifequal room_property_obj.data_type 'custom property' %}block{% else %}none{% endifequal %};">
               <div class="filter_col col-md-12">
 
                 <div class="form-group">
                   <label for="exampleInputEmail1" class="required">Custom Properties{% if room_property_form.custom_properties.field.required %}<span class="error">*</span>{% endif %}</label>
-                  <div class="col-sm-12" style="display: flex;">
-                    <div class="col-sm-10">
-                      <div class="row marl buttons_row text-center form_btn_row">
-                        <div class="col-sm-10" style="display: flex;">
-                          <label class="col-md-2" style="align-self: center;">Name</label>
-                          <input id="add_custom_property_name" class="assigned_users form-control col-md-3" />
-                          <label class="col-md-2" style="align-self: center;">Symbol</label>
-                          <input id="add_custom_property_symbol" class="assigned_users form-control col-md-3" />
+                  <form action="#" id="add_custom_property_form">
+                    <div class="col-sm-12" style="display: flex;">
+                      <div class="col-sm-10">
+                        <div class="row marl buttons_row text-center form_btn_row">
+                          <div class="col-sm-10" style="display: flex;">
+                            <label class="col-md-2" style="align-self: center;">Name</label>
+                            <input id="add_custom_property_name" class="assigned_users form-control col-md-3" required />
+                            <label class="col-md-2" style="align-self: center;">Symbol</label>
+                            <input id="add_custom_property_symbol" class="assigned_users form-control col-md-3" required />
+                          </div>
+                        </div>
+                        <div class="row marl buttons_row text-center form_btn_row">
+                          <div class="col-sm-10" style="display: flex;">
+                            <label class="col-md-2" style="align-self: center;">Data Type</label>
+                            <select id="add_custom_property_data_type" class="assigned_users form-control col-md-3">
+                              {% for obj in sub_data_type %}
+                              <option value="{{obj.0}}">{{obj.1}}</option>
+                              {% endfor %}
+                            </select>
+                            <label class="col-md-2" style="align-self: center;">Group ID</label>
+                            <input id="add_custom_property_group_id" class="assigned_users form-control col-md-3" type="number" step="1" pattern="\d*" required />
+                            <span class="error" id="id__custom_properties">{{ room_property_form.custom_properties.errors }}</span>
+                          </div>
                         </div>
                       </div>
-                      <div class="row marl buttons_row text-center form_btn_row">
-                        <div class="col-sm-10" style="display: flex;">
-                          <label class="col-md-2" style="align-self: center;">Data Type</label>
-                          <select id="add_custom_property_data_type" class="assigned_users form-control col-md-3">
-                            {% for obj in sub_data_type %}
-                            <option value="{{obj.0}}">{{obj.1}}</option>
-                            {% endfor %}
-                          </select>
-                          <label class="col-md-2" style="align-self: center;">Group ID</label>
-                          <input id="add_custom_property_group_id" class="assigned_users form-control col-md-3" />
-                          <span class="error" id="id__custom_properties">{{ room_property_form.custom_properties.errors }}</span>
+                      <div class="col-sm-2" style="display: flex;">
+                        <div class="col-md-2 row marl buttons_row form_btn_row text-center">
+                          <button type="submit" class="btn btn-default save" id="add_custom_property">Add</button>
                         </div>
                       </div>
                     </div>
-                    <div class="col-sm-2" style="display: flex;">
-                      <div class="col-md-2 row marl buttons_row form_btn_row text-center">
-                        <button type="button" class="btn btn-default save" id="add_custom_property" onclick="addCustomPropertyToList()">Add</button>
-                      </div>
-                    </div>
-                  </div>
+                  </form>
                 </div>
                 <div class="form-group">
                   <div class="row">
@@ -114,15 +124,14 @@
                         <tbody>
                         </tbody>
                       </table>
-                      <input id="id_custom_properties" type="hidden" name="custom_properties">
+                      
                       <span class="error">{{ room_property_form.custom_properties.errors }}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            {% if room_property_obj %}
-            <div class="col-md-12" style="display:{% ifequal room_property_obj.data_type 'custom property' %}block{% else %}none{% endifequal %};">
+            <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
                 <div class="filter_col col-md-12">
                   <div class="form-group">
@@ -143,7 +152,7 @@
                         </table>
                       </div>
                     </div>
-                    <input id="id_custom_property_formulas" type="hidden" name="custom_property_formulas">
+                    
                     <div class="row">
                       <div class="filter_col col-md-12">
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addModal">
@@ -155,13 +164,12 @@
                 </div>
               </div>
             </div>
-            {% endif %}
-            <input type="hidden" id="save_new_form" name="savenewform">
+            
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
-                <button class="btn btn-default save" type="submit">Save</button>
+                <button class="btn btn-default save" id="save_btn" type="submit">Save</button>
                 {% if not room_property_obj %}
-                <button class="btn btn-success save savenew" type="submit">Save & New</button>
+                <button class="btn btn-success save savenew" type="button">Save & New</button>
                 {% endif %}
                 <a  href="{% url 'rooms:list_room_properties' %}"  class="btn btn-default clear"
                   id="create_room_property_cancel">Cancel</a>
@@ -173,11 +181,10 @@
     </div>
 
   </div>
-</form>
-{% if room_property_obj %}
+
 <!-- Add Formula Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addModalLabel">Add Custom Property Formula</h5>
@@ -185,8 +192,10 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-        <div class="modal-body">
-            <div class="col-md-12">
+        <form action="#" id="add_formula_form">
+          <div class="modal-body" style="display: flex;">
+          
+            <div class="col-md-7">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-4">
                   <div class="filter_col col-md-12">
@@ -196,7 +205,7 @@
                           <label for="exampleInputEmail1" class="required">Name
                             <span class="error_marker" style="color:red"> * </span>
                           </label>
-                          <input type="text" id="add_custom_property_formula_name" placeholder="Name" class="form-control" />
+                          <input type="text" id="add_custom_property_formula_name" placeholder="Name" class="form-control" required />
                           <span class="error"></span>
                         </div>
                       </div>
@@ -211,26 +220,55 @@
                     <label for="inputZip">Formula
                       <span class="error_marker" style="color:red"> * </span>
                     </label>
-                    <textarea name="custom_property_formula" class="form-control" placeholder="Custom Property Formula" required="" id="add_custom_property_formula_formula"></textarea>
+                    <textarea name="custom_property_formula" class="form-control" placeholder="Custom Property Formula" required="" id="add_custom_property_formula_formula" required></textarea>
                     <span class="error" id="id__add_custom_property_formula_formula"></span>
                   </div>
                   {% endif %}
                 </div>
               </div>
             </div>
+            <div class="col-5">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-12">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required"><i><b>Formula Hints</b></i></label>
+                          <p style="word-break:break-all;">
+                            <b><u>Variable List</u></b><br/>
+                            <span id="var_list"></span>
+                          </p>
+                          <span style="color:red;"><i><u>*Please usa a double quote(") to quote the variable symbol in formula</u></i></span>
+                          <table>
+                            <tr><td><b><u>Operator</u></b><br/></td><td></td></tr>
+                            <tr><td>Add:</td><td>+</td></tr>
+                            <tr><td>Minus:</td><td>-</td></tr>
+                            <tr><td>Multiply:</td><td>*</td></tr>
+                            <tr><td>Divide:</td><td>/</td></tr>
+                            <tr><td>Exponent:</td><td>**</td></tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button id="create_custom_property_formula" class="btn btn-primary" onclick="addCustomPropertyFormula()">Add</button>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button id="create_custom_property_formula" class="btn btn-primary" tpye="submit">Add</button>
+          </div>
+        </form>
     </div>
   </div>
 </div>
 
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="editModalLabel">Edit Custom Property Formula</h5>
@@ -238,8 +276,9 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-        <div class="modal-body">
-            <div class="col-md-12">
+      <form id="edit_formula_form" action="#">
+        <div class="modal-body" style="display: flex;">
+            <div class="col-md-7">
               <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
                 <div class="col-md-4">
                   <div class="filter_col col-md-12">
@@ -269,12 +308,40 @@
                 </div>
               </div>
             </div>
-          
+            <div class="col-5">
+              <div class="row marl no-gutters justify-content-center" style="margin-top: 10px;justify-content: space-between!Important;">
+                <div class="col-md-12">
+                  <div class="filter_col col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <div class="filter_col col-md-12">
+                          <label for="exampleInputEmail1" class="required"><i><b>Formula Hints</b></i></label>
+                          <p style="word-break:break-all;">
+                            <b><u>Variable List</u></b><br/>
+                            <span id="edit_var_list"></span>
+                          </p>
+                          <span style="color:red;"><i><u>*Please usa a double quote(") to quote the variable symbol in formula</u></i></span>
+                          <table>
+                            <tr><td><b><u>Operator</u></b><br/></td><td></td></tr>
+                            <tr><td>Add:</td><td>+</td></tr>
+                            <tr><td>Minus:</td><td>-</td></tr>
+                            <tr><td>Multiply:</td><td>*</td></tr>
+                            <tr><td>Divide:</td><td>/</td></tr>
+                            <tr><td>Exponent:</td><td>**</td></tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           <button id="edit_custom_property_formula" class="btn btn-primary">Update</button>
         </div>
+      </form>
     </div>
   </div>
 </div>
@@ -299,23 +366,79 @@
     </div>
   </div>
 </div>
-{% endif %}
 {% endblock %}
 {% block js_block %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 <script type="text/javascript">
   var curId=-1;
+  var edit_f_ori_name;
+  var edit_f_id;
+  $("#save_btn").on('click',function(e){
+    $('#add_form').submit()
+  });
   $(".savenew").on('click', function (e) {
     e.preventDefault()
     $("#save_new_form").val('true')
     $('#add_form').submit()
   });
 
+  function insertVarToFormula(myField, myValue) {
+    //IE support
+    if (document.selection) {
+        document.getElementById(myField).focus();
+        sel = document.selection.createRange();
+        document.execCommand("insertText", false, "\""+myValue+"\"");
+        //sel.text = "\""+myValue+"\"";
+    }
+    //MOZILLA and others
+    /*else if (document.getElementById(myField).selectionStart || document.getElementById(myField).selectionStart == '0') {
+        var startPos = document.getElementById(myField).selectionStart;
+        var endPos = document.getElementById(myField).selectionEnd;
+        document.getElementById(myField).value = document.getElementById(myField).value.substring(0, startPos)
+            + "\""+myValue+"\""
+            + document.getElementById(myField).value.substring(endPos, document.getElementById(myField).value.length);
+    }*/ else {
+        document.getElementById(myField).focus();
+        document.execCommand("insertText", false, "\""+myValue+"\"");
+    }
+  }
+
+  function formulaChecker(text){
+    console.log(text);
+    text=text.replace(/".*?"/g,0);
+    //text=text.replace(/'.*?'/g,0);
+    console.log(text);
+    try{
+      if(isNaN(parseInt(eval(text))))
+          return false;
+      else 
+        return true;
+    }
+    catch(e){
+        console.log("error");
+        return false;
+    }
+  }
+
   $(document).ready(function () {
     initCP();
     initCPF();
     updateCPTable();
     updateCPFTable();
+  });
+
+  $('#add_custom_property_form').on('submit',function(e){
+    e.preventDefault();
+    addCustomPropertyToList();
+  });
+
+  $('#add_formula_form').on('submit',function(e){
+    e.preventDefault();
+    addCustomPropertyFormula();
+  });
+  $('#edit_formula_form').on('submit',function(e){
+    e.preventDefault();
+    updateCustomPropertyFormula(edit_f_id);
   });
 
   $("#id_data_type").on('change',function() {
@@ -348,16 +471,19 @@
   function initCP(){
     if(cp_str=="None" || cp_str==""){
       cp=[]
+      $('#id_custom_properties').val("[]");
     }
     else{
       cp=JSON.parse(cp_str);
       console.log(cp);
     }
+    updateCustomPropertiesValue();
   }
 
   function initCPF(){
     if(cpf_str=="None" || cpf_str==""){
       cpf=[]
+      $('#id_custom_property_formulas').val("[]");
     }
     else{
       cpf=JSON.parse(cpf_str);
@@ -387,7 +513,7 @@
     var tbody=$("#table_custom_property_formula tbody");
     var content="";
     if(Object.keys(cpf).length==0){
-      tbody.html("<td colspan='2'>There is no custom property formula</td>");
+      tbody.html("<td colspan='4'>There is no custom property formula</td>");
     }
     else{
       for(i in cpf){
@@ -405,8 +531,46 @@
   }
 
   function resetAddCPInput(){
+    $("#add_custom_property_name").val("");
     $("#add_custom_property_symbol").val("");
+    $("#add_custom_property_group_id").val("");
     $("#add_custom_property_data_type").prop('selectedIndex',0);
+  }
+
+  function safePushProperty(arr,obj){
+    safe=true;
+    for (var i=0;i<arr.length;i++){
+      var element=arr[i];
+      if (obj["name"]==element["name"]){
+        alert("Duplicated Property Name!");
+        safe= false;
+        break;
+      }
+      if (obj["symbol"]==element["symbol"]){
+        alert("Duplicated Property Symbol!");
+        safe= false;
+        break;
+      }
+    }
+
+    return safe;
+  }
+
+  function safePushFormula(arr,obj){
+    safe=true;
+    for (var i=0;i<arr.length;i++){
+      var element=arr[i];
+      if (obj["name"]==element["name"]){
+        if (obj["name"]!=edit_f_ori_name){
+          alert("Duplicated Formula Name!");
+          safe= false;
+          break;
+        }
+        
+      }
+    }
+
+    return safe;
   }
 
   function addCustomPropertyToList(){
@@ -414,10 +578,35 @@
     var symbol=$("#add_custom_property_symbol").val();
     var data_type=$("#add_custom_property_data_type").val();
     var group_id=$("#add_custom_property_group_id").val();
-    cp.push({"name":name,"symbol":symbol,"data_type":data_type,"group_id":group_id});
+    //cp.push({"name":name,"symbol":symbol,"data_type":data_type,"group_id":group_id});
+    if(safePushProperty(cp,{"name":name,"symbol":symbol,"data_type":data_type,"group_id":group_id})){
+      cp.push({"name":name,"symbol":symbol,"data_type":data_type,"group_id":group_id});
+    }
+    else{
+      return;
+    }
     $("#id_custom_properties").val(JSON.stringify(cp));
     updateCPTable();
     resetAddCPInput();
+    updateCustomPropertiesValue();
+  }
+
+  function updateCustomPropertiesValue(){
+    console.log(cp);
+    if(cp.length>0){
+      $("#id__room_properties").html("");
+    }
+    $("#id_room_properties").val([...cp]);
+    var var_list="";
+    var edit_var_list="";
+    for (const [key, value] of Object.entries(cp)){
+        var_list+="<a style=\"color: blue;text-decoration: underline;\" onClick=\"insertVarToFormula('add_custom_property_formula_formula','"+value.symbol+"')\">"+"\""+value.symbol+"\"<br/>";
+        edit_var_list+="<a style=\"color: blue;text-decoration: underline;\" onClick=\"insertVarToFormula('edit_custom_property_formula_formula','"+value.symbol+"')\">"+"\""+value.symbol+"\"<br/>";
+    }
+    $("#var_list").html(var_list);
+    $("#edit_var_list").html(edit_var_list);
+    console.log("custom_properties_value: "+$("#id_custom_properties").val());
+    console.log([...cp]);
   }
 
   function removeCustomProertyFromList(i){
@@ -426,6 +615,7 @@
     //console.log(cp);
     $("#id_custom_properties").val(JSON.stringify(cp));
     updateCPTable()
+    updateCustomPropertiesValue();
   }
 
   //Custom Property Formula Start
@@ -435,12 +625,22 @@
     document.getElementById("table_custom_property_formula").removeAttribute("style");
     var name=$('#add_custom_property_formula_name').val();
     var formula=$('#add_custom_property_formula_formula').val();
-    cpf.push({"name":name,"formula":formula});
+    if(safePushFormula(cpf,{"name":name,"formula":formula})){
+      cpf.push({"name":name,"formula":formula});
+    }
+    else{
+      return;
+    }
     clearCustomPropertyFormula();
     $("#id_custom_property_formulas").val(JSON.stringify(cpf));
     updateCPFTable();
     $('#addModal').modal('hide');
   }
+
+  $('#addModal').on('show.bs.modal',function(event){
+    edit_f_ori_name=null;
+    edit_f_id=null;
+  });
 
   $('#editModal').on('show.bs.modal', function (event) {
     var button = $(event.relatedTarget) // Button that triggered the modal
@@ -451,17 +651,24 @@
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
     cur=name
+    edit_f_ori_name=name;
+    edit_f_id=id;
     modal.find('#edit_custom_property_formula_name').val(name)
     modal.find('#edit_custom_property_formula_formula').val(formula)
-    modal.find('.btn-primary').attr('onclick','updateCustomPropertyFormula(\"'+id+'\")')
+    //modal.find('.btn-primary').attr('onclick','updateCustomPropertyFormula(\"'+id+'\")')
   })
 
 
   function updateCustomPropertyFormula(id){
     var name=$("#edit_custom_property_formula_name").val();
     var formula=$('#edit_custom_property_formula_formula').val()
-
-    cpf[id]={"name":name,"formula":formula};
+    if(safePushFormula(cpf,{"name":name,"formula":formula})){
+      cpf[id]={"name":name,"formula":formula};
+    }
+    else{
+      return;
+    }
+    //cpf[id]={"name":name,"formula":formula};
     $("#id_custom_property_formulas").val(JSON.stringify(cpf));
     updateCPFTable();
     $('#editModal').modal('hide');

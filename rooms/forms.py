@@ -23,13 +23,18 @@ class RoomTypeForm(forms.ModelForm):
         #    else:
                 value.widget.attrs['placeholder'] = value.label
 
+        #self.fields['related_items_sort'].required=False
+        self.fields['room_properties_sort'].required=False
+
 
     class Meta:
         model = RoomType
         fields = (
             'name',
             'related_items',
+            #'related_items_sort',
             'room_properties',
+            'room_properties_sort',
             'room_type_formulas',
             'is_active'
         )
@@ -45,6 +50,11 @@ class RoomPropertyForm(forms.ModelForm):
 
         for key, value in self.fields.items():
             value.widget.attrs['placeholder'] = value.label
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            self.fields['data_type'].widget.attrs['readonly'] = True
+            self.fields['data_type'].widget.attrs['disabled'] = True
+
 
     class Meta:
         model=RoomProperty

@@ -5,6 +5,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from common.models import Address, User, Document, Comment, APISettings
 from django.contrib.auth import password_validation
 from teams.models import Teams
+from common.general import get_random_alphanumeric_string
 
 
 class BillingAddressForm(forms.ModelForm):
@@ -75,7 +76,7 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['display_name',
-                  'username','email']
+                  'username','phone','is_active']
 
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -84,6 +85,7 @@ class UserForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['password'].required = True
 
+        self.fields['is_active'].widget.attrs['style']="width:auto;"
         # self.fields['password'].required = True
 
     # def __init__(self, args: object, kwargs: object) -> object:
@@ -99,9 +101,7 @@ class UserForm(forms.ModelForm):
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
-            if len(password) < 4:
-                raise forms.ValidationError(
-                    'Password must be at least 4 characters long!')
+            password=get_random_alphanumeric_string(16)
         return password
 
     def clean_has_sales_access(self):
@@ -146,6 +146,86 @@ class UserForm(forms.ModelForm):
                 return self.cleaned_data.get("email")
             raise forms.ValidationError('User already exists with this email')'''
 
+
+class AdminForm(forms.ModelForm):
+
+    password = forms.CharField(max_length=100, required=False)
+    # sales = forms.BooleanField(required=False)
+    # marketing = forms.BooleanField(required=False)
+
+    class Meta:
+        model = User
+        fields = ['display_name',
+                  'username','email']
+
+    def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)
+        super(AdminForm, self).__init__(*args, **kwargs)
+        #self.fields['first_name'].required = True
+        if not self.instance.pk:
+            self.fields['password'].required = True
+
+        # self.fields['password'].required = True
+
+    # def __init__(self, args: object, kwargs: object) -> object:
+    #     super(AdminForm, self).__init__(*args, **kwargs)
+    #
+    #     self.fields['first_name'].required = True
+    #     self.fields['username'].required = True
+    #     self.fields['email'].required = True
+    #
+        # if not self.instance.pk:
+        #     self.fields['password'].required = True
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            if len(password) < 4:
+                    raise forms.ValidationError(
+                        'Password must be at least 4 characters long!')
+        return password
+
+    def clean_has_sales_access(self):
+        sales = self.cleaned_data.get('has_sales_access', False)
+        user_role = self.cleaned_data.get('role')
+        if user_role == 'ADMIN':
+            is_admin = True
+        else:
+            is_admin = False
+        if self.request_user.role == 'ADMIN' or self.request_user.is_superuser:
+            if not is_admin:
+                marketing = self.data.get('has_marketing_access', False)
+                if not sales and not marketing:
+                    raise forms.ValidationError('Select atleast one option.')
+            # if not (self.instance.role == 'ADMIN' or self.instance.is_superuser):
+            #     marketing = self.data.get('has_marketing_access', False)
+            #     if not sales and not marketing:
+            #         raise forms.ValidationError('Select atleast one option.')
+        if self.request_user.role == 'USER':
+            sales = self.instance.has_sales_access
+        return sales
+
+    def clean_has_marketing_access(self):
+        marketing = self.cleaned_data.get('has_marketing_access', False)
+        if self.request_user.role == 'USER':
+            marketing = self.instance.has_marketing_access
+        return marketing
+
+    '''def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if self.instance.id:
+            if self.instance.email != email:
+                if not User.objects.filter(
+                        email=self.cleaned_data.get("email")).exists():
+                    return self.cleaned_data.get("email")
+                raise forms.ValidationError('Email already exists')
+            else:
+                return self.cleaned_data.get("email")
+        else:
+            if not User.objects.filter(
+                    email=self.cleaned_data.get("email")).exists():
+                return self.cleaned_data.get("email")
+            raise forms.ValidationError('User already exists with this email')'''
 
 class LoginForm(forms.ModelForm):
     username = forms.CharField()

@@ -2,8 +2,8 @@ from django.urls import path
 from companies.views import (
     CompaniesListView, CreateCompanyView, CompanyDetailView, CompanyUpdateView,
     CompanyDeleteView, AddCommentView, UpdateCommentView, DeleteCommentView,
-    AddAttachmentView, DeleteAttachmentsView, create_mail,  # get_company_details,
-    get_contacts_for_company, get_email_data_for_company
+    AddAttachmentView, DeleteAttachmentsView, CompanyBulkBRCheckView, create_mail,  # get_company_details,
+    get_contacts_for_company, get_email_data_for_company, CompanyInactivateView,CompanyActivateView
 )
 
 app_name = 'companies'
@@ -15,6 +15,9 @@ urlpatterns = [
     path('<int:pk>/edit/', CompanyUpdateView.as_view(), name="edit_company"),
     path('<int:pk>/delete/', CompanyDeleteView.as_view(),
          name="remove_company"),
+    path('<int:pk>/activate/', CompanyActivateView.as_view(),name="activate_company"),
+    path('<int:pk>/inactivate/', CompanyInactivateView.as_view(),name="inactivate_company"),
+    path('<int:pk>/bulk_br_check/',CompanyBulkBRCheckView.as_view(),name="bulk_br_check"),
     path('comment/add/', AddCommentView.as_view(), name="add_comment"),
     path('comment/edit/', UpdateCommentView.as_view(), name="edit_comment"),
     path('comment/remove/', DeleteCommentView.as_view(),

@@ -39,7 +39,7 @@
 
   <!-- modal ends -->
 
-  <div class="filter_row list_filter_row row marl">
+  <div class="filter_row list_filter_row row marl" {% if request.POST %} style="display:block;" {%endif%}>
     <div class="col-md-12">
       <div class="card">
         <div class="card-body">
@@ -47,21 +47,21 @@
             <div class="card-body">
               <div class="card-title">Filters</div>
               <div class="row marl">
-                <div class="filter_col col-md-2">
+                <div class="filter_col col-md-3">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Name</label>
                     <input type="text" class="form-control" placeholder="Username" name="username" {% if request.POST %}
                       value="{{request.POST.username}}" {%endif%} />
                   </div>
                 </div>
-                <div class="filter_col col-md-2">
+                <div class="filter_col col-md-3">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Email</label>
-                    <input type="text" class="form-control" placeholder="email" name="email" {% if request.POST %}
+                    <input type="text" class="form-control" placeholder="Email" name="email" {% if request.POST %}
                       value="{{request.POST.email}}" {%endif%} minlength="2"/>
                   </div>
                 </div>
-                <input type="hidden" name="tab_status" id="tab_status">
+                <!--<input type="hidden" name="tab_status" id="tab_status">
                 <div class="filter_col col-md-2">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Admin Status</label>
@@ -74,7 +74,7 @@
                       {% endfor%}
                     </select>
                   </div>
-                </div>
+                </div>-->
                 <div class="filter_col col-lg-2">
                   <div class="form-group buttons_row">
                     <button class="btn btn-primary save" type="submit">Search</button>

@@ -44,13 +44,33 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-2">
               <div class="filter_col col-md-12">
                 <div class="form-group">
                   <label for="exampleInputEmail1" class="required">BR Approved{% if company_form.br_approved.field.required %}<span
                       class="error_marker" style="color:red">*</span>{% endif %}</label>
                   {{ company_form.br_approved }}
                   <span class="error" id="id__br_approved">{{ company_form.br_approved.errors }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label for="exampleInputEmail1" class="required">Is Active{% if company_form.is_active.field.required %}<span
+                      class="error_marker" style="color:red">*</span>{% endif %}</label>
+                  {{ company_form.is_active }}
+                  <span class="error" id="id__is_active">{{ company_form.is_active.errors }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <label for="exampleInputEmail1" class="required">Logo{% if company_form.logo_pic.field.required %}<span
+                      class="error_marker" style="color:red">*</span>{% endif %}</label>
+                  {{ company_form.logo_pic }}
+                  <span class="error" id="id__logo_pic">{{ company_form.logo_pic.errors }}</span>
                 </div>
               </div>
             </div>

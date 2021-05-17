@@ -291,9 +291,19 @@ class UserRegisterOrLoginView(APIView):
 		ret["result"]=True
 		#return Response(request.data, status=status.HTTP_201_CREATED)
 		data = request.data
-		check_user=User.objects.filter(username=data["phone"])
+		check_user=User.objects.filter(phone=data["phone"])
 		if check_user.exists():
-			serialized = CreateOrGetUserSerializer(instance=check_user.first(),data=data)
+			user=check_user.first()
+			if user.is_active==False:
+				if user.is_set_inactive:
+					ret["result"]=False
+					ret["reason"]="你的帳戶已被停用。請聯絡管理員以進一步了解原因。"
+					return Response(ret, status=status.HTTP_401_UNAUTHORIZED)
+				elif user.is_login_company_inactive:
+					user.is_login_company_inactive=False
+					user.is_active=True
+					user.save()
+			serialized = CreateOrGetUserSerializer(instance=user,data=data)
 		else:
 			serialized = CreateOrGetUserSerializer(data=data)
 		serialized.is_valid(raise_exception=True)
@@ -394,7 +404,7 @@ class UserPhoneVerifyView(APIView):
 		ret={}
 		ret["result"]=True
 		data = request.data
-		user=User.objects.get(username=data["phone"])
+		user=User.objects.get(phone=data["phone"])
 		if not user.need_login_verify:
 			ret["result"]=False
 			ret["reason"]="Please login first"
@@ -699,6 +709,10 @@ class CheckReadyToCreateProjectView(APIView):
 			#ret["reason"]="You must create a company first."
 			#return Response(ret,status=status.HTTP_200_OK)
 			ret["company"]=False
+		if not company.is_active:
+			ret["result"]=False
+			ret["company_active"]=False
+			return Response(ret,status=status.HTTP_200_OK)
 		try:
 			ret["charging_stages"]=True
 			if company.company_charging_stages is None:
@@ -1273,6 +1287,12 @@ class GetProjectListView(APIView):
 		ret={}
 		ret["result"]=True
 		user=request.user
+		'''cs=Company.objects.filter(owner=user)
+		if cs.exists():
+			if not cs.first().is_active:
+				ret["result"]=False
+				ret["reason"]="Company is inactivated"
+				return Response(ret, status=status.HTTP_400_BAD_REQUEST)'''
 		projects=Project.objects.filter(company__owner=user)
 		ret["projects"]=[project.as_json() for project in projects]
 		return Response(ret, status=status.HTTP_200_OK)
@@ -1768,11 +1788,14 @@ class GenerateProjectQuotation(APIView):
 		context["quotation_no"]=project.generate_quot_no()
 		context["doc_header"]=project.company.company_doc_header
 		context["job_no"]=project.generate_job_no()
+		context["working_day"]=(project.due_date-project.start_date+ datetime.timedelta(days=1)).days
 
 		if not project.quotation_generated_on or project.updated_on>project.quotation_generated_on:
 			project.quotation_generated_on=datetime.datetime.now()
 			project.quotation_version=project.quotation_version+1
-			project.save()
+		if project.quotation_no==None or project.quotation_no=="":
+			project.quotation_no=context["quotation_no"].rsplit('-', 1)[0].split('-',1)[1]
+		project.save()
 
 		html = render_to_string('project_quotation_pdf.html', context=context)
 		footer=render_to_string('quotation_footer.html',context=context)
@@ -1814,6 +1837,14 @@ class GenerateProjectQuotation(APIView):
 		os.remove(context["company"].sign.path)
 		os.remove(doc_header_path)
 		
+		company=Company.objects.get(pk=project.company.id)
+		if company.gen_quot_date!=datetime.date.today():
+			company.gen_quot_date=datetime.date.today()
+			company.gen_quot_count=0
+		else:
+			company.gen_quot_count=company.gen_quot_count+1
+		company.save()
+
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
@@ -2012,17 +2043,27 @@ class GenerateProjectInvoice(APIView):
 				static_file.write(sign)
 			context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
 
+		total=(float(project.total_amount()))
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
-		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
+		context["stage_amount"]=round(total*project.charging_stages[charging_stage_id]["value"]/100,2)
+		context["charging_stage"]=project.charging_stages[charging_stage_id]
 		context["general_remarks"]=project.invoice_remarks
-		context["amount"]=project.total_amount()
+		context["amount"]=total
 		context["quotation_no"]=project.generate_quot_no()
 		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
-		context["invoice_no"]=project.generate_invoice_no()
+		context["invoice_no"]=project.generate_invoice_no(charging_stage_id)
 		context["job_no"]=project.generate_job_no()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		context["doc_header"]=project.company.company_doc_header
+		if len(project.charging_stages)-1<=charging_stage_id:
+			amount=total
+			i=0
+			for cs in project.charging_stages:
+				if i!=charging_stage_id:
+					i+=1
+					amount=round(amount-round(total*cs["value"]/100,2),2)
+			context["stage_amount"]=amount
 		html = render_to_string('project_invoice_pdf.html', context=context)
 		header=render_to_string('invoice_header.html',context=context,request=request)
 		doc_header_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/doc_header.html"
@@ -2058,6 +2099,14 @@ class GenerateProjectInvoice(APIView):
 		os.remove(context["company"].sign.path)
 		#os.remove(doc_header_path)
 		ProjectInvoice.objects.get_or_create(project=project,invoice_id=charging_stage_id)
+		
+		company=Company.objects.get(pk=project.company.id)
+		if company.gen_invoice_date!=datetime.date.today():
+			company.gen_invoice_date=datetime.date.today()
+			company.gen_invoice_count=0
+		else:
+			company.gen_invoice_count=company.gen_invoice_count+1
+		company.save()
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
@@ -2263,19 +2312,29 @@ class GenerateProjectReceipt(APIView):
 				static_file.write(sign)
 			context["company"].sign=company_path+context["company"].sign.path.split("/")[-1]
 		
+		total=(float(project.total_amount()))
 		context["project"]=project
 		context["charging_stage_id"]=charging_stage_id
-		context["charging_stage"]=project.charging_stages[charging_stage_id-1]
+		context["stage_amount"]=round(total*project.charging_stages[charging_stage_id]["value"]/100,2)
+		context["charging_stage"]=project.charging_stages[charging_stage_id]
 		context["general_remarks"]=project.receipt_remarks
-		context["amount"]=project.total_amount()
+		context["amount"]=total
 		context["quotation_no"]=project.generate_quot_no()
 		context["quotation_date"]=project.quotation_generated_on.strftime("%d %B %Y")
-		context["invoice_no"]=project.generate_invoice_no()
+		context["invoice_no"]=project.generate_invoice_no(charging_stage_id)
 		context["invoice_date"]=project_invoice.generated_on.strftime("%d-%B-%Y")
-		context["receipt_no"]=project.generate_receipt_no()
+		context["receipt_no"]=project.generate_receipt_no(charging_stage_id)
 		context["job_no"]=project.generate_job_no()
 		context["date"]=datetime.datetime.now().strftime("%d %B %Y")
 		context["doc_header"]=project.company.company_doc_header
+		if len(project.charging_stages)-1<=charging_stage_id:
+			amount=total
+			i=0
+			for cs in project.charging_stages:
+				if i!=charging_stage_id:
+					i+=1
+					amount=round(amount-round(total*cs["value"]/100,2),2)
+			context["stage_amount"]=amount
 		html = render_to_string('project_receipt_pdf.html', context=context)
 		header=render_to_string('receipt_header.html',context=context,request=request)
 		doc_header_path=settings.MEDIA_ROOT+'/companies/'+str(project.company.id)+"/doc_header.html"
@@ -2310,7 +2369,13 @@ class GenerateProjectReceipt(APIView):
 		os.remove(context["company"].sign.path)
 		#os.remove(doc_header_path)
 		ProjectReceipt.objects.get_or_create(project=project,receipt_id=charging_stage_id)
-		
+		company=Company.objects.get(pk=project.company.id)
+		if company.gen_receipt_date!=datetime.date.today():
+			company.gen_receipt_date=datetime.date.today()
+			company.gen_receipt_count=0
+		else:
+			company.gen_receipt_count=company.gen_receipt_count+1
+		company.save()
 		return response
 		#return Response(ret,status=status.HTTP_200_OK)
 
@@ -2555,6 +2620,8 @@ class RemoveProjectRoomView(APIView):
 			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if room.related_project.company.owner==request.user:
+			room.related_project.updated_on=datetime.datetime.now()
+			room.related_project.save()
 			room.delete()
 			return Response(ret, status=status.HTTP_200_OK)
 		else:
@@ -2802,6 +2869,10 @@ class SetProjectRoomItemView(APIView):
 			ret["result"]=False
 			ret["reason"]="Project room not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
+		except KeyError as e:
+			ret["reason"]=False
+			ret["reason"]="Missing paramater in value: "+str(e)
+			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
 		ret["room_item_id"]=room_item.id
 		#ret["remark"]=data.get("remark")+": "+room_item.remark
 		return Response(ret,status=status.HTTP_200_OK)
@@ -2840,6 +2911,8 @@ class RemoveProjectRoomItemView(APIView):
 			ret["reason"]="Room item not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if ri.room.related_project.company.owner==request.user:
+			ri.room.related_project.updated_on=datetime.datetime.now()
+			ri.room.related_project.save()
 			ri.delete()
 			return Response(ret, status=status.HTTP_200_OK)
 		else:
@@ -3021,6 +3094,8 @@ class RemoveProjectMiscView(APIView):
 			ret["reason"]="Project misc not found."
 			return Response(ret,status=status.HTTP_404_NOT_FOUND)
 		if pm.project.company.owner==request.user:
+			pm.project.updated_on=datetime.datetime.now()
+			pm.project.save()
 			pm.delete()
 			return Response(ret, status=status.HTTP_200_OK)
 		else:
@@ -3547,8 +3622,10 @@ class GetRoomTypeFormulaListView(APIView):
 		ret['result']=True
 		data=request.data
 		if data.get("room_type"):
-			room_type_formula_list=RoomTypeFormula.objects.filter(room_type=data["room_type"],is_active=True)
-			ret["room_type_formula_list"]=[room_type_formula.as_json() for room_type_formula in room_type_formula_list.all()]
+			#room_type_formula_list=RoomTypeFormula.objects.filter(room_type=data["room_type"],is_active=True)
+			#ret["room_type_formula_list"]=[room_type_formula.as_json() for room_type_formula in room_type_formula_list.all()]
+			
+			ret["room_type_formula_list"]=RoomType.objects.get(id=data["room_type"]).get_formulas()
 			return Response(ret,status=status.HTTP_200_OK)
 		else:
 			ret["result"]=False
@@ -3590,8 +3667,9 @@ class GetRoomRelatedItemListView(APIView):
 			ret["result"]=False
 			ret["reason"]="Please confirm you input the room type id, not the name"
 			return Response(ret,status=status.HTTP_400_BAD_REQUEST)
-		related_items=room_type.related_items
-		ret["related_items"]=[ri.as_json() for ri in related_items.all()]
+		#related_items=dict((ri.id,ri.as_json()) for ri in room_type.related_items.all())
+		#ret["related_items"]=[related_items[_id] for _id in room_type.related_items_sort]
+		ret["related_items"]=[ri.as_json() for ri in room_type.related_items.all()]
 		return Response(ret,status=status.HTTP_200_OK)
 
 #item

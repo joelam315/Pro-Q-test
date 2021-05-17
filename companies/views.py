@@ -30,6 +30,8 @@ from leads.models import Lead
 from opportunity.models import SOURCES, STAGES, Opportunity
 from teams.models import Teams
 
+from common.crypt import Cryptographer 
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateView):
     model = Company
@@ -46,6 +48,14 @@ class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
             queryset = queryset.filter(tags__in = self.request.GET.getlist('tag'))
 
         request_post = self.request.POST
+        request_get = self.request.GET
+        if request_get:
+            if request_get.get('br_approved'):
+                if not request_post.get('br_approved'):
+                    _mutable = request_post._mutable
+                    request_post._mutable = True
+                    request_post["br_approved"]=request_get.get('br_approved')
+                    request_post._mutable=_mutable
         if request_post:
             if request_post.get('name'):
                 queryset = queryset.filter(
@@ -62,6 +72,9 @@ class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
             if request_post.get('br_approved'):
                 queryset=queryset.filter(
                     br_approved__icontains=request_post.get('br_approved'))
+            if request_post.get('is_active'):
+                queryset=queryset.filter(
+                    is_active__icontains=request_post.get('is_active'))
             if request_post.get('city'):
                 queryset = queryset.filter(
                     billing_city__contains=request_post.get('city'))
@@ -97,7 +110,9 @@ class CompaniesListView(AdminAccessRequiredMixin, LoginRequiredMixin, TemplateVi
         if (
             self.request.POST.get('name') or self.request.POST.get('city') or
             self.request.POST.get('industry') or self.request.POST.get('tag') or 
-            self.request.POST.get('br_approved') or self.request.POST.get('owner')
+            self.request.POST.get('br_approved') or self.request.POST.get('owner') or 
+            self.request.POST.get('owner_name') or self.request.POST.get('owner_phone') or 
+            self.request.POST.get('company_email') or self.request.POST.get('is_active')
         ):
             search = True
 
@@ -155,8 +170,16 @@ class CreateCompanyView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateView
 
     def form_valid(self, form):
         # Save Company
-        company_object = form.save(commit=False)
+        self.object=Company.objects.create(owner=form.cleaned_data["owner"],name=form.cleaned_data["name"])
+        #form.instance=self.object
+        #form=CompanyForm(data=form.cleaned_data,instance=self.object)
+        #form.is_valid()
+        #company_object = form.save(commit=False)
+        company_object=self.object
         company_object.created_by = self.request.user
+        company_object.br_approved=form.cleaned_data["br_approved"]
+        company_object.br_pic=form.cleaned_data["br_pic"]
+        company_object.logo_pic=form.cleaned_data["logo_pic"]
         company_object.save()
 
         if self.request.POST.get('tags', ''):
@@ -268,6 +291,7 @@ class CompanyDetailView(AdminAccessRequiredMixin, LoginRequiredMixin, DetailView
         else:
             users_mention = []
 
+        
         context.update({
             "comments": company_record.companies_comments.all(),
             "attachments": company_record.company_attachment.all(),
@@ -429,6 +453,58 @@ class CompanyDeleteView(AdminAccessRequiredMixin, LoginRequiredMixin, DeleteView
                 raise PermissionDenied
         self.object.delete()
         return redirect("companies:list")
+
+class CompanyActivateView(AdminAccessRequiredMixin, DeleteView):
+    model = Company
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        #current_site = request.get_host()
+        #deleted_by = self.request.user.email
+        #send_email_user_delete.delay(
+        #    self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
+        self.object.is_active=True
+        self.object.save()
+        
+        self.object.owner.is_login_company_inactive=False
+        if self.object.owner.is_set_inactive==False:
+            self.object.owner.is_active=True
+        self.object.owner.save()
+        
+        return redirect("companies:list")
+
+class CompanyInactivateView(AdminAccessRequiredMixin, DeleteView):
+    model = Company
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        #current_site = request.get_host()
+        #deleted_by = self.request.user.email
+        #send_email_user_delete.delay(
+        #    self.object.email, deleted_by=deleted_by, domain=current_site, protocol=request.scheme)
+        self.object.is_active=False
+        self.object.save()
+        self.object.owner.is_active=False
+        self.object.owner.is_login_company_inactive=True
+        self.object.owner.save()
+        ots=OutstandingToken.objects.filter(user=self.object.owner)
+        for ot in ots:
+            if not BlacklistedToken.objects.filter(token=ot).exists():
+                BlacklistedToken.objects.create(token=ot).save()
+        return redirect("companies:list")
+
+class CompanyBulkBRCheckView(AdminAccessRequiredMixin, LoginRequiredMixin, DeleteView):
+    model = Company
+    template_name = 'view_company.html'
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+            if self.request.user != self.object.created_by:
+                raise PermissionDenied
+        self.object.br_approved=True
+        self.object.save()
+        return redirect(reverse("companies:view_company",args=(self.object.id,)))
 
 
 class AddCommentView(LoginRequiredMixin, CreateView):

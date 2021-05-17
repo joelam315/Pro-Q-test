@@ -2,7 +2,9 @@
 {% load staticfiles %}
 {% block breadcrumb %}
 {% block extralinks %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<!--<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />-->
+<link href="{% static "css/select2.css" %}" rel="stylesheet" />
+
 <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css"
   href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/start/jquery-ui.css" />
@@ -70,6 +72,7 @@
                     <option value="{{room_property.id}}"></option>
                     {% endfor %}
                   </select>
+                  <input type="hidden" id="id_room_properties_sort" name="room_properties_sort"/>
                   <span class="error" id="id__room_properties">{{ form.room_properties.errors }}</span>
                 </div>
                 <div class="col-sm-2 pl-0">
@@ -114,6 +117,7 @@
                     <option value="{{item.id}}"></option>
                     {% endfor %}
                   </select>
+                  <!--<input type="hidden" name="related_items_sort" id="id_related_items_sort"/>-->
                   <span class="error" id="id__related_items">{{ form.related_items.errors }}</span>
                 </div>
                 <div class="col-sm-2 pl-0">
@@ -140,7 +144,7 @@
               
 
             </div>
-            {% if room_type_obj %}
+
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
                 <div class="filter_col col-md-12-p-0">
@@ -178,7 +182,7 @@
                 </div>
               </div>
             </div>
-            {% endif %}
+
             <input type="hidden" id="save_new_form" name="savenewform">
             <div class="col-md-12">
               <div class="row marl buttons_row text-center form_btn_row">
@@ -197,7 +201,7 @@
 
   </div>
 </form>
-{% if room_type_obj %}
+
 <!-- Add Formula Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
@@ -272,7 +276,7 @@
                             <tr><td>Minus:</td><td>-</td></tr>
                             <tr><td>Multiply:</td><td>*</td></tr>
                             <tr><td>Divide:</td><td>/</td></tr>
-                            <tr><td>Exponent:</td><td>^</td></tr>
+                            <tr><td>Exponent:</td><td>**</td></tr>
                           </table>
                         </div>
                       </div>
@@ -366,7 +370,7 @@
                             <tr><td>Minus:</td><td>-</td></tr>
                             <tr><td>Multiply:</td><td>*</td></tr>
                             <tr><td>Divide:</td><td>/</td></tr>
-                            <tr><td>Exponent:</td><td>^</td></tr>
+                            <tr><td>Exponent:</td><td>**</td></tr>
                           </table>
                         </div>
                       </div>
@@ -406,32 +410,53 @@
     </div>
   </div>
 </div>
-{% endif %}
+
 {% endblock %}
 {% block js_block %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>-->
+<script src="{% static "js/select2.js" %}"></script>
 <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js'></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.js"></script>
 <script src="https://malsup.github.io/jquery.form.js"></script>
 <script type="text/javascript">
+
+  {% for field, errors in form.errors.items %}
+    {% for error in errors %}
+    console.log("{{field}}: {{error}}");
+    {% endfor %}
+  {% endfor %}
+
   var curId=-1;
+  var edit_f_ori_name;
+  var edit_f_id;
 
   var rp_data={}; //room properties data of this room_type
+
+  var rp_data_sort=[];// sorting of room properties
 
   var rp_all=[]; // all room properties
 
   var rpSet=new Set(); //check related items duplication
 
+  var rpChoice=[]; // options of room properties select input
+
   var ri_data={}; //related items data of this room_type
+
+  //var ri_data_sort=[];// sorting of related items
 
   var ri_all=[]; // all related items
 
   var riSet=new Set(); //check related items duplication
 
+  var ri_sort=[];
+
   var rtf_str=decode("{{room_type_obj.room_type_formulas}}").replaceAll("'",'"');
   $('#id_room_type_formulas').val(rtf_str);
   var rtf;
 
+  {% for room_property in room_properties %}
+  rpChoice.push({id:"{{room_property.id}}", text:"{{room_property.symbol}} ({{room_property.name}})"});
+  {% endfor %}
   //init
 
   /*$('form#add_form').ajaxForm({
@@ -494,13 +519,28 @@
 
   $(document).ready(function () {
     $('#select_room_properties').select2();
-    $('#select_related_items').select2();
+    $('#select_related_items').select2({closeOnSelect:false});
     initRPChoice();
     initRPTable();
     initRIChoice();
     initRITable();
     initRTF();
     updateRTFTable();
+  });
+
+  $('#select_room_properties').on('select2:open',function(){
+    if (rpChoice.length==0)
+      console.log($('#select_room_properties').select2('data'));
+  });
+
+
+  $("#select_room_properties").on("select2:select", function (evt) {
+    var element = evt.params.data.element;
+    var $element = $(element);
+    
+    $element.detach();
+    $(this).append($element);
+    $(this).trigger("change");
   });
 
 
@@ -531,6 +571,7 @@
   function initRTF(){
     if(rtf_str=="None" || rtf_str==""){
       rtf=[]
+      $('#id_room_type_formulas').val("[]");
     }
     else{
       rtf=JSON.parse(rtf_str);
@@ -570,13 +611,16 @@
   }
 
   function initRPTable(){
-
+      var rp_data_raw={};
       {% for rp in room_type_obj.room_properties.all %}
-        rp_data["{{rp.id}}"]={"id":"{{rp.id}}","name":"{{rp.name}}","symbol":"{{rp.symbol}}"};
+        rp_data_raw["{{rp.id}}"]={"id":"{{rp.id}}","name":"{{rp.name}}","symbol":"{{rp.symbol}}"};
       {% endfor %}
-
+      rp_data_sort={% if room_type_obj %}{{room_type_obj.room_properties_sort}}{% else %}[]{% endif %};
       console.log(rp_data);
-
+      console.log(rp_data_sort);
+      for (var i=0;i<rp_data_sort.length;i++){
+        rp_data[i+1]=rp_data_raw[rp_data_sort[i]];
+      }
       var tbody=document.getElementById("table_room_properties").getElementsByTagName("tbody")[0];
       if(Object.keys(rp_data).length>0)
         document.getElementById("div_room_properties").removeAttribute("style");
@@ -602,26 +646,45 @@
     //room properties loop
     {% for ri in items %}
       ri_all["{{ri.id}}"]={"id":"{{ri.id}}","name":"{{ri.name}}","item_type":"{{ri.item_type.name}}"};
+      ri_sort.push({{ri.id}});
     {% endfor %}
 
     console.log(ri_all);
   }
 
   function initRITable(){
-
+      //var ri_data_raw={};
       {% for ri in room_type_obj.related_items.all %}
         ri_data["{{ri.id}}"]={"id":"{{ri.id}}","name":"{{ri.name}}","item_type":"{{ri.item_type.name}}"};
       {% endfor %}
-
+      //ri_data_sort={% if room_type_obj %}{{room_type_obj.related_items_sort}}{% else %}[]{% endif %};
       console.log(ri_data);
-
-      var tbody=document.getElementById("table_related_items").getElementsByTagName("tbody")[0];
+      //console.log(ri_data_sort);
+      /*for (var i=0;i<ri_data_sort.length;i++){
+        ri_data[i+1]=ri_data_raw[ri_data_sort[i]];
+      }*/
+      /*var tbody=document.getElementById("table_related_items").getElementsByTagName("tbody")[0];
       if(Object.keys(ri_data).length>0)
         document.getElementById("div_related_items").removeAttribute("style");
-      
-      keys=Object.keys(ri_data);
+      var index=0;
+      for(var i=0;i<ri_sort.length;i++){
+        if(ri_data[ri_sort[i]]){
+          riSet.add(ri_data[ri_sort[i]]["id"]);
+          console.log("op: "+ri_data[ri_sort[i]]["id"]);
+          tbody.innerHTML+=
+            "<tr id='row_"+ri_data[ri_sort[i]]["id"]+"'>"+
+              "<th scope='row'>"+(index+1)+"</th>"+
+              "<td>"+ri_data[ri_sort[i]]["name"]+"</td>"+
+              "<td>"+ri_data[ri_sort[i]]["item_type"]+"</td>"+
+              "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+ri_data[ri_sort[i]]["id"]+"' onclick='removeRelatedItemFromRoomType("+ri_data[ri_sort[i]]["id"]+")'>X</button></td>"+
+            "</tr>";
+            index++;
+        }
+      }*/
+      /*keys=Object.keys(ri_data);
       for(var i=0;i<keys.length;i++){
         riSet.add(ri_data[keys[i]]["id"]);
+        console.log("op: "+ri_data[keys[i]]["id"]);
         tbody.innerHTML+=
           "<tr id='row_"+ri_data[keys[i]]["id"]+"'>"+
             "<th scope='row'>"+(i+1)+"</th>"+
@@ -629,7 +692,7 @@
             "<td>"+ri_data[keys[i]]["item_type"]+"</td>"+
             "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+ri_data[keys[i]]["id"]+"' onclick='removeRelatedItemFromRoomType("+ri_data[keys[i]]["id"]+")'>X</button></td>"+
           "</tr>";
-      }
+      }*/
 
         
       
@@ -664,6 +727,8 @@ function addRoomPropertyToRoomType(){
   $('#select_room_properties').val('').change();
   console.log(rp_all);
   updateRoomPropertiesValue();
+  $('#select_room_properties').empty();
+  $('#select_room_properties').select2({data:rpChoice});
 }
 
     function removeRoomPropertyFromRoomType(id){
@@ -692,6 +757,7 @@ function updateRoomPropertiesValue(){
     $("#id__room_properties").html("");
   }
   $("#id_room_properties").val([...rpSet]);
+  $("#id_room_properties_sort").val(JSON.stringify(Array.from(rpSet).map(elem=> parseInt(elem, 10))));
   var var_list="";
   var edit_var_list="";
   for (const [key, value] of Object.entries(rp_data)){
@@ -701,12 +767,35 @@ function updateRoomPropertiesValue(){
   $("#var_list").html(var_list);
   $("#edit_var_list").html(edit_var_list);
   console.log("room_properties_value: "+$("#id_room_properties").val());
+  console.log("room_properties_sort: "+$("#id_room_properties_sort").val());
   console.log([...rpSet]);
 }
 
 
 //Room Properties Function End
 //Related Items Function Start
+
+function renderRITable(){
+  var tbody=document.getElementById("table_related_items").getElementsByTagName("tbody")[0];
+  if(Object.keys(ri_data).length>0)
+    document.getElementById("div_related_items").removeAttribute("style");
+  var index=0;
+  tbody.innerHTML="";
+  for(var i=0;i<ri_sort.length;i++){
+    if(ri_data[ri_sort[i]]){
+      riSet.add(ri_data[ri_sort[i]]["id"]);
+      console.log("op: "+ri_data[ri_sort[i]]["id"]);
+      tbody.innerHTML+=
+        "<tr id='row_"+ri_data[ri_sort[i]]["id"]+"'>"+
+          "<th scope='row'>"+(index+1)+"</th>"+
+          "<td>"+ri_data[ri_sort[i]]["name"]+"</td>"+
+          "<td>"+ri_data[ri_sort[i]]["item_type"]+"</td>"+
+          "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+ri_data[ri_sort[i]]["id"]+"' onclick='removeRelatedItemFromRoomType("+ri_data[ri_sort[i]]["id"]+")'>X</button></td>"+
+        "</tr>";
+        index++;
+    }
+  }
+}
 
 function addRelatedItemToRoomType(){
   var selectRelatedItems = $("#select_related_items");
@@ -717,8 +806,8 @@ function addRelatedItemToRoomType(){
     console.log(cur);
     if(!riSet.has(cur["id"])){
       riSet.add(cur["id"]);
-      ri_data[cur["id"]]={"id":cur["id"],"name":cur["name"],"symbol":cur["symbol"]};
-      document.getElementById("div_related_items").removeAttribute("style");
+      ri_data[cur["id"]]={"id":cur["id"],"name":cur["name"],"item_type":cur["item_type"]};
+      /*document.getElementById("div_related_items").removeAttribute("style");
 
       var tbody=document.getElementById("table_related_items").getElementsByTagName("tbody")[0];
       tbody.innerHTML+=
@@ -727,7 +816,7 @@ function addRelatedItemToRoomType(){
           "<td>"+cur["name"]+"</td>"+
           "<td>"+cur["item_type"]+"</td>"+
           "<td><button type='button' class='btn btn-danger' style='font-size: 0.85rem;font-weight: 600;background-color: #dc3545;border-color: #dc3545;' id='dataId_"+cur["id"]+"' onclick='removeRelatedItemFromRoomType("+cur["id"]+")'>X</button></td>"+
-        "</tr>";
+        "</tr>";*/
     }
     
   }
@@ -736,25 +825,25 @@ function addRelatedItemToRoomType(){
   updateRelatedItemsValue();
 }
 
-    function removeRelatedItemFromRoomType(id){
-      console.log(id);
+function removeRelatedItemFromRoomType(id){
+  console.log(id);
 
-      riSet.delete(id.toString());
-      delete ri_data[id];
+  riSet.delete(id.toString());
+  delete ri_data[id];
 
-      console.log(ri_data);
-      //
-      var tbody=$("#table_related_items tbody");
-      $("#table_related_items tbody #row_"+id).remove();
+  console.log(ri_data);
+  //
+  var tbody=$("#table_related_items tbody");
+  $("#table_related_items tbody #row_"+id).remove();
 
-      
-      console.log(tbody.children().length);
-      if(tbody.children().length<=0){
-        console.log(tbody.parent().parent());
-        tbody.parent().parent().attr("style","display:none");
-      }
-      updateRelatedItemsValue();
-    }
+  
+  console.log(tbody.children().length);
+  if(tbody.children().length<=0){
+    console.log(tbody.parent().parent());
+    tbody.parent().parent().attr("style","display:none");
+  }
+  updateRelatedItemsValue();
+}
 
 function updateRelatedItemsValue(){
   console.log(riSet);
@@ -762,8 +851,11 @@ function updateRelatedItemsValue(){
     $("#id__related_items").html("");
   }
   $("#id_related_items").val([...riSet]);
+  //$("#id_related_items_sort").val(JSON.stringify(Array.from(riSet).map(elem=> parseInt(elem, 10))));
   console.log("related_items_value: "+$("#id_related_items").val());
+  //console.log("related_items_sort: "+$("#id_related_items_sort").val());
   console.log([...riSet]);
+  renderRITable();
 }
 
 
@@ -798,6 +890,23 @@ function updateRelatedItemsValue(){
       return false;
   });
 
+  function safePushFormula(arr,obj){
+    safe=true;
+    for (var i=0;i<arr.length;i++){
+      var element=arr[i];
+      if (obj["name"]==element["name"]){
+        if (obj["name"]!=edit_f_ori_name){
+          alert("Duplicated Formula Name!");
+          safe= false;
+          break;
+        }
+        
+      }
+    }
+
+    return safe;
+  }
+
   //Room Formula Start
 
   function addRoomTypeFormula(){
@@ -813,13 +922,23 @@ function updateRelatedItemsValue(){
       $('#id__room_type_formula_formula').html("");
     }
     var is_active=$('#add_room_type_formula_is_active').is(':checked');
-    rtf.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
+    if(safePushFormula(rtf,{"name":name,"formula":formula,"is_active":is_active?"True":"False"})){
+      rtf.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
+    }
+    else {
+      return;
+    }
     clearRoomTypeFormula();
     //console.log(rtf);
     $("#id_room_type_formulas").val(JSON.stringify(rtf));
     updateRTFTable();
     $('#addModal').modal('hide');
   }
+
+  $('#addModal').on('show.bs.modal',function(event){
+    edit_f_ori_name=null;
+    edit_f_id=null;
+  });
 
   $('#editModal').on('show.bs.modal', function (event) {
     var button = $(event.relatedTarget) // Button that triggered the modal
@@ -832,6 +951,8 @@ function updateRelatedItemsValue(){
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
     curId=id
+    edit_f_ori_name=name;
+    edit_f_id=id;
     modal.find('#edit_room_type_formula_name').val(name)
     modal.find('#edit_room_type_formula_formula').val(formula)
     modal.find('#edit_room_type_formula_is_active').prop('checked', is_active=="True"?true:false);
@@ -850,7 +971,12 @@ function updateRelatedItemsValue(){
       $('#id__edit_room_type_formula_formula').html("");
     }
     var is_active=$('#edit_room_type_formula_is_active').is(':checked');
-    rtf[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    if(safePushFormula(rtf,{"name":name,"formula":formula,"is_active":is_active?"True":"False"})){
+      rtf[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    }
+    else{
+      return;
+    }
     $("#id_room_type_formulas").val(JSON.stringify(rtf));
     updateRTFTable();
     $('#editModal').modal('hide');

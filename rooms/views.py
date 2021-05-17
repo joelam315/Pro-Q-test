@@ -122,7 +122,7 @@ class CreateRoomTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, CreateVie
 	def get_context_data(self, **kwargs):
 		context = super(CreateRoomTypeView, self).get_context_data(**kwargs)
 		context["room_type_form"] = context["form"]
-		context["items"]=Item.objects.all()
+		context["items"]=Item.objects.order_by('-index','-id')
 		context["room_properties"]=RoomProperty.objects.all()
 
 		return context
@@ -195,8 +195,10 @@ class UpdateRoomTypeView(AdminAccessRequiredMixin, LoginRequiredMixin, UpdateVie
 	def get_context_data(self, **kwargs):
 		context = super(UpdateRoomTypeView, self).get_context_data(**kwargs)
 		context["room_type_obj"] = self.object
+		#context["room_type_obj_related_items_sort"]=self.object.related_items.order_by("-index","-id")
+		#context["room_type_obj"].related_items.extra(select={'creation_seq': 'rooms_roomtype_related_items.id'}).order_by("creation_seq")
 		#context["room_type_formula_objs"]=self.object.room_type_formulas.all()
-		context["items"]=Item.objects.all()
+		context["items"]=Item.objects.order_by("-index","-id")
 		context["room_properties"]=RoomProperty.objects.all()
 		if (self.request.user.role != "ADMIN" and not self.request.user.is_superuser):
 			raise PermissionDenied
@@ -386,6 +388,9 @@ class RoomPropertiesListView(AdminAccessRequiredMixin, LoginRequiredMixin, Templ
 			if request_post.get('symbol'):
 				queryset = queryset.filter(
 					symbol__icontains=request_post.get('symbol'))
+			if request_post.get('data_type') and request_post.get('data_type')!="blank":
+				queryset = queryset.filter(
+					data_type=request_post.get('data_type'))
 
 		return queryset.distinct()
 
@@ -393,11 +398,13 @@ class RoomPropertiesListView(AdminAccessRequiredMixin, LoginRequiredMixin, Templ
 		context = super(RoomPropertiesListView, self).get_context_data(**kwargs)
 		context["room_property_list"] = self.get_queryset()
 		context["per_page"] = self.request.POST.get('per_page')
+		context["data_type"]= DATA_TYPE
 		#context["users"] = User.objects.filter(is_active=True).order_by('email')
 		search = False
 		if (
 			self.request.POST.get('name') or
-			self.request.POST.get('symbol')
+			self.request.POST.get('symbol') or
+			(self.request.POST.get('data_type') and self.request.POST.get('data_type')!="blank")
 		):
 			search = True
 		context["search"] = search

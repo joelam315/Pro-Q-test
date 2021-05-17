@@ -2,7 +2,9 @@
 {% load staticfiles %}
 {% block breadcrumb %}
 {% block extralinks %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<!--<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />-->
+<link href="{% static "css/select2.css" %}" rel="stylesheet" />
+
 <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css"
   href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/start/jquery-ui.css" />
@@ -80,6 +82,30 @@
                 </div>
               </div>
             </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                      <label for="exampleInputEmail1" class="required">Indexing{% if item_form.index.field.required %}<span
+                                class="error">*</span>{% endif %}</label>
+                      {{ item_form.index }}
+                      <span class="error">{{ item_form.index.errors }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="filter_col col-md-12">
+                <div class="form-group">
+                  <div class="row">
+                    <div class="filter_col col-md-12">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="col-md-12 mt-5">
               <div class="form-group">
                 <label for="staticEmail" class="col-sm-4 col-form-label">Item Properties</label>
@@ -98,6 +124,7 @@
                     <option value="{{item_property.id}}"></option>
                     {% endfor %}
                   </select>
+                  <input type="hidden" name="item_properties_sort" id="id_item_properties_sort"/>
                   <span class="error" id="id__item_properties">{{ form.item_properties.errors }}</span>
                 </div>
                 <div class="col-sm-2 pl-0">
@@ -256,7 +283,7 @@
                             <tr><td>Minus:</td><td>-</td></tr>
                             <tr><td>Multiply:</td><td>*</td></tr>
                             <tr><td>Divide:</td><td>/</td></tr>
-                            <tr><td>Exponent:</td><td>^</td></tr>
+                            <tr><td>Exponent:</td><td>**</td></tr>
                           </table>
                         </div>
                       </div>
@@ -351,7 +378,7 @@
                             <tr><td>Minus:</td><td>-</td></tr>
                             <tr><td>Multiply:</td><td>*</td></tr>
                             <tr><td>Divide:</td><td>/</td></tr>
-                            <tr><td>Exponent:</td><td>^</td></tr>
+                            <tr><td>Exponent:</td><td>**</td></tr>
                           </table>
                         </div>
                       </div>
@@ -399,17 +426,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-tagsinput/1.3.6/jquery.tagsinput.min.js"></script>
 <script src="https://malsup.github.io/jquery.form.js"></script>
 <script type="text/javascript">
+
+  {% for field, errors in form.errors.items %}
+    {% for error in errors %}
+    console.log("{{field}}: {{error}}");
+    {% endfor %}
+  {% endfor %}
+
   var curId=-1;
+  var edit_f_ori_name;
+  var edit_f_id;
+
 
   var ip_data={}; //item properties data of this item
 
+  var ip_data_sort=[]; // item properties sorting order
+
   var ip_all=[]; // all item properties
+
+  var ipChoice=[]; // options of item properties select input
 
   var ipSet=new Set(); //check item properties duplication
 
   var if_str=decode("{{item_obj.item_formulas}}").replaceAll("'",'"');
   $('#id_item_formulas').val(if_str);
   var _if;
+
+  {% for item_property in item_properties %}
+  ipChoice.push({id:"{{item_property.id}}", text:"{{item_property.symbol}} ({{item_property.name}})"});
+  {% endfor %}
 
   //init
 
@@ -465,9 +510,10 @@
 
 
   $(".savenew").on('click', function (e) {
-    e.preventDefault()
-    $("#save_new_form").val('true')
-    $('#add_form').submit()
+    e.preventDefault();
+    $("#save_new_form").val('true');
+    alert($('#add_form').serialize());
+    $('#add_form').submit();
   });
 
 
@@ -477,6 +523,20 @@
     initIPTable();
     initIF();
     updateIFTable();
+  });
+
+  $('#select_item_properties').on('select2:open',function(){
+    if (ipChoice.length==0)
+      console.log($('#select_item_properties').select2('data'));
+  });
+
+  $("#select_item_properties").on("select2:select", function (evt) {
+    var element = evt.params.data.element;
+    var $element = $(element);
+    
+    $element.detach();
+    $(this).append($element);
+    $(this).trigger("change");
   });
 
   function decode(str) {
@@ -543,13 +603,16 @@
   }
 
   function initIPTable(){
-
+      var ip_data_raw={};
       {% for ip in item_obj.item_properties.all %}
-        ip_data["{{ip.id}}"]={"id":"{{ip.id}}","name":"{{ip.name}}","symbol":"{{ip.symbol}}"};
+        ip_data_raw["{{ip.id}}"]={"id":"{{ip.id}}","name":"{{ip.name}}","symbol":"{{ip.symbol}}"};
       {% endfor %}
-
+      ip_data_sort={% if item_obj %}{{item_obj.item_properties_sort}}{% else %}[]{% endif %};
       console.log(ip_data);
-
+      console.log(ip_data_sort);
+      for (var i=0;i<ip_data_sort.length;i++){
+        ip_data[i+1]=ip_data_raw[ip_data_sort[i]];
+      }
       var tbody=document.getElementById("table_item_properties").getElementsByTagName("tbody")[0];
       if(Object.keys(ip_data).length>0)
         document.getElementById("div_item_properties").removeAttribute("style");
@@ -621,6 +684,8 @@ function addItemPropertyToItem(){
   $('#select_item_properties').val('').change();
   console.log(ip_all);
   updateItemPropertiesValue();
+  $('#select_item_properties').empty();
+  $('#select_item_properties').select2({data:ipChoice});
 }
 
     function removeItemPropertyFromItem(id){
@@ -649,6 +714,7 @@ function updateItemPropertiesValue(){
     $("#id__item_properties").html("");
   }
   $("#id_item_properties").val([...ipSet]);
+  $("#id_item_properties_sort").val(JSON.stringify(Array.from(ipSet).map(elem=> parseInt(elem, 10))));
   var var_list="";
   var edit_var_list="";
   for (const [key, value] of Object.entries(ip_data)){
@@ -658,6 +724,7 @@ function updateItemPropertiesValue(){
   $("#var_list").html(var_list);
   $("#edit_var_list").html(edit_var_list);
   console.log("item_properties_value: "+$("#id_item_properties").val());
+  console.log("item_properties_sort: "+$("#id_item_properties_sort").val());
   console.log([...ipSet]);
 }
 
@@ -693,6 +760,23 @@ function updateItemPropertiesValue(){
       return false;
   });
 
+  function safePushFormula(arr,obj){
+    safe=true;
+    for (var i=0;i<arr.length;i++){
+      var element=arr[i];
+      if (obj["name"]==element["name"]){
+        if (obj["name"]!=edit_f_ori_name){
+          alert("Duplicated Formula Name!");
+          safe= false;
+          break;
+        }
+        
+      }
+    }
+
+    return safe;
+  }
+
   //Item Formula Start
 
   function addItemFormula(id){
@@ -708,12 +792,23 @@ function updateItemPropertiesValue(){
       $('#id__item_formula_formula').html("");
     }
     var is_active=$('#add_item_formula_is_active').is(':checked');
-    _if.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
+    if(safePushFormula(_if,{"name":name,"formula":formula,"is_active":is_active?"True":"False"})){
+      _if.push({"name":name,"formula":formula,"is_active":is_active?"True":"False"});
+    }
+    else{
+      return;
+    }
     clearItemFormula();
     $("#id_item_formulas").val(JSON.stringify(_if));
     updateIFTable();
     $('#addModal').modal('hide');
   }
+
+  $('#addModal').on('show.bs.modal',function(event){
+    edit_f_ori_name=null;
+    edit_f_id=null;
+  });
+
 
   $('#editModal').on('show.bs.modal', function (event) {
     var button = $(event.relatedTarget) // Button that triggered the modal
@@ -726,6 +821,8 @@ function updateItemPropertiesValue(){
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
     curId=id
+    edit_f_ori_name=name;
+    edit_f_id=id;
     modal.find('#edit_item_formula_name').val(name)
     modal.find('#edit_item_formula_formula').val(formula)
     modal.find('#edit_item_formula_is_active').prop('checked', is_active=="True"?true:false);
@@ -744,7 +841,12 @@ function updateItemPropertiesValue(){
     else{
       $('#id__edit_item_formula_formula').html("");
     }
-    _if[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    if(safePushFormula(_if,{"name":name,"formula":formula,"is_active":is_active?"True":"False"})){
+      _if[id]={"name":name,"formula":formula,"is_active":is_active?"True":"False"};
+    }
+    else{
+      return;
+    }
     $("#id_item_formulas").val(JSON.stringify(_if));
     updateIFTable();
     $('#editModal').modal('hide');

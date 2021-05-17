@@ -39,13 +39,6 @@
                 </div>
                 <div class="filter_col col-md-3">
                   <div class="form-group">
-                    <label for="exampleInputEmail1">Suggested Unit Price</label>
-                    <input type="text" class="form-control" placeholder="Suggested Unit Price" name="suggested_unit_price"
-                      value="{{request.POST.suggested_unit_price}}">
-                  </div>
-                </div>
-                <div class="filter_col col-md-3">
-                  <div class="form-group">
                     <label for="exampleInputEmail1">Active</label>
                     <input type="text" class="form-control" placeholder="Active" name="is_active"
                       value="{{request.POST.is_active}}">
@@ -102,8 +95,7 @@
                 {% for misc in misc_list %}
                 <tr style="text-align:center;">
                   <td scope="row">{{ forloop.counter }}</td>
-                  <td><a href="#" data-toggle="modal"
-                      data-target="#exampleModalCenter_misc{{misc.id}}">{{misc.name}}</a></td>
+                  <td><a href="{% url 'project_misc:edit_misc' misc.id%}">{{misc.name}}</a></td>
                   <td>
                     {{misc.suggested_unit_price}}
                   </td>
@@ -111,8 +103,6 @@
                     {{misc.is_active}}
                   </td>
                   <td class="actions">
-                    <a href="{% url 'project_misc:view_misc' misc.id %}" class="btn btn-info view" title="View" ><i
-                        class="fas fa-eye"></i></a>
                     {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                     <a href="{% url 'project_misc:edit_misc' misc.id%}" class="btn btn-success edit" title="Edit"><i
                         class="fas fa-pencil-alt"></i></a>

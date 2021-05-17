@@ -43,6 +43,8 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 		validated_data["value"]=_value
 		if user==project.company.owner:
 			room=Room.objects.create(**validated_data)
+			project.updated_on=datetime.now()
+			project.save()
 			return room
 		else:
 			raise PermissionDenied
@@ -55,7 +57,7 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 	room_id=serializers.IntegerField()
 	class Meta:
 		model=Room
-		fields=("room_id","name","room_type","value","measure_quantifier")
+		fields=("room_id","name","measure_quantifier")
 
 	def create(self, validated_data):
 		user = None
@@ -73,18 +75,11 @@ class UpdateRoomSerializer(serializers.ModelSerializer):
 		if user==project.company.owner:
 			room=Room.objects.get(id=validated_data["room_id"])
 			_value={}
-			room_properties=RoomType.objects.get(id=room.room_type).room_properties
-			if validated_data.get("value"):
-				for room_property in room_properties.all():
-					if room_property.symbol in validated_data["value"]:
-						_value[room_property.symbol]=validated_data["value"][room_property.symbol]
-					else:
-						raise ValidationError("Room value missing: "+room_property.symbol)
-			room.value=_value if validated_data.get("value") else room.value
 			room.name=validated_data.get("name",room.name)
-			room.room_type=validated_data.get("room_type",room.room_type)
 			room.measure_quantifier=validated_data.get("measure_quantifier",room.measure_quantifier)
 			room.save()
+			project.updated_on=datetime.now()
+			project.save()
 			return room
 		else:
 			raise PermissionDenied
@@ -93,7 +88,7 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 	room_item_id=serializers.IntegerField(required=False)
 	class Meta:
 		model=RoomItem
-		fields=("room_item_id","item","room","material","material_value_based_price","unit_price","value","quantity","remark","measure_quantifier","item_quantifier")
+		fields=("room_item_id","item","room","material","material_value_based_price","unit_price","value_based_price","value","quantity","remark","measure_quantifier","item_quantifier")
 
 	def create(self,validated_data):
 		user = None
@@ -107,6 +102,7 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 		if user==validated_data["room"].related_project.company.owner:
 			data={}
 			data["material_value_based_price"]=validated_data["material_value_based_price"]
+			data["value_based_price"]=validated_data["value_based_price"]
 			data["unit_price"]=validated_data["unit_price"]
 			_value={}
 			if validated_data["value"]:
@@ -141,7 +137,7 @@ class SetRoomItemSerializer(serializers.ModelSerializer):
 		if user==validated_data["room"].related_project.company.owner:
 			room_item=instance
 			room_item.material_value_based_price=validated_data["material_value_based_price"]
-			
+			room_item.value_based_price=validated_data["value_based_price"]
 			room_item.unit_price=validated_data["unit_price"]
 			_value={}
 			input_value=json.loads(validated_data["value"])
@@ -211,7 +207,7 @@ class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = RoomItem
-		fields=["item","room","material","value"]
+		fields=["item","room","value","material_value_based_price","value_based_price"]
 
 	def create(self,validated_data):
 		user = None
@@ -220,7 +216,7 @@ class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 			user = request.user
 
 		if validated_data["room"].related_project.company.owner==user:
-			cur_material=None
+			'''cur_material=None
 			if validated_data.get("material"):
 				if validated_data["item"].item_type.item_type_materials:
 					for material in validated_data["item"].item_type.item_type_materials:
@@ -229,13 +225,15 @@ class PreCalRoomItemFormulaSerializer(serializers.ModelSerializer):
 							break
 				if cur_material==None:
 					#raise ValidationError(validated_data["item"].item_type.item_type_materials[0]["name"]+":"+validated_data.get("material"))
-					raise ValidationError("Material not match to this item.")
+					raise ValidationError("Material not match to this item.")'''
 			
 			#formulas=ItemFormula.objects.filter(item=validated_data["item"])
 			rfps=validated_data["room"].room_type.cal_formulas(validated_data["room"].value)
 			#rfps={rfp.name:rfp.cal(validated_data["room"].value) for rfp in RoomTypeFormula.objects.filter(room_type=validated_data["room"].room_type)}
-			mvbp=cur_material["value_based_price"] if cur_material!=None and cur_material["value_based_price"] else 0
-			vbp= validated_data["item"].value_based_price if validated_data["item"].value_based_price else 0
+			mvbp=validated_data["material_value_based_price"]
+			#mvbp= cur_material["value_based_price"] if cur_material!=None and cur_material["value_based_price"] else 0
+			vbp=validated_data["value_based_price"]
+			#vbp= validated_data["item"].value_based_price if validated_data["item"].value_based_price else 0
 			ret={}
 			ret.update(validated_data["item"].cal_formulas(value=validated_data["value"],rfps=rfps,vbp=vbp,mvbp=mvbp))
 			#for formula in formulas:

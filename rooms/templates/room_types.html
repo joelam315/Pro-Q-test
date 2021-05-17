@@ -94,12 +94,9 @@
                 {% for room_type in room_type_list %}
                 <tr style="text-align:center;">
                   <td scope="row">{{ forloop.counter }}</td>
-                  <td><a href="#" data-toggle="modal"
-                      data-target="#exampleModalCenter_item{{room_type.id}}">{{room_type.name}}</a></td>
+                  <td><a href="{% url 'rooms:edit_room_type' room_type.id%}">{{room_type.name}}</a></td>
                   <td>{{room_type.is_active}}</td>
                   <td class="actions">
-                    <a href="{% url 'rooms:view_room_type' room_type.id %}" class="btn btn-info view" title="View" ><i
-                        class="fas fa-eye"></i></a>
                     {% if request.user.role == "ADMIN" or request.user.is_superuser %}
                     <a href="{% url 'rooms:edit_room_type' room_type.id%}" class="btn btn-success edit" title="Edit"><i
                         class="fas fa-pencil-alt"></i></a>

@@ -8,11 +8,8 @@ from phonenumber_field.serializerfields import PhoneNumberField
 from django.db import IntegrityError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist, ValidationError
+from common.general import get_random_alphanumeric_string
 
-def get_random_alphanumeric_string(length):
-	letters_and_digits = string.ascii_letters + string.digits
-	result_str = ''.join((random.choice(letters_and_digits) for i in range(length)))
-	return result_str
 
 class AddressSerializer(serializers.ModelSerializer):
 	class Meta:

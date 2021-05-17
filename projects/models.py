@@ -89,16 +89,16 @@ class Project(models.Model):
         miscs=self.project_misc.all()
         rooms=self.project_rooms.all()
         for misc in miscs:
-            total+=misc.unit_price*misc.quantity
+            total+=round(misc.unit_price*misc.quantity,2)
         for room in rooms:
             for item in room.room_project_items.all():
-                total+=item.unit_price*item.quantity
+                total+=round(item.unit_price*item.quantity,2)
         return total
         #return self.currency + ' ' + str(self.total_amount)
 
     def formatted_total_amount(self):
         
-        return 'HK$ ' + str(self.total_amount())
+        return 'HK$ ' + str(round(self.total_amount(),2))
         #return self.currency + ' ' + str(self.total_amount)
 
     def is_draft(self):
@@ -141,7 +141,7 @@ class Project(models.Model):
             status=(self.status,dict(PROJECT_STATUS)[self.status]),
             district=(self.district,dict(HK_DISTRICT)[self.district]),
             details=self.details,
-            work_location=self.work_location,
+            work_location=self.work_location if self.work_location!=None else "",
             start_date=str(self.start_date),
             due_date=str(self.due_date),
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
@@ -169,29 +169,34 @@ class Project(models.Model):
         items["前期項目"]={"items":[],"sum_price":0}
         for misc in miscs:
             items["前期項目"]["items"].append(misc.as_json())
-            items["前期項目"]["sum_price"]+=misc.unit_price*misc.quantity
+            items["前期項目"]["sum_price"]+=round(misc.unit_price*misc.quantity,2)
         for room in rooms:
             for item in room.room_project_items.all():
                 if item.item.item_type.name not in items:
                     items[item.item.item_type.name]={"items":[],"sum_price":0}
                 items[item.item.item_type.name]["items"].append(item.as_json())
-                items[item.item.item_type.name]["sum_price"]+=item.unit_price*item.quantity
+                items[item.item.item_type.name]["sum_price"]+=round(item.unit_price*item.quantity,2)
+        for _type in items:
+            items[_type]["sum_price"]=round(items[_type]["sum_price"],2)
         return items
     def all_charging_stages(self):
         items=[]
         charging_stages=self.charging_stages
         i=0
-        total=self.total_amount()
+        total=round(float(self.total_amount()),2)
+        _sum=0
         receipts=self.project_receipt_records.all()
         for charging_stage in charging_stages:
             received=ProjectReceipt.objects.filter(project=self,receipt_id=i).exists()
-            items.append({"value":charging_stage["value"],"description": charging_stage["description"] if charging_stage.get("description") else "","sum_price":(total*decimal.Decimal(charging_stage["value"])/100),"received":received})
+            _sum+=round(total*charging_stage["value"]/100,2)
+            items.append({"value":charging_stage["value"],"description": charging_stage["description"] if charging_stage.get("description") else "","sum_price":round(total*charging_stage["value"]/100,2),"received":received})
             try:
                 receipt=receipts.get(receipt_id=len(items))
                 items[-1]["date"]=receipt.generated_on.strftime("%Y-%m-%d")
             except ObjectDoesNotExist:
                 pass
             i+=1
+        items[-1]["sum_price"]=round(items[-1]["sum_price"]+total-_sum,2)
         return items
     def all_expense(self):
         items={}
@@ -200,7 +205,9 @@ class Project(models.Model):
             if expense.expense_type.name not in items:
                 items[expense.expense_type.name]={"items":[],"sum_price":0}
             items[expense.expense_type.name]["items"].append(expense.as_json())
-            items[expense.expense_type.name]["sum_price"]+=expense.price
+            items[expense.expense_type.name]["sum_price"]+=round(expense.price,2)
+        for _type in items:
+            items[_type]["sum_price"]=round(items[_type]["sum_price"],2)
         return items
     def quot_format(self):
         return dict(
@@ -231,67 +238,104 @@ class Project(models.Model):
         quot_format=self.quot_format()
         quot_no+=quot_format["quot_upper_format"]
         quot_no+="-"
-        if quot_format["quot_middle_format"]=="Date":
-            quot_no+=self.created_on.strftime("%Y%m%d")
-        elif quot_format["quot_middle_format"]=="Number":
-            quot_no+=str(self.job_no)
-        elif quot_format["quot_middle_format"]=="Alphabet":
-            quot_no+=number2alphabet(self.job_no)
+        gen_quot_count=0
+        quotation_version=self.quotation_version
+        if self.company.gen_quot_date==datetime.date.today():
+            gen_quot_count=self.company.gen_quot_count
+
+        if self.quotation_generated_on and self.updated_on>self.quotation_generated_on:
+            quotation_version+=1
+
+        if self.quotation_no==None or self.quotation_no=="":
+            if quot_format["quot_middle_format"]=="Date":
+                quot_no+=datetime.date.today().strftime("%Y%m%d")+"-"+format(gen_quot_count+1,"02")
+                #quot_no+=self.created_on.strftime("%Y%m%d")
+            elif quot_format["quot_middle_format"]=="Number":
+                quot_no+=str(format(self.job_no,"04"))
+            elif quot_format["quot_middle_format"]=="Alphabet":
+                quot_no+=number2alphabet(self.job_no)
+
+        else:
+            quot_no+=self.quotation_no
+
+        quot_no+="-"
 
         if quot_format["quot_lower_format"]=="Date":
-            quot_no+=self.created_on.strftime("%Y%m%d")
+            quot_no+=datetime.date.today().strftime("%Y%m%d")+"-"+format(gen_quot_count+1,"02")
+            #quot_no+=self.created_on.strftime("%Y%m%d")
         elif quot_format["quot_lower_format"]=="Number":
-            quot_no+=str(self.job_no)
+            quot_no+=str(format(quotation_version+1,"04"))
         elif quot_format["quot_lower_format"]=="Alphabet":
-            quot_no+=number2alphabet(self.job_no) 
+            quot_no+=number2alphabet(quotation_version+1) 
 
         return quot_no
 
-    def generate_invoice_no(self):
+    def generate_invoice_no(self,stage_id):
         invoice_no=""
         invoice_format=self.invoice_format()
         invoice_no+=invoice_format["invoice_upper_format"]
         invoice_no+="-"
-        if invoice_format["invoice_middle_format"]=="Date":
-            invoice_no+=self.created_on.strftime("%Y%m%d")
-        elif invoice_format["invoice_middle_format"]=="Number":
-            invoice_no+=str(self.job_no)
-        elif invoice_format["invoice_middle_format"]=="Alphabet":
-            invoice_no+=number2alphabet(self.job_no)
+        gen_invoice_count=0
+        if self.company.gen_invoice_date==datetime.date.today():
+            gen_invoice_date=self.company.gen_invoice_date
+
+        if self.quotation_no==None or self.quotation_no=="":
+            if invoice_format["invoice_middle_format"]=="Date":
+                invoice_no+=datetime.date.today().strftime("%Y%m%d")+"-"+format(gen_invoice_count+1,"02")
+            elif invoice_format["invoice_middle_format"]=="Number":
+                invoice_no+=str(format(self.job_no,"04"))
+            elif invoice_format["invoice_middle_format"]=="Alphabet":
+                invoice_no+=number2alphabet(self.job_no)
+        else:
+            invoice_no+=self.quotation_no
+
+        invoice_no+="-"
 
         if invoice_format["invoice_lower_format"]=="Date":
-            invoice_no+=self.created_on.strftime("%Y%m%d")
+            invoice_no+=datetime.date.today().strftime("%Y%m%d")+"-"+format(gen_invoice_count+1,"02")
         elif invoice_format["invoice_lower_format"]=="Number":
-            invoice_no+=str(self.job_no)
+            invoice_no+=str(format(stage_id+1,"04"))
         elif invoice_format["invoice_lower_format"]=="Alphabet":
-            invoice_no+=number2alphabet(self.job_no) 
+            invoice_no+=number2alphabet(stage_id+1) 
 
         return invoice_no
 
-    def generate_receipt_no(self):
+    def generate_receipt_no(self,stage_id):
         receipt_no=""
         receipt_format=self.receipt_format()
         receipt_no+=receipt_format["receipt_upper_format"]
         receipt_no+="-"
-        if receipt_format["receipt_middle_format"]=="Date":
-            receipt_no+=self.created_on.strftime("%Y%m%d")
-        elif receipt_format["receipt_middle_format"]=="Number":
-            receipt_no+=str(self.job_no)
-        elif receipt_format["receipt_middle_format"]=="Alphabet":
-            receipt_no+=number2alphabet(self.job_no)
+        gen_receipt_count=0
+        if self.company.gen_receipt_date==datetime.date.today():
+            gen_receipt_date=self.company.gen_receipt_date
+        if self.quotation_no==None or self.quotation_no=="":
+            if receipt_format["receipt_middle_format"]=="Date":
+                receipt_no+=datetime.date.today().strftime("%Y%m%d")+"-"+format(gen_receipt_count+1,"02")
+            elif receipt_format["receipt_middle_format"]=="Number":
+                receipt_no+=str(format(self.job_no,"04"))
+            elif receipt_format["receipt_middle_format"]=="Alphabet":
+                receipt_no+=number2alphabet(self.job_no)
+
+        else:
+            receipt_no+=self.quotation_no
+
+        receipt_no+="-"
 
         if receipt_format["receipt_lower_format"]=="Date":
-            receipt_no+=self.created_on.strftime("%Y%m%d")
+            receipt_no+=datetime.date.today().strftime("%Y%m%d")+"-"+format(gen_receipt_count+1,"02")
         elif receipt_format["receipt_lower_format"]=="Number":
-            receipt_no+=str(self.job_no)
+            receipt_no+=str(format(stage_id+1,"04"))
         elif receipt_format["receipt_lower_format"]=="Alphabet":
-            receipt_no+=number2alphabet(self.job_no) 
+            receipt_no+=number2alphabet(stage_id+1) 
 
         return receipt_no
     def list_charging_stage_amounts(self):
         ret=[]
+        _sum=0
         for charging_stage in self.charging_stages:
-            ret.append({"value":charging_stage["value"],"price":((float)(self.total_amount())*charging_stage["value"]/100)})
+            _sum+=round(((float)(self.total_amount())*charging_stage["value"]/100),2)
+            ret.append({"value":charging_stage["value"],"price":round(((float)(self.total_amount())*charging_stage["value"]/100),2)})
+        ret[-1]["price"]+=float(round(self.total_amount(),2))-_sum
         return ret
     def quot_preview(self):
         ret=dict(
@@ -301,42 +345,64 @@ class Project(models.Model):
             charging_stages=self.charging_stages,
             general_remarks=self.quotation_remarks,
             quotation_no=self.generate_quot_no(),
-            work_location=self.work_location,
+            work_location=self.work_location if self.work_location!=None and self.work_location!="null" else "",
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None,
             can_update_charging_stage=False if not self.quotation_generated_on else True
         )
         if self.document_format["project_lower_format"]=="Number":
             ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
-        ret["total_price"]=sum(ret["items"][item]["sum_price"] for item in ret["items"])
+        ret["total_price"]=round(sum(ret["items"][item]["sum_price"] for item in ret["items"]),2)
         return ret 
 
     def invoice_preview(self,stage_id):
+        total=(float(self.total_amount()))
         ret=dict(
             job_no=self.document_format["project_upper_format"],
             invoice_format=self.invoice_format(),
-            amount=((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100),
-            total_amount=(float)(self.total_amount()),
+            amount=round(total*self.charging_stages[stage_id]["value"]/100,2),
+            #amount=round((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100,2) if len(self.charging_stages)-1>stage_id else round(round((float)(self.total_amount()),2)-(round((float)(self.total_amount())*(100-self.charging_stages[stage_id]["value"])/100,2)),2),
+            total_amount=round((float)(self.total_amount()),2),
             charging_stage=self.charging_stages[stage_id],
             general_remarks=self.invoice_remarks,
-            invoice_no=self.generate_invoice_no(),
-            work_location=self.work_location,
+            invoice_no=self.generate_invoice_no(stage_id),
+            work_location=self.work_location if self.work_location!=None and self.work_location!="null" else "",
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        if len(self.charging_stages)-1<=stage_id:
+            amount=total
+            i=0
+            for cs in self.charging_stages:
+                if i!=stage_id:
+                    i+=1
+                    amount=round(amount-round(total*cs["value"]/100,2),2)
+            ret["amount"]=amount
+
         if self.document_format["project_lower_format"]=="Number":
             ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
         return ret
     def receipt_preview(self,stage_id):
+        total=(float(self.total_amount()))
         ret=dict(
             job_no=self.document_format["project_upper_format"],
             receipt_format=self.receipt_format(),
-            amount=((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100),
-            total_amount=(float)(self.total_amount()),
+            amount=round(total*self.charging_stages[stage_id]["value"]/100,2),
+            #amount=round((float)(self.total_amount())*self.charging_stages[stage_id]["value"]/100,2) if len(self.charging_stages)-1>stage_id else round(round((float)(self.total_amount()),2)-(round((float)(self.total_amount())*(100-self.charging_stages[stage_id]["value"])/100,2)),2),
+            total_amount=round((float)(self.total_amount()),2),
             charging_stage=self.charging_stages[stage_id],
             general_remarks=self.receipt_remarks,
-            receipt_no=self.generate_receipt_no(),
-            work_location=self.work_location,
+            receipt_no=self.generate_receipt_no(stage_id),
+            work_location=self.work_location if self.work_location!=None and self.work_location!="null" else "",
             customer_contact=self.customer.as_json() if hasattr(self, 'customer') and self.customer!=None else None
         )
+        if len(self.charging_stages)-1<=stage_id:
+            amount=total
+            i=0
+            for cs in self.charging_stages:
+                if i!=stage_id:
+                    i+=1
+                    amount=round(amount-round(total*cs["value"]/100,2),2)
+            ret["amount"]=amount
+
         if self.document_format["project_lower_format"]=="Number":
             ret["job_no"]=ret["job_no"]+format(self.job_no, "04")
         return ret
@@ -344,9 +410,9 @@ class Project(models.Model):
         income=self.all_charging_stages()
         outcome=self.all_expense()
 
-        total_income=self.total_amount()
+        total_income=round(self.total_amount(),2)
 
-        total_outcome=sum(outcome[item]["sum_price"] for item in outcome.keys())
+        total_outcome=round(sum(outcome[item]["sum_price"] for item in outcome.keys()),2)
 
         ret=dict(
             income_items=income,
@@ -361,9 +427,9 @@ class Project(models.Model):
         income=self.all_charging_stages()
         outcome=self.all_expense()
 
-        total_income=self.total_amount()
+        total_income=round(self.total_amount(),2)
 
-        total_outcome=sum(outcome[item]["sum_price"] for item in outcome.keys())
+        total_outcome=round(sum(outcome[item]["sum_price"] for item in outcome.keys()),2)
 
         ret=dict(
             project_id=self.id,

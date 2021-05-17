@@ -68,7 +68,7 @@
               <div class="filter_col col-md-12">
                 <div class="form-group">
                   <label class="acc_field_label" for="id_status" data-name="br_approved">BR Approved</label>
-                  <div class="account_field" id="company_br_approved" data-name="br_approved">{{ company_record.br_approved }}</div>
+                  <div class="account_field" id="company_br_approved" data-name="br_approved">{{ company_record.br_approved }} {% if not company_record.br_approved %}<br><a href="{% url 'companies:bulk_br_check'  company_record.id %}">Set True</a>{% endif %}</div>
                 </div>
               </div>
               <div class="filter_col col-md-12">
@@ -83,24 +83,36 @@
               </div>
             </div>
             <div class="col-md-6">
-              {% if company_record.logo_pic %}
+              <div class="row marl">
               <div class="filter_col col-md-6" id="iname">
                 <div class="form-group">
                   <div class="form-group">
                     <label class="acc_field_label" for="id_shipping_address" data-name="name">Logo pic</label>
                     <div class="profile_pic" style="text-align: left;">
                       {% if company_record.logo_pic %}
-                      {% thumbnail company_record.logo_pic "125x125" as im %}
-                      <img src="{{ im.url }}">
-                      {% endthumbnail %}
+                      <a href="{{ company_record.logo_pic.url }}" target="popup" onclick="window.open('{{ company_record.logo_pic.url }}','popup','width=600,height=600'); return false;"><img src="{{ company_record.logo_pic.url }}"></a>
+                      {% else %}
+                      None
                       {% endif %}
                     </div>
                   </div>
                 </div>
               </div>
-              {% endif %}
-              
-              
+              <div class="filter_col col-md-6" id="iname">
+                <div class="form-group">
+                  <div class="form-group">
+                    <label class="acc_field_label" for="id_shipping_address" data-name="name">BR pic</label>
+                    <div class="profile_pic" style="text-align: left;">
+                      {% if company_record.br_pic %}
+                      <a href="{{ company_record.br_pic.url }}" target="popup" onclick="window.open('{{ company_record.br_pic.url }}','popup','width=600,height=600'); return false;"><img src="{{ company_record.br_pic.url }}"></a>
+                      {% else %}
+                      None
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              </div>
               {% if company_record.website %}
               <div class="filter_col col-md-12">
                 <div class="form-group">
