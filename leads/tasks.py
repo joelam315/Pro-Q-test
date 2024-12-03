@@ -1,6 +1,6 @@
 import re
 
-from celery.task import task
+from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db.models import Q
@@ -17,7 +17,7 @@ def get_rendered_html(template_name, context={}):
     return html_content
 
 
-@task
+@shared_task
 def send_email(subject, html_content,
                text_content=None, from_email=None,
                recipients=[], attachments=[], bcc=[], cc=[]):
@@ -36,7 +36,7 @@ def send_email(subject, html_content,
     email.send()
 
 
-@task
+@shared_task
 def send_lead_assigned_emails(lead_id, new_assigned_to_list, site_address):
     lead_instance = Lead.objects.filter(
         ~Q(status='converted'), pk=lead_id, is_active=True
@@ -66,7 +66,7 @@ def send_lead_assigned_emails(lead_id, new_assigned_to_list, site_address):
             send_email.delay(**mail_kwargs)
 
 
-@task
+@shared_task
 def send_email_to_assigned_user(recipients, lead_id, domain='demo.django-crm.io', protocol='http', source=''):
     """ Send Mail To Users When they are assigned to a lead """
     lead = Lead.objects.get(id=lead_id)
@@ -98,7 +98,7 @@ def send_email_to_assigned_user(recipients, lead_id, domain='demo.django-crm.io'
                 msg.send()
 
 
-@task
+@shared_task
 def create_lead_from_file(validated_rows, invalid_rows, user_id, source):
     """Parameters : validated_rows, invalid_rows, user_id.
     This function is used to create leads from a given file.
