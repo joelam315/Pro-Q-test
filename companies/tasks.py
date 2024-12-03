@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytz
-from celery.task import task
+from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.shortcuts import reverse
@@ -16,7 +16,7 @@ from contacts.models import Contact
 from marketing.models import BlockedDomain, BlockedEmail
 
 
-@task
+@share task
 def send_email(email_obj_id):
     email_obj = Email.objects.filter(id=email_obj_id).first()
     blocked_domains = BlockedDomain.objects.values_list('domain', flat=True)
@@ -53,7 +53,7 @@ def send_email(email_obj_id):
 
 
 
-@task
+@share task
 def send_email_to_assigned_user(recipients, from_email, domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Users When they are assigned to a contact """
     company = Company.objects.filter(id=from_email).first()
@@ -87,7 +87,7 @@ def send_email_to_assigned_user(recipients, from_email, domain='demo.django-crm.
                 msg.send()
 
 
-@task
+@share task
 def send_scheduled_emails():
     email_objs = Email.objects.filter(scheduled_later=True)
     # TODO: modify this later , since models are updated
