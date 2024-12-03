@@ -1,4 +1,4 @@
-from celery.task import task
+from celery import shared_task
 from django.core.mail import EmailMessage
 from django.shortcuts import reverse
 from django.template.loader import render_to_string
@@ -8,7 +8,7 @@ from contacts.models import Contact
 from marketing.models import BlockedDomain, BlockedEmail
 
 
-@task
+@shared_task
 def send_email_to_assigned_user(recipients, contact_id, domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Users When they are assigned to a contact """
     contact = Contact.objects.get(id=contact_id)
