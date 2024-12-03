@@ -74,7 +74,7 @@ def send_invoice_email(invoice_id, domain='demo.django-crm.io', protocol='http')
         msg.send()
 
 
-@task
+@shared_task
 def send_invoice_email_cancel(invoice_id, domain='demo.django-crm.io', protocol='http'):
     invoice = Invoice.objects.filter(id=invoice_id).first()
     if invoice:
