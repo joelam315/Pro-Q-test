@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views
-from django.conf.urls import url
+from django.urls import re_path as url
 from django.urls import include, path
 from common.views import handler404, handler500
 from common.constants import FETCH_URL_NAME
