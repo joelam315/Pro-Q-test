@@ -1,6 +1,6 @@
 import datetime
 
-from celery.task import task
+from celery import shared_task
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
 from django.shortcuts import reverse
