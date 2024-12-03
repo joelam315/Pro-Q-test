@@ -8,7 +8,7 @@ import datetime
 from decimal import Decimal
 from django.db import models
 from django.db.models.signals import m2m_changed
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.postgres.fields import JSONField,ArrayField
 from django.dispatch import receiver
