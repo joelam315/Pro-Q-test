@@ -1,6 +1,6 @@
 import arrow
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from common.models import User
 from function_items.utils import FUNCTION_TYPE, FUNCTION_STATUS
 from django.shortcuts import get_object_or_404
