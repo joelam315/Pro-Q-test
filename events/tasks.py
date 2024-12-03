@@ -1,4 +1,4 @@
-from celery.task import task
+from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.shortcuts import reverse
@@ -10,7 +10,7 @@ from events.models import Event
 from marketing.models import BlockedDomain, BlockedEmail
 
 
-@task
+@shared_task
 def send_email(event_id, recipients, domain='demo.django-crm.io', protocol='http'):
     event = Event.objects.filter(id=event_id).first()
     subject = ' Invitation for an event.'
