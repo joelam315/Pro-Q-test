@@ -4,7 +4,7 @@ import time
 import datetime
 from django.db import models
 from projects.models import Project
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.dispatch import receiver
 from common.fields import  EncryptedImageField
 from common.constants import FETCH_URL_NAME
