@@ -1,6 +1,6 @@
 from companies.models import Company
 from cases.models import Case
-from celery.task import task
+from celery import shared_task
 from common.models import Document
 from contacts.models import Contact
 from events.models import Event
@@ -10,7 +10,7 @@ from tasks.models import Task
 from teams.models import Teams
 
 
-@task
+@shared_task
 def update_team_users(team_id):
     """ this function updates assigned_to field on all models when a team is updated """
     pass
