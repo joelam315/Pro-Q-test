@@ -1,7 +1,7 @@
 import arrow
 from django.db import models
 from projects.models import Project
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 class Misc(models.Model):
 	name=models.CharField(max_length=50)
