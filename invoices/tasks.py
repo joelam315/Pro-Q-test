@@ -1,4 +1,4 @@
-from celery.task import task
+from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.shortcuts import reverse
@@ -9,7 +9,7 @@ from invoices.models import Invoice, InvoiceHistory
 from marketing.models import BlockedDomain, BlockedEmail
 
 
-@task
+@shared_task
 def send_email(invoice_id, recipients, domain='demo.django-crm.io', protocol='http'):
     invoice = Invoice.objects.filter(id=invoice_id).first()
     created_by = invoice.created_by
@@ -56,7 +56,7 @@ def send_email(invoice_id, recipients, domain='demo.django-crm.io', protocol='ht
 
 
 
-@task
+@shared_task
 def send_invoice_email(invoice_id, domain='demo.django-crm.io', protocol='http'):
     invoice = Invoice.objects.filter(id=invoice_id).first()
     if invoice:
@@ -92,7 +92,7 @@ def send_invoice_email_cancel(invoice_id, domain='demo.django-crm.io', protocol=
         msg.send()
 
 
-@task
+@shared_task
 def create_invoice_history(original_invoice_id, updated_by_user_id, changed_fields):
     """original_invoice_id, updated_by_user_id, changed_fields"""
     original_invoice = Invoice.objects.filter(id=original_invoice_id).first()
