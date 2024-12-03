@@ -1,6 +1,6 @@
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 import six
-from django.utils import six
+from django.utils import timezone
 
 
 class TokenGenerator(PasswordResetTokenGenerator):
