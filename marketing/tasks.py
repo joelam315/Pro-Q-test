@@ -4,7 +4,7 @@ from mimetypes import MimeTypes
 
 import pytz
 import requests
-from celery.task import task
+from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.shortcuts import reverse
