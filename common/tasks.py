@@ -15,7 +15,7 @@ from common.token_generator import account_activation_token
 from marketing.models import BlockedDomain, BlockedEmail
 
 
-@task
+@shared_task
 def send_email_to_new_user(user_email, created_by, domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Users When their company is created """
 
