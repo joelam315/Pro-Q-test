@@ -17,22 +17,22 @@ from marketing.models import (BlockedDomain, BlockedEmail, Campaign,
                               DuplicateContacts, FailedContact)
 
 
-@task
+@shared_task
 def campaign_sechedule(request):
     pass
 
 
-@task
+@shared_task
 def campaign_open(request):
     pass
 
 
-@task
+@shared_task
 def campaign_click(request):
     pass
 
 
-@task
+@shared_task
 def upload_csv_file(data, invalid_data, user, contact_lists):
     for each in data:
         contact = Contact.objects.filter(email=each['email']).first()
@@ -106,7 +106,7 @@ def get_campaign_message_id(campaign):
     return file_hash
 
 
-@task
+@shared_task
 def run_campaign(campaign, domain='demo.django-crm.io', protocol='https'):
     blocked_domains = BlockedDomain.objects.values_list('domain', flat=True)
     blocked_emails = BlockedEmail.objects.values_list('email', flat=True)
@@ -182,7 +182,7 @@ def run_campaign(campaign, domain='demo.django-crm.io', protocol='https'):
         pass
 
 
-@task
+@shared_task
 def run_all_campaigns():
     start_date = datetime.date.today()
     campaigns = Campaign.objects.filter(schedule_date_time__date=start_date)
@@ -190,7 +190,7 @@ def run_all_campaigns():
         run_campaign(each.id)
 
 
-@task
+@shared_task
 def list_all_bounces_unsubscribes():
     bounces = requests.get('https://api.sendgrid.com/api/bounces.get.json?api_user=' +
                            settings.EMAIL_HOST_USER + '&api_key=' + settings.EMAIL_HOST_PASSWORD)
@@ -211,7 +211,7 @@ def list_all_bounces_unsubscribes():
                 contact.save()
 
 
-@task
+@shared_task
 def send_scheduled_campaigns():
     from datetime import datetime
     campaigns = Campaign.objects.filter(schedule_date_time__isnull=False)
@@ -238,7 +238,7 @@ def send_scheduled_campaigns():
                     campaign=each, is_completed=True)
 
 
-@task
+@shared_task
 def delete_multiple_contacts_tasks(contact_list_id, bounced=True):
     """ this method is used to remove all contacts from a contact list based on bounced kwarg """
     contacts_list_obj = ContactList.objects.filter(id=contact_list_id).first()
@@ -252,7 +252,7 @@ def delete_multiple_contacts_tasks(contact_list_id, bounced=True):
                     contact_obj.delete()
 
 
-@task
+@shared_task
 def send_campaign_email_to_admin_contact(campaign, domain='demo.django-crm.io', protocol='https'):
     try:
         campaign = Campaign.objects.get(id=campaign)
