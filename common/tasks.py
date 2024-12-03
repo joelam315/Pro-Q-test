@@ -51,7 +51,7 @@ def send_email_to_new_user(user_email, created_by, domain='demo.django-crm.io', 
             msg.send()
 
 
-@task
+@shared_task
 def send_email_user_mentions(comment_id, called_from, domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Mentioned Users In The Comment """
     comment = Comment.objects.filter(id=comment_id).first()
@@ -123,7 +123,7 @@ def send_email_user_mentions(comment_id, called_from, domain='demo.django-crm.io
                     msg.send()
 
 
-@task
+@shared_task
 def send_email_user_status(user_id, status_changed_user="", domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Users Regarding their status i.e active or inactive """
     user = User.objects.filter(id=user_id).first()
@@ -158,7 +158,7 @@ def send_email_user_status(user_id, status_changed_user="", domain='demo.django-
             msg.send()
 
 
-@task
+@shared_task
 def send_email_user_delete(user_email, deleted_by="", domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Users When their company is deleted """
     if user_email:
@@ -180,7 +180,7 @@ def send_email_user_delete(user_email, deleted_by="", domain='demo.django-crm.io
             msg.send()
 
 
-@task
+@shared_task
 def resend_activation_link_to_user(user_email="", domain='demo.django-crm.io', protocol='http'):
     """ Send Mail To Users When their company is created """
 
